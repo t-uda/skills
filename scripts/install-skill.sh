@@ -4,12 +4,14 @@ set -eu
 usage() {
   cat <<'EOF'
 Usage:
-  ./scripts/install-skill.sh <skill-name> [claude|codex|both] [workspace-root]
+  ./scripts/install-skill.sh <skill-name> [claude|codex|copilot|gemini|all] [workspace-root]
 
 Examples:
   ./scripts/install-skill.sh transfer-prompt
-  ./scripts/install-skill.sh transfer-prompt claude .
-  ./scripts/install-skill.sh transfer-prompt both /path/to/workspace
+  ./scripts/install-skill.sh transfer-prompt codex .
+  ./scripts/install-skill.sh transfer-prompt copilot /path/to/workspace
+  ./scripts/install-skill.sh transfer-prompt gemini /path/to/workspace
+  ./scripts/install-skill.sh transfer-prompt all /path/to/workspace
 EOF
 }
 
@@ -19,7 +21,7 @@ if [ "${1:-}" = "" ] || [ "${1:-}" = "-h" ] || [ "${1:-}" = "--help" ]; then
 fi
 
 SKILL_NAME="$1"
-TARGET_KIND="${2:-both}"
+TARGET_KIND="${2:-codex}"
 WORKSPACE_ROOT="${3:-.}"
 
 case "$SKILL_NAME" in
@@ -47,6 +49,29 @@ copy_skill() {
   echo "Installed $SKILL_NAME -> $target_dir"
 }
 
+install_gemini_compat() {
+  gemini_root="$WORKSPACE_ROOT/.gemini"
+  gemini_md="$gemini_root/GEMINI.md"
+  import_line="@./skills/$SKILL_NAME/SKILL.md"
+
+  copy_skill "$gemini_root/skills"
+  mkdir -p "$gemini_root"
+
+  if [ ! -f "$gemini_md" ]; then
+    printf '# Gemini project context\n\n%s\n' "$import_line" > "$gemini_md"
+    echo "Created $gemini_md"
+    return 0
+  fi
+
+  if grep -Fqx "$import_line" "$gemini_md"; then
+    echo "Gemini import already present in $gemini_md"
+    return 0
+  fi
+
+  printf '\n%s\n' "$import_line" >> "$gemini_md"
+  echo "Updated $gemini_md"
+}
+
 case "$TARGET_KIND" in
   claude)
     copy_skill "$WORKSPACE_ROOT/.claude/skills"
@@ -54,9 +79,17 @@ case "$TARGET_KIND" in
   codex)
     copy_skill "$WORKSPACE_ROOT/.agents/skills"
     ;;
-  both)
+  copilot)
+    copy_skill "$WORKSPACE_ROOT/.github/skills"
+    ;;
+  gemini)
+    install_gemini_compat
+    ;;
+  all)
     copy_skill "$WORKSPACE_ROOT/.claude/skills"
     copy_skill "$WORKSPACE_ROOT/.agents/skills"
+    copy_skill "$WORKSPACE_ROOT/.github/skills"
+    install_gemini_compat
     ;;
   *)
     echo "Invalid target: $TARGET_KIND" >&2
