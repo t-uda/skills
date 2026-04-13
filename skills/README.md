@@ -15,4 +15,4 @@ Guidelines:
 
 Current status:
 
-- no skills have been added yet
+- transfer-prompt
