@@ -13,6 +13,7 @@ Guidelines:
 - concise documentation
 - no generated files
 
-Current status:
+Current skills:
 
-- no skills have been added yet
+- implementation-readiness-review
+- transfer-prompt
