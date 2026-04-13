@@ -1,15 +1,15 @@
 ---
-name: planning-triage
-description: Decide whether a development task should be done immediately, handled with a lightweight spec, or sent to implementation-readiness review.
+name: triage
+description: Decide whether a development task should be done now, handled with `lite-spec`, or sent to `metaplan`.
 ---
 
-# Planning Triage
+# Triage
 
 Classify an incoming development task into one of three routes:
 
 - `DO_IT_NOW`
-- `LIGHTWEIGHT_SPEC`
-- `IMPLEMENTATION_READINESS_REVIEW`
+- `LITE_SPEC`
+- `METAPLAN`
 
 The purpose of this skill is to keep planning overhead proportional to task difficulty.
 Use the lightest route that still protects execution quality.
@@ -70,7 +70,7 @@ Typical examples:
 - narrow mechanical changes
 - local refactors with obvious boundaries
 
-### Route: LIGHTWEIGHT_SPEC
+### Route: LITE_SPEC
 
 Choose this when:
 
@@ -86,7 +86,7 @@ Typical examples:
 - changes spanning several files with limited design uncertainty
 - work that needs one compact implementation brief before coding
 
-### Route: IMPLEMENTATION_READINESS_REVIEW
+### Route: METAPLAN
 
 Choose this when one or more of the following hold:
 
@@ -116,7 +116,7 @@ Return:
 Use this structure:
 
 ```text
-Route: <DO_IT_NOW | LIGHTWEIGHT_SPEC | IMPLEMENTATION_READINESS_REVIEW>
+Route: <DO_IT_NOW | LITE_SPEC | METAPLAN>
 
 Why:
 - ...

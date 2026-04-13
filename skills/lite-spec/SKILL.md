@@ -1,16 +1,16 @@
 ---
-name: lightweight-spec
-description: Produce a compact implementation brief for medium-complexity tasks that are too large for immediate coding but do not justify heavy planning review.
+name: lite-spec
+description: Produce a compact execution spec for bounded implementation tasks that are too large to do immediately but do not require `metaplan`.
 ---
 
-# Lightweight Spec
+# Lite Spec
 
 Produce a compact planning document for medium-complexity implementation work.
 
 This skill covers the middle zone between:
 
 - doing the work immediately
-- sending planning artifacts to implementation-readiness review
+- sending planning artifacts to `metaplan`
 
 The goal is to create just enough structure to reduce ambiguity and rework without imposing heavy process overhead.
 
@@ -27,7 +27,7 @@ Use this skill when:
 Do not use this skill for:
 
 - tiny local edits that can be executed immediately
-- large, high-risk, or highly ambiguous changes that should go through implementation-readiness review
+- large, high-risk, or highly ambiguous changes that should go through `metaplan`
 
 ## Deliverable
 

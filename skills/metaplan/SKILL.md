@@ -1,9 +1,9 @@
 ---
-name: implementation-readiness-review
-description: Review and tighten specifications, plans, task lists, and related repository guidance before implementation. Use when an AI coding agent must be able to start work without ambiguity, unnecessary re-research, avoidable human confirmation requests, duplicated instructions, unclear boundaries, or weak completion criteria.
+name: metaplan
+description: Review and tighten specs, plans, and task breakdowns before implementation so an autonomous coding agent can execute without ambiguity or avoidable re-research.
 ---
 
-# Implementation Readiness Review
+# Metaplan
 
 Review planning artifacts from the perspective of an autonomous coding agent that must execute reliably with minimal interruption.
 

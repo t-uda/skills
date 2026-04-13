@@ -7,11 +7,11 @@ Usage:
   ./scripts/install-skill.sh <skill-name> [claude|codex|copilot|gemini|all] [workspace-root]
 
 Examples:
-  ./scripts/install-skill.sh transfer-prompt
-  ./scripts/install-skill.sh transfer-prompt codex .
-  ./scripts/install-skill.sh transfer-prompt copilot /path/to/workspace
-  ./scripts/install-skill.sh transfer-prompt gemini /path/to/workspace
-  ./scripts/install-skill.sh transfer-prompt all /path/to/workspace
+  ./scripts/install-skill.sh handoff-prompt
+  ./scripts/install-skill.sh triage codex .
+  ./scripts/install-skill.sh lite-spec copilot /path/to/workspace
+  ./scripts/install-skill.sh metaplan gemini /path/to/workspace
+  ./scripts/install-skill.sh handoff-prompt all /path/to/workspace
 EOF
 }
 
