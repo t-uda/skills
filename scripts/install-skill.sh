@@ -22,6 +22,13 @@ SKILL_NAME="$1"
 TARGET_KIND="${2:-both}"
 WORKSPACE_ROOT="${3:-.}"
 
+case "$SKILL_NAME" in
+  .*|*/*|*\\*|*".."*|*[^A-Za-z0-9._-]*)
+    echo "Invalid skill name: $SKILL_NAME" >&2
+    exit 1
+    ;;
+esac
+
 SCRIPT_DIR=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
 REPO_ROOT=$(CDPATH= cd -- "$SCRIPT_DIR/.." && pwd)
 SOURCE_DIR="$REPO_ROOT/skills/$SKILL_NAME"
