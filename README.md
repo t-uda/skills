@@ -40,7 +40,6 @@ Supported targets:
 - `codex`: install to `.agents/skills/`
 - `copilot`: install to `.github/skills/`
 - `gemini`: compatibility mode via `.gemini/skills/` plus `.gemini/GEMINI.md`
-- `both`: install to Claude Code and Codex locations
 - `all`: install to Claude Code, Codex, Copilot, and Gemini compatibility locations
 
 Examples:

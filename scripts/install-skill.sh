@@ -4,7 +4,7 @@ set -eu
 usage() {
   cat <<'EOF'
 Usage:
-  ./scripts/install-skill.sh <skill-name> [claude|codex|copilot|gemini|both|all] [workspace-root]
+  ./scripts/install-skill.sh <skill-name> [claude|codex|copilot|gemini|all] [workspace-root]
 
 Examples:
   ./scripts/install-skill.sh transfer-prompt
@@ -84,10 +84,6 @@ case "$TARGET_KIND" in
     ;;
   gemini)
     install_gemini_compat
-    ;;
-  both)
-    copy_skill "$WORKSPACE_ROOT/.claude/skills"
-    copy_skill "$WORKSPACE_ROOT/.agents/skills"
     ;;
   all)
     copy_skill "$WORKSPACE_ROOT/.claude/skills"
