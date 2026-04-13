@@ -19,3 +19,4 @@ Current skills:
 - lite-spec
 - metaplan
 - handoff-prompt
+- growing-agents-md
