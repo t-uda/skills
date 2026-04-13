@@ -8,10 +8,16 @@ The default distribution model is conservative:
 - avoid public registries and auto-install workflows by default
 - copy only the required skills into a project workspace when needed
 
-This layout is intended to work with agents that discover skills from local folders, including:
+## Tool compatibility
 
-- Claude Code: `.claude/skills/`
-- Codex: `.agents/skills/`
+This repository targets multiple coding agents, but each tool discovers reusable guidance differently:
+
+- Claude Code: project-local skills in `.claude/skills/`
+- Codex: project-local skills in `.agents/skills/`
+- GitHub Copilot CLI: project-local skills in `.github/skills/` or `.claude/skills/`
+- Gemini CLI: project-local context from `GEMINI.md`; official reusable packaging is based on Gemini extensions
+
+For Gemini CLI, this repository provides a compatibility install mode that copies a skill into `.gemini/skills/` and imports its `SKILL.md` from `.gemini/GEMINI.md`.
 
 ## Repository layout
 
@@ -28,11 +34,32 @@ scripts/
 The installer script copies one skill from this repository into a target workspace.
 It does not depend on a remote marketplace or registry.
 
-Example:
+Supported targets:
+
+- `claude`: install to `.claude/skills/`
+- `codex`: install to `.agents/skills/`
+- `copilot`: install to `.github/skills/`
+- `gemini`: compatibility mode via `.gemini/skills/` plus `.gemini/GEMINI.md`
+- `both`: install to Claude Code and Codex locations
+- `all`: install to Claude Code, Codex, Copilot, and Gemini compatibility locations
+
+Examples:
 
 ```sh
-./scripts/install-skill.sh my-skill both /path/to/workspace
+./scripts/install-skill.sh my-skill codex /path/to/workspace
+./scripts/install-skill.sh my-skill copilot /path/to/workspace
+./scripts/install-skill.sh my-skill gemini /path/to/workspace
+./scripts/install-skill.sh my-skill all /path/to/workspace
 ```
+
+## Project instruction files
+
+These are separate from skills, but they affect project-local behaviour:
+
+- GitHub Copilot supports `AGENTS.md`, `GEMINI.md`, and `.github/copilot-instructions.md`
+- Gemini CLI loads hierarchical `GEMINI.md` files and can be configured to accept other context filenames
+
+The installer in this repository currently copies skills only. It does not generate repository-wide instruction files such as `AGENTS.md` or `.github/copilot-instructions.md`.
 
 ## Notes
 
