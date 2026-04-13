@@ -15,5 +15,7 @@ Guidelines:
 
 Current skills:
 
-- implementation-readiness-review
-- transfer-prompt
+- triage
+- lite-spec
+- metaplan
+- handoff-prompt

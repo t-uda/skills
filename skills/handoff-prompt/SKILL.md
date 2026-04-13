@@ -1,9 +1,9 @@
 ---
-name: transfer-prompt
-description: Generate a compact transfer prompt for the next agent or stage. Use when work must be handed off without copying redundant context. Output the prompt only.
+name: handoff-prompt
+description: Generate a compact handoff prompt for the next agent or stage. Output the prompt only.
 ---
 
-# Transfer Prompt
+# Handoff Prompt
 
 Generate a **minimal sufficient prompt** for the next agent.
 

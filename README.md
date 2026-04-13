@@ -1,12 +1,47 @@
 # skills
 
-This repository is the source of truth for a small set of agent skills.
+This repository is the source of truth for a small set of reusable agent skills.
 
 The default distribution model is conservative:
 
 - keep each skill under version control in this repository
 - avoid public registries and auto-install workflows by default
 - copy only the required skills into a project workspace when needed
+
+## Repository layout
+
+```text
+skills/
+  <skill-name>/
+    SKILL.md
+scripts/
+  install-skill.sh
+```
+
+Each skill must live at `skills/<skill-name>/SKILL.md`.
+
+## Current skills
+
+### Planning flow
+
+- `triage`: choose the lightest adequate planning route for a development task
+- `lite-spec`: write a compact execution brief for bounded implementation work
+- `metaplan`: review and tighten specs, plans, and task breakdowns before autonomous implementation
+
+### Handoff
+
+- `handoff-prompt`: generate a compact prompt for the next agent or stage
+
+## Naming guidance
+
+Prefer short, command-friendly names.
+
+Use names that:
+
+- are easy to invoke directly as slash-style commands
+- distinguish categories without excessive prefixes
+- describe the skill's role in a few syllables
+- avoid avoidable collisions with common built-in commands such as `/plan`
 
 ## Tool compatibility
 
@@ -18,16 +53,6 @@ This repository targets multiple coding agents, but each tool discovers reusable
 - Gemini CLI: project-local context from `GEMINI.md`; official reusable packaging is based on Gemini extensions
 
 For Gemini CLI, this repository provides a compatibility install mode that copies a skill into `.gemini/skills/` and imports its `SKILL.md` from `.gemini/GEMINI.md`.
-
-## Repository layout
-
-```text
-skills/
-  <skill-name>/
-    SKILL.md
-scripts/
-  install-skill.sh
-```
 
 ## Installation model
 
@@ -45,10 +70,10 @@ Supported targets:
 Examples:
 
 ```sh
-./scripts/install-skill.sh my-skill codex /path/to/workspace
-./scripts/install-skill.sh my-skill copilot /path/to/workspace
-./scripts/install-skill.sh my-skill gemini /path/to/workspace
-./scripts/install-skill.sh my-skill all /path/to/workspace
+./scripts/install-skill.sh triage codex /path/to/workspace
+./scripts/install-skill.sh lite-spec copilot /path/to/workspace
+./scripts/install-skill.sh metaplan gemini /path/to/workspace
+./scripts/install-skill.sh handoff-prompt all /path/to/workspace
 ```
 
 ## Project instruction files
