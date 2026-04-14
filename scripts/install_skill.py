@@ -16,6 +16,7 @@ from typing import Dict, List, Optional, Set, Tuple
 
 
 VALID_SKILL_NAME = re.compile(r"^[A-Za-z0-9_][A-Za-z0-9._-]*$")
+TARGET_ORDER = ("claude", "codex", "gemini", "copilot")
 TARGETS: Dict[str, Tuple[str, str]] = {
     "claude": (".claude", "skills"),
     "codex": (".agents", "skills"),
@@ -39,7 +40,7 @@ def parse_args(argv: Optional[List[str]] = None) -> argparse.Namespace:
         "target",
         nargs="?",
         default="codex",
-        choices=sorted([*TARGETS, "all"]),
+        choices=sorted([*TARGET_ORDER, "all"]),
         metavar="target",
         help="agent target: claude, codex, copilot, gemini, or all",
     )
@@ -90,7 +91,7 @@ def target_base_dirs(workspace_root: Path, target: str) -> List[Path]:
 
     paths: List[Path] = []
     seen: Set[Path] = set()
-    for target_name in ("claude", "codex", "gemini", "copilot"):
+    for target_name in TARGET_ORDER:
         path = workspace_root.joinpath(*TARGETS[target_name])
         resolved = path.resolve(strict=False)
         if resolved in seen:
