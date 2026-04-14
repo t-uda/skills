@@ -15,7 +15,7 @@ from pathlib import Path
 from typing import Dict, List, Optional, Set, Tuple
 
 
-VALID_SKILL_NAME = re.compile(r"^[A-Za-z0-9_-][A-Za-z0-9._-]*$")
+VALID_SKILL_NAME = re.compile(r"^[A-Za-z0-9_][A-Za-z0-9._-]*$")
 TARGETS: Dict[str, Tuple[str, str]] = {
     "claude": (".claude", "skills"),
     "codex": (".agents", "skills"),
@@ -131,19 +131,36 @@ def install_skill(
     validate_source(source_dir, skill_name)
 
     target_dir = target_base_dir / skill_name
-    target_base_dir.mkdir(parents=True, exist_ok=True)
-    remove_existing(target_dir, force)
+    try:
+        target_base_dir.mkdir(parents=True, exist_ok=True)
+        remove_existing(target_dir, force)
 
-    if copy:
-        shutil.copytree(source_dir, target_dir, symlinks=True)
-        mode = "Copied"
-    else:
-        relative_source = os.path.relpath(
-            source_dir.resolve(strict=True),
-            start=target_base_dir.resolve(strict=False),
-        )
-        target_dir.symlink_to(relative_source, target_is_directory=True)
-        mode = "Linked"
+        if copy:
+            shutil.copytree(source_dir, target_dir, symlinks=True)
+            mode = "Copied"
+        else:
+            resolved_source = source_dir.resolve(strict=True)
+            try:
+                symlink_target = os.path.relpath(
+                    resolved_source,
+                    start=target_base_dir.resolve(strict=False),
+                )
+            except ValueError:
+                symlink_target = str(resolved_source)
+            target_dir.symlink_to(symlink_target, target_is_directory=True)
+            mode = "Linked"
+    except OSError as error:
+        action = "copy" if copy else "link"
+        guidance = "Use --force if the existing target needs to be replaced."
+        if not copy:
+            guidance = (
+                "Use --copy if symlinks are not supported in this environment, "
+                "or use --force if the existing target needs to be replaced."
+            )
+        raise InstallError(
+            f"Failed to {action} skill '{skill_name}' from {source_dir} to {target_dir}: "
+            f"{error}. {guidance}"
+        ) from error
 
     print(f"{mode} {skill_name} -> {target_dir}")
 
