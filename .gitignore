@@ -3,6 +3,8 @@ Thumbs.db
 *.swp
 *.swo
 *.tmp
+__pycache__/
+*.py[cod]
 
 # Local agent installs
 .claude/
