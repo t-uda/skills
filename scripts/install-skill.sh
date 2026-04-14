@@ -70,13 +70,12 @@ install_to_kind() {
       copy_skill "$skill_name" "$WORKSPACE_ROOT/.github/skills"
       ;;
     gemini)
-      copy_skill "$skill_name" "$WORKSPACE_ROOT/.gemini/skills"
+      copy_skill "$skill_name" "$WORKSPACE_ROOT/.agents/skills"
       ;;
     all)
       copy_skill "$skill_name" "$WORKSPACE_ROOT/.claude/skills"
       copy_skill "$skill_name" "$WORKSPACE_ROOT/.agents/skills"
       copy_skill "$skill_name" "$WORKSPACE_ROOT/.github/skills"
-      copy_skill "$skill_name" "$WORKSPACE_ROOT/.gemini/skills"
       ;;
     *)
       echo "Invalid target: $kind" >&2
