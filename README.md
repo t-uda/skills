@@ -54,7 +54,7 @@ This repository targets multiple coding agents, but each tool discovers reusable
 - Claude Code: project-local skills in `.claude/skills/`
 - Codex: project-local skills in `.agents/skills/`
 - GitHub Copilot CLI: project-local skills in `.github/skills/` or `.claude/skills/`
-- Gemini CLI: project-local skills in `.gemini/skills/`
+- Gemini CLI: project-local skills in `.agents/skills/`
 
 ## Installation model
 
@@ -66,7 +66,7 @@ Supported targets:
 - `claude`: install to `.claude/skills/`
 - `codex`: install to `.agents/skills/`
 - `copilot`: install to `.github/skills/`
-- `gemini`: install to `.gemini/skills/`
+- `gemini`: install to `.agents/skills/`
 - `all`: install to all supported agent locations
 
 Examples:
