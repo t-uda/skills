@@ -6,7 +6,7 @@ The default distribution model is conservative:
 
 - keep each skill under version control in this repository
 - avoid public registries and auto-install workflows by default
-- copy only the required skills into a project workspace when needed
+- link only the required skills into a project workspace when needed
 
 ## Repository layout
 
@@ -58,8 +58,10 @@ This repository targets multiple coding agents, but each tool discovers reusable
 
 ## Installation model
 
-The installer script copies skills from this repository into a target workspace.
+The installer script links skills from this repository into a target workspace by default.
 It does not depend on a remote marketplace or registry.
+Use `--copy` when a workspace needs its own editable copy.
+Use `--force` to replace an existing real directory or file.
 
 Supported targets:
 
@@ -77,6 +79,8 @@ Examples:
 ./scripts/install-skill.sh lite-spec copilot /path/to/workspace
 ./scripts/install-skill.sh metaplan gemini /path/to/workspace
 ./scripts/install-skill.sh handoff-prompt all /path/to/workspace
+./scripts/install-skill.sh triage codex /path/to/workspace --copy
+./scripts/install-skill.sh triage codex /path/to/workspace --force
 ```
 
 ## Project instruction files
@@ -86,7 +90,7 @@ These are separate from skills, but they affect project-local behaviour:
 - GitHub Copilot supports `AGENTS.md`, `GEMINI.md`, and `.github/copilot-instructions.md`
 - Gemini CLI loads hierarchical `GEMINI.md` files and can be configured to accept other context filenames
 
-The installer in this repository currently copies skills only. It does not generate repository-wide instruction files such as `AGENTS.md` or `.github/copilot-instructions.md`.
+The installer in this repository manages skills only. It does not generate repository-wide instruction files such as `AGENTS.md` or `.github/copilot-instructions.md`.
 
 ## Notes
 
