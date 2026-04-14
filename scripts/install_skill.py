@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # /// script
-# requires-python = ">=3.12"
+# requires-python = ">=3.8"
 # dependencies = []
 # ///
 
@@ -12,10 +12,11 @@ import re
 import shutil
 import sys
 from pathlib import Path
+from typing import Dict, List, Optional, Set, Tuple
 
 
 VALID_SKILL_NAME = re.compile(r"^[A-Za-z0-9_-][A-Za-z0-9._-]*$")
-TARGETS = {
+TARGETS: Dict[str, Tuple[str, str]] = {
     "claude": (".claude", "skills"),
     "codex": (".agents", "skills"),
     "gemini": (".agents", "skills"),
@@ -27,7 +28,7 @@ class InstallError(Exception):
     pass
 
 
-def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
+def parse_args(argv: Optional[List[str]] = None) -> argparse.Namespace:
     argv = sys.argv[1:] if argv is None else argv
     parser = argparse.ArgumentParser(
         prog="install-skill.sh",
@@ -83,12 +84,12 @@ def validate_source(source_dir: Path, skill_name: str) -> None:
         raise InstallError(f"Invalid skill '{skill_name}': missing {source_dir / 'SKILL.md'}")
 
 
-def target_base_dirs(workspace_root: Path, target: str) -> list[Path]:
+def target_base_dirs(workspace_root: Path, target: str) -> List[Path]:
     if target != "all":
         return [workspace_root.joinpath(*TARGETS[target])]
 
-    paths: list[Path] = []
-    seen: set[Path] = set()
+    paths: List[Path] = []
+    seen: Set[Path] = set()
     for target_name in ("claude", "codex", "gemini", "copilot"):
         path = workspace_root.joinpath(*TARGETS[target_name])
         resolved = path.resolve(strict=False)
@@ -147,7 +148,7 @@ def install_skill(
     print(f"{mode} {skill_name} -> {target_dir}")
 
 
-def skill_names(skills_dir: Path, requested: str) -> list[str]:
+def skill_names(skills_dir: Path, requested: str) -> List[str]:
     if requested != "all":
         return [requested]
 
