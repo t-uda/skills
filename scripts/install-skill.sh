@@ -28,6 +28,11 @@ SCRIPT_DIR=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
 REPO_ROOT=$(CDPATH= cd -- "$SCRIPT_DIR/.." && pwd)
 SKILLS_DIR="$REPO_ROOT/skills"
 
+if [ ! -d "$SKILLS_DIR" ]; then
+  echo "Skills directory not found: $SKILLS_DIR" >&2
+  exit 1
+fi
+
 copy_skill() {
   skill_name="$1"
   target_base_dir="$2"
@@ -36,6 +41,11 @@ copy_skill() {
 
   if [ ! -d "$source_dir" ]; then
     echo "Skill not found: $skill_name" >&2
+    exit 1
+  fi
+
+  if [ ! -f "$source_dir/SKILL.md" ]; then
+    echo "Invalid skill '$skill_name': missing $source_dir/SKILL.md" >&2
     exit 1
   fi
 
@@ -87,15 +97,23 @@ case "$SKILL_NAME_INPUT" in
 esac
 
 if [ "$SKILL_NAME_INPUT" = "all" ]; then
+  count=0
   # Iterate over all directories in skills/
   for skill_path in "$SKILLS_DIR"/*; do
     if [ -d "$skill_path" ]; then
       skill_name=$(basename "$skill_path")
       # Skip README.md if it's a directory (unlikely, but safe)
       if [ "$skill_name" = "README.md" ]; then continue; fi
+      
       install_to_kind "$skill_name" "$TARGET_KIND_INPUT"
+      count=$((count + 1))
     fi
   done
+  
+  if [ "$count" -eq 0 ]; then
+    echo "No skills found in $SKILLS_DIR" >&2
+    exit 1
+  fi
 else
   install_to_kind "$SKILL_NAME_INPUT" "$TARGET_KIND_INPUT"
 fi
