@@ -3,3 +3,9 @@ Thumbs.db
 *.swp
 *.swo
 *.tmp
+
+# Local agent installs
+.claude/
+.gemini/
+.agents/
+.github/skills/
