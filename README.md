@@ -54,13 +54,11 @@ This repository targets multiple coding agents, but each tool discovers reusable
 - Claude Code: project-local skills in `.claude/skills/`
 - Codex: project-local skills in `.agents/skills/`
 - GitHub Copilot CLI: project-local skills in `.github/skills/` or `.claude/skills/`
-- Gemini CLI: project-local context from `GEMINI.md`; official reusable packaging is based on Gemini extensions
-
-For Gemini CLI, this repository provides a compatibility install mode that copies a skill into `.gemini/skills/` and imports its `SKILL.md` from `.gemini/GEMINI.md`.
+- Gemini CLI: project-local skills in `.gemini/skills/`
 
 ## Installation model
 
-The installer script copies one skill from this repository into a target workspace.
+The installer script copies skills from this repository into a target workspace.
 It does not depend on a remote marketplace or registry.
 
 Supported targets:
@@ -68,13 +66,14 @@ Supported targets:
 - `claude`: install to `.claude/skills/`
 - `codex`: install to `.agents/skills/`
 - `copilot`: install to `.github/skills/`
-- `gemini`: compatibility mode via `.gemini/skills/` plus `.gemini/GEMINI.md`
-- `all`: install to Claude Code, Codex, Copilot, and Gemini compatibility locations
+- `gemini`: install to `.gemini/skills/`
+- `all`: install to all supported agent locations
 
 Examples:
 
 ```sh
-./scripts/install-skill.sh triage codex /path/to/workspace
+./scripts/install-skill.sh all all
+./scripts/install-skill.sh triage codex .
 ./scripts/install-skill.sh lite-spec copilot /path/to/workspace
 ./scripts/install-skill.sh metaplan gemini /path/to/workspace
 ./scripts/install-skill.sh handoff-prompt all /path/to/workspace
