@@ -101,17 +101,17 @@ if [ "$SKILL_NAME_INPUT" = "all" ]; then
   # Iterate over all directories in skills/
   for skill_path in "$SKILLS_DIR"/*; do
     if [ -d "$skill_path" ]; then
+      # Skip non-skill directories (must contain SKILL.md)
+      if [ ! -f "$skill_path/SKILL.md" ]; then continue; fi
+
       skill_name=$(basename "$skill_path")
-      # Skip README.md if it's a directory (unlikely, but safe)
-      if [ "$skill_name" = "README.md" ]; then continue; fi
-      
       install_to_kind "$skill_name" "$TARGET_KIND_INPUT"
       count=$((count + 1))
     fi
   done
   
   if [ "$count" -eq 0 ]; then
-    echo "No skills found in $SKILLS_DIR" >&2
+    echo "No valid skills found in $SKILLS_DIR" >&2
     exit 1
   fi
 else
