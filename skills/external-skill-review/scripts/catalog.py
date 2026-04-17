@@ -33,10 +33,14 @@ def save(entries: list[dict]) -> None:
 
 def cmd_get(repo: str, skill_path: str) -> None:
     for entry in load():
-        if entry.get("repo") == repo and entry.get("skill_path") == skill_path:
-            print(json.dumps(entry, indent=2))
-            return
-
+        if entry.get("review_status") != "approved":
+            continue
+        if entry.get("repo") != repo:
+            continue
+        if entry.get("skill_path") != skill_path:
+            continue
+        print(json.dumps(entry, indent=2))
+        return
 
 def cmd_add(raw: str) -> None:
     new_entry = json.loads(raw)
