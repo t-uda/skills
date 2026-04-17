@@ -32,6 +32,10 @@ Each skill must live at `skills/<skill-name>/SKILL.md`.
 
 - `handoff-prompt`: generate a compact prompt for the next agent or stage
 
+### Notebook review
+
+- `marimo-reactive-review`: review an existing marimo notebook for reactive design quality and refactor opportunities
+
 ### Repository guidance
 
 - `growing-agents-md`: create or refine a compact `AGENTS.md` without letting it bloat
