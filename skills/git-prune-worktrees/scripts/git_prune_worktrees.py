@@ -44,6 +44,10 @@ def command_text(command: list[str]) -> str:
     return shlex.join(command)
 
 
+def git_args(command: list[str]) -> list[str]:
+    return command[1:] if command and command[0] == "git" else command
+
+
 def error_record(
     reason: str,
     command: list[str] | None = None,
@@ -82,7 +86,7 @@ def action_record(
     item_type: str,
     target: str,
     branch: str | None,
-    command: list[str],
+    commands: list[list[str]],
     reason: str,
     detail: str | None = None,
 ) -> dict[str, Any]:
@@ -90,7 +94,8 @@ def action_record(
         "type": item_type,
         "target": target,
         "branch": branch,
-        "command": command,
+        "command": commands[0] if commands else [],
+        "commands": commands,
         "reason": reason,
         "status": "planned",
     }
@@ -339,7 +344,7 @@ def prune_metadata_plan(repo: str, execute: bool) -> tuple[dict[str, Any] | None
             "prune_metadata",
             repo,
             None,
-            result.command,
+            [result.command],
             "stale_metadata",
             detail,
         ),
@@ -426,7 +431,7 @@ def build_plan(
                 "remove_worktree",
                 path,
                 branch,
-                ["git", "worktree", "remove", path],
+                [["git", "worktree", "remove", path]],
                 "merged_clean_worktree",
             )
         )
@@ -471,9 +476,8 @@ def build_plan(
                     "switch_base",
                     local_base_branch,
                     branch,
-                    ["git", "switch", local_base_branch],
+                    [["git", "switch", local_base_branch], ["git", "merge", "--ff-only", args.base]],
                     "current_branch_merged",
-                    f"then run git merge --ff-only {args.base}",
                 )
             )
             switch_planned_for = branch
@@ -499,12 +503,12 @@ def build_plan(
                 "delete_branch",
                 branch,
                 branch,
-                ["git", "branch", "-d", branch],
+                [["git", "branch", "-d", branch]],
                 "merged_branch",
             )
         )
 
-    prune_action, prune_error = prune_metadata_plan(repo, execute=False)
+    prune_action, prune_error = prune_metadata_plan(repo, execute=args.yes)
     if prune_error:
         errors.append(prune_error)
     if prune_action:
@@ -535,13 +539,13 @@ def execute_plan(
     for action in actions:
         if action["type"] != "switch_base" or action["status"] != "planned":
             continue
-        switch_result = run_git(["switch", action["target"]], repo)
+        switch_result = run_git(git_args(action["commands"][0]), repo)
         if switch_result.returncode != 0:
             action["status"] = "failed"
             errors.append(error_record("switch_failed", switch_result.command, switch_result.stderr, action["target"]))
             destructive_failed = True
             break
-        merge_result = run_git(["merge", "--ff-only", args.base], repo)
+        merge_result = run_git(git_args(action["commands"][1]), repo)
         if merge_result.returncode != 0:
             action["status"] = "failed"
             errors.append(error_record("fast_forward_failed", merge_result.command, merge_result.stderr, args.base))
@@ -555,7 +559,7 @@ def execute_plan(
     for action in actions:
         if action["type"] != "remove_worktree" or action["status"] != "planned":
             continue
-        result = run_git(["worktree", "remove", action["target"]], repo)
+        result = run_git(git_args(action["commands"][0]), repo)
         if result.returncode != 0:
             action["status"] = "failed"
             errors.append(error_record("worktree_remove_failed", result.command, result.stderr, action["target"]))
@@ -569,7 +573,7 @@ def execute_plan(
     for action in actions:
         if action["type"] != "delete_branch" or action["status"] != "planned":
             continue
-        result = run_git(["branch", "-d", action["branch"]], repo)
+        result = run_git(git_args(action["commands"][0]), repo)
         if result.returncode != 0:
             action["status"] = "skipped"
             skipped.append(
@@ -584,13 +588,22 @@ def execute_plan(
             continue
         action["status"] = "done"
 
-    result = run_git(["worktree", "prune", "--verbose"], repo)
+    prune_action = next(
+        (
+            action
+            for action in actions
+            if action["type"] == "prune_metadata" and action["status"] == "planned"
+        ),
+        None,
+    )
+    if prune_action is None:
+        return True
+
+    result = run_git(git_args(prune_action["commands"][0]), repo)
     if result.returncode != 0:
         errors.append(error_record("worktree_prune_failed", result.command, result.stderr))
         return False
-    for action in actions:
-        if action["type"] == "prune_metadata" and action["status"] == "planned":
-            action["status"] = "done"
+    prune_action["status"] = "done"
     return True
 
 
@@ -606,7 +619,9 @@ def print_action_lines(actions: list[dict[str, Any]]) -> None:
     for action in actions:
         branch = f" ({action['branch']})" if action.get("branch") else ""
         detail = f" - {action['detail']}" if action.get("detail") else ""
-        print(f"- {action['target']}{branch}: {command_text(action['command'])}{detail}")
+        commands = action.get("commands", [action["command"]])
+        command = " && ".join(command_text(cmd) for cmd in commands)
+        print(f"- {action['target']}{branch}: {command}{detail}")
 
 
 def print_skips(skipped: list[dict[str, Any]]) -> None:
