@@ -36,6 +36,10 @@ Each skill must live at `skills/<skill-name>/SKILL.md`.
 
 - `growing-agents-md`: create or refine a compact `AGENTS.md` without letting it bloat
 
+### Git maintenance
+
+- `git-prune-worktrees`: safely prune stale refs, clean merged worktrees, merged local branches, and stale worktree metadata
+
 ## Naming guidance
 
 Prefer short, command-friendly names.

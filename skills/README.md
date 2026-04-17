@@ -20,3 +20,4 @@ Current skills:
 - metaplan
 - handoff-prompt
 - growing-agents-md
+- git-prune-worktrees
