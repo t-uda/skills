@@ -42,6 +42,7 @@ def cmd_get(repo: str, skill_path: str) -> None:
         print(json.dumps(entry, indent=2))
         return
 
+
 def cmd_add(raw: str) -> None:
     new_entry = json.loads(raw)
     repo = new_entry.get("repo")
