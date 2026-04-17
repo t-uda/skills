@@ -19,5 +19,6 @@ Current skills:
 - lite-spec
 - metaplan
 - handoff-prompt
+- marimo-reactive-review
 - growing-agents-md
 - git-prune-worktrees
