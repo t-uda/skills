@@ -11,9 +11,9 @@ This skill is review-only by default. It should inspect, diagnose, and recommend
 
 ## Relationship to other skills
 
-- If the task is to create or edit a marimo notebook, use `marimo-notebook`.
-- If the task is to convert a Jupyter notebook, use `jupyter-to-marimo` first.
-- If the task is to prepare a notebook for scheduled or CLI-driven runs, use `marimo-batch`.
+- If the task is to create or edit a marimo notebook, handle that as a notebook authoring task rather than a review.
+- If the task is to convert a Jupyter notebook, handle the conversion first, then review the resulting marimo notebook.
+- If the task is to prepare a notebook for scheduled or CLI-driven runs, focus on execution and packaging concerns rather than reactive design review.
 - Use this skill when the task is to evaluate whether an existing marimo notebook is taking proper advantage of reactivity.
 
 ## Review goals
