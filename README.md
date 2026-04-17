@@ -71,6 +71,7 @@ It does not depend on a remote marketplace or registry.
 It runs with `python3` when available and falls back to `uv`.
 Use `--copy` when a workspace needs its own editable copy.
 Use `--force` to replace an existing real directory or file.
+For external skills installed directly from upstream repositories, see `docs/external-skills.md`.
 
 Supported targets:
 
