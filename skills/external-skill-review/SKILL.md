@@ -34,12 +34,12 @@ Work through these steps in order. Stop at the first blocking condition.
 Read `.agents/approved-external-skills.json` in the target workspace using the bundled script:
 
 ```sh
-python3 skills/external-skill-review/scripts/catalog.py get <repo> <skill_path>
+python3 skills/external-skill-review/scripts/catalog.py get <repo> <skill_path> <pinned_ref>
 ```
 
-If a matching approved entry exists **with the same `pinned_ref`**, skip to step 8 and reuse the stored provenance.
+If the script prints an entry, an exact match on `(repo, skill_path, pinned_ref)` with `review_status: approved` exists — skip to step 8 and reuse the stored provenance.
 
-If the entry exists but the `pinned_ref` differs, treat it as a new review event and continue from step 2. Each upstream update requires a fresh review.
+If the script prints nothing, proceed from step 2. This covers: no catalog file, no matching entry, a matching entry with a different `pinned_ref`, and a matching entry that is not approved. Each upstream update requires a fresh review.
 
 ### 2. Validate specificity
 
@@ -145,8 +145,8 @@ Example entry:
 Use the bundled script to read and write the catalog reliably:
 
 ```sh
-# Look up an entry
-python3 skills/external-skill-review/scripts/catalog.py get owner/repo skills/example
+# Look up an entry (repo, skill_path, pinned_ref must all match)
+python3 skills/external-skill-review/scripts/catalog.py get owner/repo skills/example abc1234
 
 # Add or update an entry (pass JSON string)
 python3 skills/external-skill-review/scripts/catalog.py add '{"repo":"owner/repo","skill_path":"skills/example",...}'

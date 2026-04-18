@@ -5,8 +5,9 @@ Narrow helper for reading and writing the approved external skills catalog.
 Catalog location: .agents/approved-external-skills.json (relative to cwd).
 
 Usage:
-  python3 catalog.py get <repo> <skill_path>
+  python3 catalog.py get <repo> <skill_path> <pinned_ref>
       Print the matching approved entry as JSON, or nothing if not found.
+      All three fields must match. A different pinned_ref returns nothing.
 
   python3 catalog.py add <json-entry>
       Append or update an entry in the catalog.
@@ -31,13 +32,15 @@ def save(entries: list[dict]) -> None:
     CATALOG_PATH.write_text(json.dumps(entries, indent=2) + "\n")
 
 
-def cmd_get(repo: str, skill_path: str) -> None:
+def cmd_get(repo: str, skill_path: str, pinned_ref: str) -> None:
     for entry in load():
         if entry.get("review_status") != "approved":
             continue
         if entry.get("repo") != repo:
             continue
         if entry.get("skill_path") != skill_path:
+            continue
+        if entry.get("pinned_ref") != pinned_ref:
             continue
         print(json.dumps(entry, indent=2))
         return
@@ -67,10 +70,10 @@ def main() -> None:
 
     command = sys.argv[1]
     if command == "get":
-        if len(sys.argv) != 4:
-            print("usage: catalog.py get <repo> <skill_path>", file=sys.stderr)
+        if len(sys.argv) != 5:
+            print("usage: catalog.py get <repo> <skill_path> <pinned_ref>", file=sys.stderr)
             sys.exit(1)
-        cmd_get(sys.argv[2], sys.argv[3])
+        cmd_get(sys.argv[2], sys.argv[3], sys.argv[4])
     elif command == "add":
         if len(sys.argv) != 3:
             print("usage: catalog.py add <json-entry>", file=sys.stderr)
