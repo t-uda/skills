@@ -37,7 +37,9 @@ Read `.agents/approved-external-skills.json` in the target workspace using the b
 python3 skills/external-skill-review/scripts/catalog.py get <repo> <skill_path>
 ```
 
-If a matching approved entry exists, skip to step 8 and reuse the stored provenance.
+If a matching approved entry exists **with the same `pinned_ref`**, skip to step 8 and reuse the stored provenance.
+
+If the entry exists but the `pinned_ref` differs, treat it as a new review event and continue from step 2. Each upstream update requires a fresh review.
 
 ### 2. Validate specificity
 
