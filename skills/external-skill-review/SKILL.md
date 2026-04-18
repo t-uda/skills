@@ -119,7 +119,8 @@ Return all five items in this order:
 Example install commands (replace placeholders):
 
 ```sh
-npx agent-skills-cli install owner/repo#COMMIT_SHA --skill skill-path -a claude,codex
+npx agent-skills-cli add owner/repo@skill-name
+npx agent-skills-cli install owner/repo#COMMIT_SHA -a claude,codex
 ```
 
 ## Catalog model

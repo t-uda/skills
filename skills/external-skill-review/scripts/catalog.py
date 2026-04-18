@@ -11,12 +11,13 @@ Usage:
 
   python3 catalog.py add <json-entry>
       Append or update an entry in the catalog.
-      Matches on (repo, skill_path). Overwrites an existing entry if found.
+      Matches on (repo, skill_path, pinned_ref). Adds a new entry if not found.
 """
 
 import json
 import pathlib
 import sys
+import tempfile
 
 CATALOG_PATH = pathlib.Path(".agents/approved-external-skills.json")
 
@@ -24,12 +25,37 @@ CATALOG_PATH = pathlib.Path(".agents/approved-external-skills.json")
 def load() -> list[dict]:
     if not CATALOG_PATH.exists():
         return []
-    return json.loads(CATALOG_PATH.read_text())
+    try:
+        entries = json.loads(CATALOG_PATH.read_text(encoding="utf-8"))
+    except OSError as exc:
+        print(f"error: unable to read catalog {CATALOG_PATH}: {exc}", file=sys.stderr)
+        sys.exit(1)
+    except json.JSONDecodeError as exc:
+        print(f"error: catalog {CATALOG_PATH} contains invalid JSON: {exc}", file=sys.stderr)
+        sys.exit(1)
+    if not isinstance(entries, list):
+        print(f"error: catalog {CATALOG_PATH} must contain a JSON list", file=sys.stderr)
+        sys.exit(1)
+    for i, entry in enumerate(entries):
+        if not isinstance(entry, dict):
+            print(
+                f"error: catalog {CATALOG_PATH} entry at index {i} must be a JSON object",
+                file=sys.stderr,
+            )
+            sys.exit(1)
+    return entries
 
 
 def save(entries: list[dict]) -> None:
     CATALOG_PATH.parent.mkdir(parents=True, exist_ok=True)
-    CATALOG_PATH.write_text(json.dumps(entries, indent=2) + "\n")
+    text = json.dumps(entries, indent=2) + "\n"
+    tmp = pathlib.Path(tempfile.mktemp(dir=CATALOG_PATH.parent, prefix=".catalog-tmp-"))
+    try:
+        tmp.write_text(text, encoding="utf-8")
+        tmp.replace(CATALOG_PATH)
+    except Exception:
+        tmp.unlink(missing_ok=True)
+        raise
 
 
 def cmd_get(repo: str, skill_path: str, pinned_ref: str) -> None:
@@ -50,12 +76,17 @@ def cmd_add(raw: str) -> None:
     new_entry = json.loads(raw)
     repo = new_entry.get("repo")
     skill_path = new_entry.get("skill_path")
-    if not repo or not skill_path:
-        print("error: entry must include 'repo' and 'skill_path'", file=sys.stderr)
+    pinned_ref = new_entry.get("pinned_ref")
+    if not repo or not skill_path or not pinned_ref:
+        print("error: entry must include 'repo', 'skill_path', and 'pinned_ref'", file=sys.stderr)
         sys.exit(1)
     entries = load()
     for i, entry in enumerate(entries):
-        if entry.get("repo") == repo and entry.get("skill_path") == skill_path:
+        if (
+            entry.get("repo") == repo
+            and entry.get("skill_path") == skill_path
+            and entry.get("pinned_ref") == pinned_ref
+        ):
             entries[i] = new_entry
             save(entries)
             return
