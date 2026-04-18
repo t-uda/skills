@@ -22,3 +22,4 @@ Current skills:
 - marimo-reactive-review
 - growing-agents-md
 - git-prune-worktrees
+- external-skill-review

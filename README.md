@@ -44,6 +44,10 @@ Each skill must live at `skills/<skill-name>/SKILL.md`.
 
 - `git-prune-worktrees`: safely prune stale refs, clean merged worktrees, merged local branches, and stale worktree metadata
 
+### External skills
+
+- `external-skill-review`: review a candidate external skill against the repo policy, record approved entries in a project-local catalog, and recommend install commands
+
 ## Naming guidance
 
 Prefer short, command-friendly names.
