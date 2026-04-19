@@ -28,6 +28,10 @@ Each skill must live at `skills/<skill-name>/SKILL.md`.
 - `lite-spec`: write a compact execution brief for bounded implementation work
 - `metaplan`: review and tighten specs, plans, and task breakdowns before autonomous implementation
 
+### Orchestration
+
+- `light-orchestration`: choose between single-agent execution and a minimal multi-agent split, and produce strictly bounded subtask contracts when a split is justified
+
 ### Handoff
 
 - `handoff-prompt`: generate a compact prompt for the next agent or stage

@@ -23,3 +23,4 @@ Current skills:
 - growing-agents-md
 - git-prune-worktrees
 - external-skill-review
+- light-orchestration
