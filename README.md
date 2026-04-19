@@ -28,6 +28,10 @@ Each skill must live at `skills/<skill-name>/SKILL.md`.
 - `lite-spec`: write a compact execution brief for bounded implementation work
 - `metaplan`: review and tighten specs, plans, and task breakdowns before autonomous implementation
 
+### Source-of-truth review
+
+- `sot-integrity`: audit a source-of-truth artifact for authority, evidentiary grounding, trust scope, and conflict with repository reality before implementation or orchestration relies on it
+
 ### Handoff
 
 - `handoff-prompt`: generate a compact prompt for the next agent or stage

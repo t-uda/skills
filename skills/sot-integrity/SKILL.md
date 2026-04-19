@@ -170,13 +170,13 @@ Tell downstream agents how to behave with this artifact in its current state:
 
 ### G. Next action
 
-End with exactly one of:
+Output a single final line of the form `Next action: <value>`, where `<value>` is exactly one of the strings in backticks below (no leading bullet, numbering, or commentary):
 
-- proceed: implementation may rely on the SoT within stated scope
-- proceed with caveats: implementation may proceed only in trusted sections; flag gaps to user
-- repair SoT before implementation
-- downgrade artifact from SoT to background context, then re-plan
-- stop: escalate to user; SoT is broken and no safe partial use exists
+- `proceed` — implementation may rely on the SoT within stated scope
+- `proceed with caveats` — implementation may proceed only in trusted sections; flag gaps to user
+- `repair SoT before implementation`
+- `downgrade artifact from SoT to background context, then re-plan`
+- `stop` — escalate to user; SoT is broken and no safe partial use exists
 
 ## Working rules
 
