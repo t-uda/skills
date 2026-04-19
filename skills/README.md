@@ -24,3 +24,4 @@ Current skills:
 - git-prune-worktrees
 - external-skill-review
 - sot-integrity
+- light-orchestration

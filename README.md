@@ -32,6 +32,10 @@ Each skill must live at `skills/<skill-name>/SKILL.md`.
 
 - `sot-integrity`: audit a source-of-truth artifact for authority, evidentiary grounding, trust scope, and conflict with repository reality before implementation or orchestration relies on it
 
+### Orchestration
+
+- `light-orchestration`: choose between single-agent execution and a minimal multi-agent split, and produce strictly bounded subtask contracts when a split is justified
+
 ### Handoff
 
 - `handoff-prompt`: generate a compact prompt for the next agent or stage
