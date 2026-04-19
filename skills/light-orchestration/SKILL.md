@@ -9,7 +9,13 @@ Help an orchestrator choose between direct execution and a minimal multi-agent s
 
 This skill is for lightweight orchestration only. If producing the orchestration plan would cost more context than it saves, recommend single-agent execution.
 
+## Core rule
+
+This skill produces a decomposition. It does not dispatch. The orchestrator decides whether to invoke subagents and runs the dispatch itself. Treat any output of this skill as advisory until the orchestrator acts on it.
+
 ## When to use
+
+Invoke this skill only when execution may need to span multiple subagents. For a single task that fits in one agent's context, choose planning depth via `triage` or write the brief via `lite-spec` directly; do not invoke this skill.
 
 Use this skill when:
 
@@ -32,7 +38,8 @@ Do not use this skill for:
 Gather before proceeding. Ask the user for any that are missing.
 
 - `task` — the work to be done
-- `current_context` — what the orchestrator already has loaded
+- `current_context` — what the orchestrator already has loaded, expressed as a list of file paths or document anchors plus an estimated token footprint (or a relative size such as small / medium / large compared to `context_budget` when an exact count is unavailable)
+- `context_budget` — approximate token window available to a single agent in this harness; used to evaluate whether the task fits in `SINGLE_AGENT`. If unknown, infer it from the harness or ask the user before deciding.
 - `known_decisions` — design or scope choices already settled
 - `repository_anchors` — file paths, modules, or docs that scope the work
 - `constraints` — deadlines, budgets, parallelism limits, or required outputs
@@ -63,15 +70,19 @@ Would splitting reduce total token use across all agents (orchestrator plus suba
 
 If the orchestration plan itself would be long or fragile, treat that as evidence against orchestration, not as a reason to produce a longer plan.
 
+### Tiebreaker
+
+Score each axis as either *favours single-agent* or *favours orchestrate*. If the result is mixed, prefer `SINGLE_AGENT` unless axis 4 (expected token savings) decisively favours orchestration. A 3:2 lead toward `ORCHESTRATE` with marginal savings is not enough; require a clear payoff before splitting.
+
 ## Execution modes
 
 Choose exactly one.
 
 ### `SINGLE_AGENT`
 
-Choose this when most of the following hold:
+Choose this when at least three of the following hold:
 
-- the task fits comfortably in one agent's context
+- the task fits comfortably in one agent's context (judged against `context_budget`)
 - subtasks would heavily overlap in files or background
 - coordination overhead would dominate any parallel savings
 - the orchestration plan would be longer than the task itself
@@ -97,7 +108,7 @@ Choose this when:
 - decomposition would require design or scoping decisions not yet made
 - the right next step is to rewrite the task itself before orchestrating
 
-In this mode, do not produce a decomposition. Recommend the rewrite or planning step instead.
+In this mode, do not produce a decomposition. Recommend the rewrite or planning step instead, and explicitly require the orchestrator to re-invoke `light-orchestration` once the task has been rewritten or the missing decisions are settled. State the trigger that should cause re-invocation (for example, "after `metaplan` returns Ready" or "after the user confirms the new scope").
 
 ## Decomposition rules
 
@@ -128,14 +139,16 @@ Keep each contract compact. If a contract grows long, the split is probably wron
 
 ## Global constraints
 
-When multiple subtasks exist, define:
+Required when mode is `ORCHESTRATE`. Define:
 
 - shared invariants neither subtask may violate
 - coordination rules (ordering, merge points, shared file ownership)
 - validation or merge strategy for combining outputs
 - escalation rule when a subtask discovers that a fixed decision is wrong
 
-Omit this section if mode is `SINGLE_AGENT` and no extra global constraints are needed.
+If no escalation rule is provided, the default is: the subtask must halt and surface the conflict to the orchestrator before proceeding. Subtasks must never silently override a fixed decision.
+
+Omit this section when mode is `SINGLE_AGENT` or `DEFER_OR_SPLIT_REWRITE`.
 
 ## Output format
 
@@ -156,7 +169,7 @@ One block per task using the required fields above.
 
 ### D. Global constraints
 
-Shared invariants, coordination rules, and validation or merge strategy. Omit when mode is `SINGLE_AGENT` and no extra global constraints are needed.
+Shared invariants, coordination rules, validation or merge strategy, and escalation rule. Omit when mode is `SINGLE_AGENT` or `DEFER_OR_SPLIT_REWRITE`.
 
 ### E. Next action
 
@@ -166,15 +179,61 @@ Exactly one of:
 - dispatch subagents
 - refine task split
 
+## Example output (skeleton)
+
+A minimal `ORCHESTRATE` output looks like the following. Use it as a shape, not a template to copy verbatim.
+
+```text
+A. Decision
+- mode: ORCHESTRATE
+- justification: <1–2 sentences tied to the decision criteria>
+
+B. Decomposition
+1. <Task A> — <one-line boundary>
+2. <Task B> — <one-line boundary> (depends on 1; may run after A completes)
+
+C. Subtask contracts
+### Task A
+- task: ...
+- read first: ...
+- do not read unless needed: ...
+- fixed decisions: ...
+- constraints: ...
+- expected output: ...
+- done criteria: ...
+
+### Task B
+- task: ...
+- read first: ...
+- do not read unless needed: ...
+- fixed decisions: ...
+- constraints: ...
+- expected output: ...
+- done criteria: ...
+
+D. Global constraints
+- invariants: ...
+- coordination: ...
+- merge: ...
+- escalation: ...
+
+E. Next action
+dispatch subagents
+```
+
+For `SINGLE_AGENT`, sections B–D are omitted and section E is `proceed with single-agent execution`. For `DEFER_OR_SPLIT_REWRITE`, sections B–D are omitted and section E is `refine task split`.
+
 ## Working rules
 
+Listed roughly in priority order.
+
+- Do not auto-dispatch. This skill produces a decomposition; the orchestrator dispatches. (See **Core rule** above.)
 - Prefer `SINGLE_AGENT` unless a cheaper split is concretely describable.
 - Keep total subtasks small. More tasks usually mean more handoff cost, not more speed.
 - Forbid repository-wide re-reads. Each subtask reads only what its contract names.
-- Forbid reopening fixed decisions. If a subtask believes a fixed decision is wrong, escalate per the global escalation rule rather than diverging.
+- Forbid reopening fixed decisions. If a subtask believes a fixed decision is wrong, escalate per the global escalation rule (or its default) rather than diverging.
 - Do not assign overlapping file ownership across subtasks.
 - Do not produce a long orchestration narrative. If the plan grows long, that is evidence to fall back to `SINGLE_AGENT` or `DEFER_OR_SPLIT_REWRITE`.
-- Do not auto-dispatch. This skill produces a decomposition; the orchestrator dispatches.
 - Do not duplicate repository-wide guidance that already lives in `AGENTS.md` or equivalent. Reference it.
 
 ## Relationship to other skills
