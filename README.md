@@ -131,6 +131,18 @@ APM automatically deploys skills to detected target directories (`.github/skills
 
 The manual installer script remains available for environments where APM is not installed.
 
+### Install-first, compile-minimal
+
+This repository favours native install over compiled instruction files:
+
+- `apm install` is the preferred path. Skills land directly in each tool's native directory.
+- `apm compile` output (`AGENTS.md`, `CLAUDE.md`) is treated as a compatibility layer only.
+- Compiled artifacts in this repo stay compact: durable policy, minimal guardrails, and pointers. Procedures live in skill files, not in compiled documents.
+
+### Current APM scope
+
+Phase 1 covers skills only. Prompts, agents, instructions, hooks, and MCP are not distributed from this repository yet. See `docs/apm-consumption.md` for supported primitives, target-directory mapping per tool, and subpath install patterns.
+
 ## Project instruction files
 
 These are separate from skills, but they affect project-local behaviour:
