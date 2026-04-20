@@ -109,6 +109,28 @@ Examples:
 ./scripts/install-skill.sh triage codex /path/to/workspace --force
 ```
 
+## APM installation
+
+This repository is compatible with [APM (Agent Package Manager)](https://microsoft.github.io/apm).
+
+Install individual skills via subpath:
+
+```sh
+apm install t-uda/skills/skills/triage
+apm install t-uda/skills/skills/metaplan
+apm install t-uda/skills/skills/lite-spec
+```
+
+Install with pinned commit:
+
+```sh
+apm install t-uda/skills/skills/triage#abc1234
+```
+
+APM automatically deploys skills to detected target directories (`.github/skills/`, `.claude/skills/`, `.agents/skills/`, etc.).
+
+The manual installer script remains available for environments where APM is not installed.
+
 ## Project instruction files
 
 These are separate from skills, but they affect project-local behaviour:
