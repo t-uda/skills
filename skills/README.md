@@ -25,3 +25,4 @@ Current skills:
 - external-skill-review
 - sot-integrity
 - light-orchestration
+- deslop-history
