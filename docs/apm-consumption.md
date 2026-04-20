@@ -70,9 +70,12 @@ workspace. Observed behaviour with APM CLI 0.8.12:
 | Tool                    | Skill destination   | Detection trigger |
 | ----------------------- | ------------------- | ----------------- |
 | Claude Code             | `.claude/skills/`   | `.claude/` present |
-| GitHub Copilot / VSCode | `.github/skills/`   | `.github/` present, or created as fallback |
+| GitHub Copilot / VSCode | `.github/skills/`   | `.github/` present |
 | Cursor                  | `.cursor/skills/`   | `.cursor/` present |
 | OpenCode                | `.opencode/skills/` | `.opencode/` present |
+
+If no native target directory is present in the consuming workspace, APM
+creates `.github/` and deploys skills under `.github/skills/` as a fallback.
 
 Notes:
 
@@ -90,10 +93,16 @@ At least one subpath install is verified end-to-end before releases that
 change APM-facing layout or metadata. Record of the last validation is kept
 in this document when it is run.
 
-Last validated: 2026-04-21 against APM CLI 0.8.12. `apm install
-t-uda/skills/skills/triage` and a pinned-commit variant both resolved the
-skill and deployed into `.claude/skills/` and (when `.github/` was present)
-`.github/skills/`.
+Last validated: 2026-04-21 against APM CLI 0.8.12.
+
+- `apm install t-uda/skills/skills/triage` in a workspace with `.claude/`
+  and `.github/` present: deployed to `.claude/skills/triage/` and
+  `.github/skills/triage/`.
+- `apm install t-uda/skills/skills/metaplan#<sha>` (pinned commit) in a
+  workspace with only `.claude/` present: deployed to `.claude/skills/metaplan/`.
+- `apm install t-uda/skills/skills/triage` in a bare workspace with no
+  native directories: APM created `.github/` and deployed to
+  `.github/skills/triage/`.
 
 ## Follow-ups
 
