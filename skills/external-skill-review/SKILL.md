@@ -131,10 +131,10 @@ apm install owner/repo#COMMIT_SHA
 **Fallback (manual, APM unavailable):**
 
 ```sh
-# Clone the upstream repo and copy or link the skill into the target directory
-git clone --depth 1 https://github.com/owner/repo /tmp/ext-skill-repo
+# Clone and checkout the reviewed commit SHA, then copy into the target directory
+git clone https://github.com/owner/repo /tmp/ext-skill-repo
+git -C /tmp/ext-skill-repo checkout COMMIT_SHA
 cp -r /tmp/ext-skill-repo/path/to/skill .agents/skills/skill-name
-# or symlink: ln -s /tmp/ext-skill-repo/path/to/skill .agents/skills/skill-name
 ```
 
 APM automatically deploys to detected target directories (`.github/skills/`, `.claude/skills/`, `.agents/skills/`, etc.).
