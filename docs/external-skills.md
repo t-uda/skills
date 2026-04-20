@@ -14,16 +14,21 @@ It does not vendor those skills into this repository, and it does not extend `sc
 
 ## Normative tool
 
-Use Agent Skills CLI as the normative example tool for this policy.
+Use APM (Agent Package Manager) as the preferred tool for this policy.
 
 Example commands:
 
 ```sh
-npx agent-skills-cli add owner/repo@skill-name -a claude,codex,copilot
-npx agent-skills-cli install owner/repo#COMMIT_SHA -a codex
+# Install with pinned commit (preferred)
+apm install owner/repo/path/to/skill#COMMIT_SHA
+
+# Install from repo root if skill is at root
+apm install owner/repo#COMMIT_SHA
 ```
 
-If a project uses another tool, it should meet the same pinning, provenance, license, and review requirements described here.
+APM automatically deploys to detected target directories (`.github/skills/`, `.claude/skills/`, `.agents/skills/`, etc.).
+
+If APM is not available, use manual installation with the same pinning, provenance, license, and review requirements described here.
 
 ## Approval rules
 

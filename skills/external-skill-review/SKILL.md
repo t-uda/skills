@@ -1,6 +1,6 @@
 ---
 name: external-skill-review
-description: Review a candidate external skill against the repo policy, record approved entries in a project-local catalog, and recommend Agent Skills CLI install commands when approved.
+description: Review a candidate external skill against the repo policy, record approved entries in a project-local catalog, and recommend APM install commands when approved.
 ---
 
 # External Skill Review
@@ -118,10 +118,26 @@ Return all five items in this order:
 
 Example install commands (replace placeholders):
 
+**Preferred (APM):**
+
 ```sh
-npx agent-skills-cli add owner/repo@skill-name
-npx agent-skills-cli install owner/repo#COMMIT_SHA -a claude,codex
+# Install with pinned commit
+apm install owner/repo/path/to/skill#COMMIT_SHA
+
+# Or install from root if skill is at repo root
+apm install owner/repo#COMMIT_SHA
 ```
+
+**Fallback (manual, APM unavailable):**
+
+```sh
+# Clone and checkout the reviewed commit SHA, then copy into the target directory
+git clone https://github.com/owner/repo /tmp/ext-skill-repo
+git -C /tmp/ext-skill-repo checkout COMMIT_SHA
+cp -r /tmp/ext-skill-repo/path/to/skill .agents/skills/skill-name
+```
+
+APM automatically deploys to detected target directories (`.github/skills/`, `.claude/skills/`, `.agents/skills/`, etc.).
 
 ## Catalog model
 
