@@ -64,50 +64,37 @@ dependencies:
 
 ## Target directory mapping
 
-APM deploys skills to the native directories it detects in the consuming
-workspace. Observed behaviour with APM CLI 0.8.12:
+See [docs/apm-primitive-matrix.md](apm-primitive-matrix.md) for the full
+verified matrix of (tool × primitive) deployment paths, detection triggers,
+native support, and install-first classifications for APM CLI 0.8.12.
 
-| Tool                    | Skill destination   | Detection trigger |
-| ----------------------- | ------------------- | ----------------- |
-| Claude Code             | `.claude/skills/`   | `.claude/` present |
-| GitHub Copilot / VSCode | `.github/skills/`   | `.github/` present |
-| Cursor                  | `.cursor/skills/`   | `.cursor/` present |
-| OpenCode                | `.opencode/skills/` | `.opencode/` present |
+Summary for skills (subpath install):
 
-If no native target directory is present in the consuming workspace, APM
-creates `.github/` and deploys skills under `.github/skills/` as a fallback.
-
-Notes:
-
-- The exact set of auto-detected targets may evolve. Verify against the APM
-  version in use.
-- In validation with APM 0.8.12, a bare `.agents/` directory did not trigger
-  a Codex skill deploy. If Codex support is required, confirm the current
-  APM detection rules before relying on it.
-- Non-skill primitive targets (`.claude/commands/`, `.github/prompts/`,
-  `.github/agents/`, etc.) are not exercised by this repository in phase 1.
+| Tool            | Skill destination      | Detection trigger     |
+| --------------- | ---------------------- | --------------------- |
+| Claude Code     | `.claude/skills/`      | `.claude/` present    |
+| GitHub Copilot  | `.github/skills/`      | `.github/` present    |
+| Cursor          | `.cursor/skills/`      | `.cursor/` present    |
+| OpenCode        | `.opencode/skills/`    | `.opencode/` present  |
+| Codex CLI       | `.agents/skills/`      | `.codex/` present     |
+| Gemini CLI      | — (no APM target)      | —                     |
+| (bare workspace) | `.github/skills/`     | APM creates `.github/` |
 
 ## Validation
 
 At least one subpath install is verified end-to-end before releases that
-change APM-facing layout or metadata. Record of the last validation is kept
-in this document when it is run.
+change APM-facing layout or metadata. Detailed validation records live in
+[docs/apm-primitive-matrix.md](apm-primitive-matrix.md).
 
 Last validated: 2026-04-21 against APM CLI 0.8.12.
-
-- `apm install t-uda/skills/skills/triage` in a workspace with `.claude/`
-  and `.github/` present: deployed to `.claude/skills/triage/` and
-  `.github/skills/triage/`.
-- `apm install t-uda/skills/skills/metaplan#<sha>` (pinned commit) in a
-  workspace with only `.claude/` present: deployed to `.claude/skills/metaplan/`.
-- `apm install t-uda/skills/skills/triage` in a bare workspace with no
-  native directories: APM created `.github/` and deployed to
-  `.github/skills/triage/`.
 
 ## Follow-ups
 
 - Evaluate whether to migrate skills under `.apm/skills/` when a non-skill
-  primitive is first added.
+  primitive is first added (#30).
 - Evaluate adoption of prompts, agents, instructions, or hooks as separate
-  tracked issues.
-- Revisit repository name if scope broadens beyond skills.
+  tracked issues (#31).
+- Revisit repository name if scope broadens beyond skills (#24).
+- Revisit Gemini CLI support when a newer APM version adds a Gemini target.
+- Revisit Claude Code hook integration once APM hook schema aligns with
+  Claude Code settings.json format (see matrix gap notes).
