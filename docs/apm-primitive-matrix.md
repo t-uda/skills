@@ -40,7 +40,7 @@ Fixture: local scratch package with `skills/sample/SKILL.md`, `.apm/prompts/samp
 | Cursor | prompts | No | `none` | unsupported | [verified] | APM 0.8.12 does not deploy prompts for the cursor target |
 | Cursor | agents | Yes | `native:.cursor/agents/` | install-first | [verified] | Cursor reads `.cursor/agents/` for agent mode configurations |
 | Cursor | instructions | Yes | `native:.cursor/rules/` | install-first | [verified] | APM deploys as `.cursor/rules/*.mdc` (converts to MDC format); Cursor reads `.cursor/rules/` for project context rules |
-| Cursor | hooks | Unknown | `native:.cursor/hooks.json` | install-first | [unverified] | APM deploys to `.cursor/hooks.json`; Cursor automation support via hooks.json is not confirmed in public docs — treat Axis A as unverified |
+| Cursor | hooks | Unknown | `native:.cursor/hooks.json` | unsupported | [unverified] | APM deploys to `.cursor/hooks.json`; Cursor automation support via hooks.json is not confirmed in public docs — Axis A unknown, so cannot classify as install-first |
 | OpenCode | skills | Yes | `native:.opencode/skills/` | install-first | [verified] | APM deploys to `.opencode/skills/`; OpenCode natively loads skills from this path |
 | OpenCode | prompts | Yes | `native:.opencode/commands/` | install-first | [verified] | APM deploys `.apm/prompts/` → `.opencode/commands/`; OpenCode treats these as slash commands |
 | OpenCode | agents | Yes | `native:.opencode/agents/` | install-first | [verified] | APM deploys to `.opencode/agents/`; OpenCode reads agent definitions from this path |
@@ -50,7 +50,7 @@ Fixture: local scratch package with `skills/sample/SKILL.md`, `.apm/prompts/samp
 | Codex CLI | prompts | No | `none` | unsupported | [verified] | APM 0.8.12 does not deploy prompts for the codex target |
 | Codex CLI | agents | Yes | `native:.codex/agents/` | install-first | [verified] | APM deploys `.apm/agents/` → `.codex/agents/*.toml` (converts to TOML format); Codex reads agent configs from `.codex/agents/` |
 | Codex CLI | instructions | No | `none` | unsupported | [verified] | APM 0.8.12 does not deploy instructions for the codex target |
-| Codex CLI | hooks | Unknown | `native:.codex/hooks.json` | install-first | [unverified] | APM deploys to `.codex/hooks.json`; Codex hook support not confirmed in public docs |
+| Codex CLI | hooks | Unknown | `native:.codex/hooks.json` | unsupported | [unverified] | APM deploys to `.codex/hooks.json`; Codex hook support not confirmed in public docs — Axis A unknown, so cannot classify as install-first |
 | Gemini CLI | skills | Unknown | `untested` | unsupported | [unverified] | APM 0.8.12 has no Gemini target; no `gemini` option in `apm install --target` or `apm compile --target`; Gemini CLI likely uses `.gemini/` as its config root but not exercised |
 | Gemini CLI | prompts | Unknown | `untested` | unsupported | [unverified] | No APM Gemini target in 0.8.12 |
 | Gemini CLI | agents | Unknown | `untested` | unsupported | [unverified] | No APM Gemini target in 0.8.12 |
@@ -94,7 +94,7 @@ Multiple markers → multiple targets. Install deploys to all detected targets s
 
 | Situation | Cells |
 |-----------|-------|
-| Axis A unconfirmed | Cursor hooks, Codex hooks |
+| APM deploys, Axis A unconfirmed (classified unsupported) | Cursor hooks, Codex hooks |
 | APM deploys but tool doesn't consume | GitHub Copilot hooks, Cursor skills |
 | APM doesn't deploy in 0.8.12 | Cursor prompts, OpenCode instructions, OpenCode hooks, Codex prompts, Codex instructions |
 | No APM target at all | All Gemini CLI cells |
