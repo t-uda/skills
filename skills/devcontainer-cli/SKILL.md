@@ -18,9 +18,9 @@ Use this skill when a task involves `.devcontainer/`, `devcontainer.json`, Dev C
 ## Core rules
 
 - Prefer the official Dev Container specification and CLI behaviour over editor-specific assumptions.
-- Treat committed `.devcontainer/*`, referenced Docker/Compose files, and lifecycle scripts as the current implementation; treat the official specification and CLI behaviour as the correctness authority when editor defaults disagree.
+- Treat committed `.devcontainer/` contents, referenced Docker/Compose files, and lifecycle scripts as the current implementation; treat the official specification and CLI behaviour as the correctness authority when editor defaults disagree.
 - Inspect `.devcontainer/`, Dockerfile, Compose files, and referenced scripts before editing.
-- Edit `.devcontainer/*`, referenced Docker/Compose files, and lifecycle scripts only when needed for the task.
+- Edit `.devcontainer/` contents, referenced Docker/Compose files, and lifecycle scripts only when needed for the task.
 - Treat commands that start the container or run lifecycle hooks as execution steps, not routine inspection.
 - Choose the simplest viable topology:
   - `image` for simple reuse
@@ -37,11 +37,11 @@ Use CLI validation when the task requires runtime verification and the environme
 
 - Static inspection:
   - `devcontainer read-configuration --workspace-folder <repo>`
-- Optional build validation:
+- Approval-required build validation:
   - `devcontainer build --workspace-folder <repo>`
-  - Use this when image or build correctness matters and Docker-heavy execution is in scope.
-  - This can pull images or run Docker build steps, but it does not run repo lifecycle hooks by itself.
-- Approval-required execution:
+  - Use this only after explicit approval, when image or build correctness matters and Docker-heavy execution is in scope.
+  - This can pull images and run Docker build steps or Feature installs, even though it does not run repo lifecycle hooks by itself.
+- Approval-required runtime execution:
   - `devcontainer up --workspace-folder <repo>`
   - `devcontainer exec --workspace-folder <repo> <cmd>`
   - `devcontainer run-user-commands --workspace-folder <repo>`
