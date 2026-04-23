@@ -19,6 +19,7 @@ Use this skill when a task involves `.devcontainer/`, `devcontainer.json`, Dev C
 
 - Prefer the official Dev Container specification and CLI behaviour over editor-specific assumptions.
 - Inspect `.devcontainer/`, Dockerfile, Compose files, and referenced scripts before editing.
+- Treat commands that start the container or run lifecycle hooks as execution steps, not routine inspection.
 - Choose the simplest viable topology:
   - `image` for simple reuse
   - `build` for project-specific tooling
@@ -32,11 +33,16 @@ Use this skill when a task involves `.devcontainer/`, `devcontainer.json`, Dev C
 
 Use the CLI as the primary validation path:
 
-- `devcontainer read-configuration --workspace-folder <repo>`
-- `devcontainer build --workspace-folder <repo>`
-- `devcontainer up --workspace-folder <repo>`
-- `devcontainer exec --workspace-folder <repo> <cmd>`
-- `devcontainer run-user-commands --workspace-folder <repo>`
+- Read-only inspection:
+  - `devcontainer read-configuration --workspace-folder <repo>`
+- Build validation:
+  - `devcontainer build --workspace-folder <repo>`
+  - This can pull images or run Docker build steps, but it does not run repo lifecycle hooks by itself.
+- Approval-required execution:
+  - `devcontainer up --workspace-folder <repo>`
+  - `devcontainer exec --workspace-folder <repo> <cmd>`
+  - `devcontainer run-user-commands --workspace-folder <repo>`
+  - Use these only after explicit approval, because they start the target container and may run repo-defined lifecycle hooks or project commands.
 
 Do not assume a setup is correct until it is CLI-verifiable.
 
