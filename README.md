@@ -60,6 +60,10 @@ Each skill must live at `skills/<skill-name>/SKILL.md`.
 
 - `external-skill-review`: review a candidate external skill against the repo policy, record approved entries in a project-local catalog, and recommend install commands
 
+### Dev containers
+
+- `devcontainer-cli`: review, validate, and troubleshoot Dev Container setup with explicit CLI-first guidance
+
 ## Naming guidance
 
 Prefer short, command-friendly names.
