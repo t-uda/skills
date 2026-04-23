@@ -26,3 +26,4 @@ Current skills:
 - sot-integrity
 - light-orchestration
 - deslop-history
+- devcontainer-cli
