@@ -215,6 +215,22 @@ class GrowingAgentsMdTests(unittest.TestCase):
             self.assertNotEqual(result.returncode, 0)
             self.assertIn("missing permanent section: Maintenance Notes", result.stderr)
 
+    def test_lint_fails_on_stray_content_before_first_canonical_section(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            write(
+                root / "AGENTS.md",
+                EXPECTED_SCAFFOLD.replace(
+                    "## Core Principles",
+                    "stray line\n\n## Core Principles",
+                ),
+            )
+
+            result = run_script(root, "lint", check=False)
+
+            self.assertNotEqual(result.returncode, 0)
+            self.assertIn("unexpected content before the first canonical section", result.stderr)
+
     def test_lint_fails_when_budget_is_exceeded(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)

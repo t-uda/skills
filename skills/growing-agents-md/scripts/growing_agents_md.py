@@ -234,6 +234,14 @@ def validate_heading_order(headings: list[tuple[int, str]]) -> list[str]:
     return errors
 
 
+def validate_outer_structure(lines: list[str], headings: list[tuple[int, str]]) -> list[str]:
+    if not headings:
+        return []
+    if headings[0][0] != 4:
+        return ["unexpected content before the first canonical section"]
+    return []
+
+
 def validate_section_body(
     heading: str,
     body: list[str],
@@ -327,6 +335,7 @@ def lint_text(text: str, max_lines: int) -> list[str]:
     headings, heading_errors = collect_headings(lines)
     errors.extend(heading_errors)
     errors.extend(validate_heading_order(headings))
+    errors.extend(validate_outer_structure(lines, headings))
 
     positions = {name: index for index, name in headings if name in SECTION_ORDER}
     end_of_file = len(lines)
