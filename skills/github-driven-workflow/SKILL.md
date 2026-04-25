@@ -13,6 +13,13 @@ This skill governs the entire delivery lifecycle. It is assigned by an orchestra
 
 Use this skill when an orchestrator or project instructions assign it to govern a delivery task. It controls the full lifecycle from issue intake through merge.
 
+Assign this skill for tasks that involve:
+
+- implementing a change from a GitHub issue (issue-first delivery)
+- delivering work through a PR (PR-gated delivery)
+- requiring independent review before merge
+- checking or enforcing merge gate readiness
+
 Do not invoke this skill for a single sub-step (e.g. "open a PR" or "check CI") unless the full workflow context is already established and the orchestrator has scoped the invocation explicitly.
 
 ## Workflow
@@ -61,14 +68,14 @@ The PR must include:
 
 ### 7. Acquire independent review
 
-A qualifying independent review is one of:
+A qualifying independent review is a formal GitHub PR review submitted by an actor other than the implementation author:
 
-- A GitHub PR review or PR comment by a human actor other than the implementation author.
+- A GitHub PR review (approved, changes requested, or commented) by a human actor other than the implementation author.
 - A Copilot code review result visible on the PR.
-- A `@codex` review comment visible on the PR.
+- A `@codex` review visible on the PR.
 - A subagent review only when the environment explicitly supports subagents and the PR body contains the subagent review summary and identity.
 
-Do not treat self-review, local notes, or an unlinked claim as qualifying.
+PR comments alone do not qualify. Self-reviews, local notes, and unlinked claims do not qualify.
 
 #### Requesting Copilot review
 
@@ -171,15 +178,16 @@ gh api graphql -f query='
 {
   repository(owner: "<owner>", name: "<repo>") {
     pullRequest(number: <N>) {
-      reviewThreads(first: 50) {
+      reviewThreads(first: 100) {
         nodes { isResolved }
+        pageInfo { hasNextPage endCursor }
       }
     }
   }
 }'
 ```
 
-Count nodes where `isResolved` is `false`. Must be zero. If the query errors, stop.
+Count nodes where `isResolved` is `false`. Must be zero. If `pageInfo.hasNextPage` is `true`, repeat with `after: "<endCursor>"` until all pages are checked. If the query errors, stop.
 
 **Unchecked task boxes**
 
@@ -211,7 +219,7 @@ Stop conditions:
 
 - Issue is missing or ambiguous.
 - Issue Scope or Acceptance is missing.
-- Current branch is `main` and no implementation branch exists.
+- Current branch is `main`.
 - PR is missing.
 - PR lacks `Closes #<issue>`.
 - Independent review evidence is missing.
