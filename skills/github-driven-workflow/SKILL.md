@@ -72,35 +72,54 @@ Do not treat self-review, local notes, or an unlinked claim as qualifying.
 
 #### Requesting Copilot review
 
-Copilot code review requires the feature to be enabled in the repository settings. Check availability by attempting to add the reviewer:
+Copilot code review requires the `copilot-pull-request-reviewer` GitHub App to be installed on the repository. Assign Copilot as a reviewer using the REST API with a JSON body:
 
 ```sh
 gh api repos/<owner>/<repo>/pulls/<N>/requested_reviewers \
-  -X POST -f 'reviewers[]=copilot-ai'
+  -X POST --input - <<'EOF'
+{"reviewers": ["copilot-pull-request-reviewer[bot]"]}
+EOF
 ```
 
-- HTTP 200 → reviewer added; Copilot review is available and was requested.
-- HTTP 422 ("not a collaborator") → Copilot code review is not enabled for this repository. Use a different qualifying route.
+- HTTP 200 with `requested_reviewers` containing `"login": "Copilot"` → reviewer added successfully.
+- HTTP 422 ("not a collaborator") → the Copilot app is not installed on this repository. Use a different qualifying route.
 
-Verify completion: poll `gh pr view <N> --json reviews` until a review entry with `author.login` of `github-copilot[bot]` appears with `state` of `APPROVED`, `CHANGES_REQUESTED`, or `COMMENTED`.
+Do not use `-f 'reviewers[]=Copilot'` or `gh pr edit --add-reviewer Copilot`; both silently fail or produce a GraphQL error.
+
+Verify assignment:
+```sh
+gh pr view <N> --json reviewRequests \
+  --jq '[.reviewRequests[].requestedReviewer.login]'
+```
+Should include `"Copilot"`.
+
+Verify completion: poll `gh pr view <N> --json reviews` until a review entry with `author.login` of `copilot-pull-request-reviewer[bot]` appears.
 
 #### Requesting @codex review
 
-@codex review requires the Codex GitHub App to be installed on the repository. Request a review by posting a comment:
+Post a mention comment to request a @codex review:
 
 ```sh
 gh api repos/<owner>/<repo>/issues/<N>/comments \
   -X POST -f body='@codex please review this PR'
 ```
 
-The comment always posts successfully regardless of whether Codex is installed. Verify completion by polling the comments endpoint until a comment from a bot with `login` containing `codex` appears:
+The comment always posts successfully. Verify that Codex received the notification:
+```sh
+gh api repos/<owner>/<repo>/issues/<N>/timeline \
+  --jq '[.[] | select(.event == "mentioned") | .actor.login]'
+```
+Should include `"codex"`.
 
+Verify completion by polling comments until a response from the Codex bot appears:
 ```sh
 gh api repos/<owner>/<repo>/issues/<N>/comments \
-  --jq '[.[] | select(.user.login | contains("codex")) | {author: .user.login, body: .body}]'
+  --jq '[.[] | select(.user.login | ascii_downcase | contains("codex")) | {author: .user.login, body: .body[:120]}]'
 ```
 
-If no Codex response appears after a reasonable wait, Codex is not installed. Use a different qualifying route.
+If no Codex response appears after a reasonable wait, the Codex app may not be active on this repository. Use a different qualifying route.
+
+A @codex review counts as independent even when Codex opened the PR; the review agent invoked by mention runs in a separate context.
 
 #### Waiting for review
 
