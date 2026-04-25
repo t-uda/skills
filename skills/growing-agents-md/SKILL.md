@@ -1,167 +1,57 @@
 ---
 name: growing-agents-md
-description: Create a compact AGENTS.md when missing, or refine an existing AGENTS.md so it stays short, current, and useful for implementation agents. Use this when the user explicitly asks for a growing, compact AGENTS.md or wants to create or maintain AGENTS.md without letting it bloat.
+description: Seed, lint, or update a compact canonical AGENTS.md with deterministic guardrails. Use this when AGENTS.md is missing, stale, structurally degraded, or when durable repo guidance changed.
 ---
 
 # Growing AGENTS.md
 
-Maintain a compact, high-signal `AGENTS.md` for the current repository.
+Use this skill to keep `AGENTS.md` canonical, compact, and durable.
 
-This skill has exactly two jobs:
+Use it when:
 
-1. **If `AGENTS.md` does not exist:** create a minimal, high-quality one.
-2. **If `AGENTS.md` already exists:** refine it so it remains compact, current, and implementation-useful.
+- `AGENTS.md` is missing
+- `AGENTS.md` fails structural lint
+- the current task changes durable commands, architecture, or workflow rules
+- the file became generic, bloated, or stale enough to prune
 
-The goal is **not** to accumulate notes.  
-The goal is to keep `AGENTS.md` **short, project-specific, and operationally valuable**.
+The bundled script is the source of truth for scaffold shape, guard comments, placeholder rules, section rendering, and the counted-line budget:
 
-## Core policy
+```sh
+python3 skills/growing-agents-md/scripts/growing_agents_md.py <command>
+```
 
-Treat `AGENTS.md` as a **living, bounded document**.
+## Workflow
 
-Always optimise for these properties:
+1. Run `init` when `AGENTS.md` is missing. This writes the canonical scaffold only.
+2. Run `lint` before editing an existing file. If lint fails, do not guess repairs outside the canonical schema.
+3. Gather only stable, repo-specific facts worth preserving in durable agent guidance.
+4. Run `apply` with structured JSON input to replace whole sections deterministically.
+5. Review the result for repo-specific quality, then keep moving. Do not turn `AGENTS.md` into a changelog.
 
-- Short enough to read quickly
-- Specific to this repository
-- Useful to an implementation agent with no prior context
-- Free from stale, redundant, or inferable content
+## Commands
 
-When updating an existing file, **prune first**.  
-Do not default to appending.
+```sh
+python3 skills/growing-agents-md/scripts/growing_agents_md.py init
+python3 skills/growing-agents-md/scripts/growing_agents_md.py lint
+python3 skills/growing-agents-md/scripts/growing_agents_md.py apply --input agents.json
+```
 
-## What belongs in AGENTS.md
+`apply` expects JSON shaped like:
 
-Include only information that satisfies most of the following:
+```json
+{
+  "project_overview": ["- ..."],
+  "commands": ["~~~sh", "make test", "~~~"],
+  "code_conventions": ["- ..."],
+  "architecture": ["- ..."]
+}
+```
 
-- It is **project-specific**
-- It is **not easily inferable** from code, config, or standard conventions
-- It helps an agent begin or continue implementation without unnecessary clarification
-- Getting it wrong would cause wasted work, confusion, or bad changes
-- It is stable enough to deserve placement in a persistent repository instruction file
+Missing or empty arrays remove that replaceable section. The script hard-fails on non-canonical structure, placeholder leftovers, forbidden catch-all headings, or counted-line budget overflow.
 
-Good candidates include:
+## Content policy
 
-- Repository-specific workflow constraints
-- Important architectural boundaries that are not obvious from local code inspection
-- Non-obvious conventions actually used in this project
-- High-value entry points for build, test, or validation
-- Strong project preferences that materially affect implementation choices
-
-## What does not belong in AGENTS.md
-
-Do **not** include:
-
-- Generic programming advice
-- Restatements of what the code already makes obvious
-- Large command inventories
-- Historical notes
-- Temporary task-specific reminders
-- Long explanations
-- Speculation
-- Catch-all sections such as `Notes`, `Misc`, `Context`, or `Other`
-
-If information is volatile, detailed, or better represented elsewhere, keep it in code, scripts, config, or dedicated docs instead.
-
-## Editing rules
-
-When `AGENTS.md` exists, perform these operations in this order:
-
-1. Remove stale items
-2. Remove redundant items
-3. Compress verbose items
-4. Merge overlapping items
-5. Rewrite unclear items
-6. Add only truly missing, high-value items
-
-Prefer **rewriting the whole file coherently** over incrementally appending text.
-
-## Size discipline
-
-Aim for a compact document.
-
-Target:
-- roughly 20 to 30 lines when possible
-- brief sections
-- terse bullets
-- no paragraph that exists only for explanation
-
-If forced to choose, omit lower-value detail rather than exceed the signal budget.
-
-## Recommended structure
-
-Use a minimal structure like this when creating or rewriting:
-
-- Purpose or scope
-- Key workflow rules
-- Project-specific implementation guidance
-- Validation or completion checks
-- Maintenance note
-
-Do not mechanically preserve an existing structure if it causes bloat.
-
-## Maintenance note policy
-
-A short maintenance note is allowed, but it must stay short.
-
-It should reinforce rules such as:
-
-- keep this file lean
-- delete inferable content
-- rewrite stale guidance
-- prefer stable rules over volatile facts
-
-Do not let the maintenance note become a manifesto.
-
-## Procedure
-
-### Case 1: AGENTS.md is missing
-
-Create a new `AGENTS.md` that:
-
-- is minimal
-- reflects the actual repository
-- avoids placeholders unless unavoidable
-- includes only high-value project guidance
-
-Do not invent repository facts.  
-If repository evidence is insufficient, keep the file narrower rather than padding it.
-
-### Case 2: AGENTS.md exists
-
-Review the file critically.
-
-For each existing item, ask:
-
-- Is this still current?
-- Is this project-specific?
-- Is this non-inferable?
-- Is this worth permanent space?
-- Can this be shortened?
-- Should this be merged or deleted?
-
-Then rewrite the file into a cleaner compact version.
-
-## Decision standard
-
-Every retained line should justify its existence.
-
-A line should usually survive only if removing it would make a competent implementation agent materially more likely to misunderstand the repository, violate a local convention, or pause for clarification.
-
-## Output requirements
-
-When performing this skill:
-
-- Produce the resulting `AGENTS.md`
-- Keep wording direct and compact
-- Prefer imperative phrasing
-- Avoid motivational language
-- Avoid verbosity
-- Avoid duplication
-
-If useful, briefly summarise the main changes as:
-
-- removed
-- compressed
-- added
-
-But the primary output is the improved `AGENTS.md` itself.
+- Keep only repo-specific, non-obvious, stable guidance.
+- Prefer terse bullets and one high-value shell block.
+- Delete stale or inferable content instead of appending.
+- Do not add generic advice, history, or catch-all sections such as `Notes` or `Context`.
