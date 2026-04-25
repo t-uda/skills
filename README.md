@@ -64,6 +64,10 @@ Each skill must live at `skills/<skill-name>/SKILL.md`.
 
 - `devcontainer-cli`: review, validate, and troubleshoot Dev Container setup with explicit CLI-first guidance
 
+### Delivery workflow
+
+- `github-driven-workflow`: enforce issue-first, PR-gated delivery with no direct main pushes, independent review requirement, and deterministic merge gates
+
 ## Naming guidance
 
 Prefer short, command-friendly names.
