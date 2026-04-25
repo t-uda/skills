@@ -50,7 +50,7 @@ Each skill must live at `skills/<skill-name>/SKILL.md`.
 
 ### Repository guidance
 
-- `growing-agents-md`: create or refine a compact `AGENTS.md` without letting it bloat
+- `growing-agents-md`: seed, lint, or update a compact canonical `AGENTS.md` with deterministic guardrails
 
 ### Git maintenance
 
