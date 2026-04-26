@@ -130,6 +130,11 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
     )
     parser.add_argument("--json", action="store_true", help="print one JSON object")
     parser.add_argument("--no-fetch", action="store_true", help="skip fetch/prune")
+    parser.add_argument(
+        "--no-detect-pr-merged",
+        action="store_true",
+        help="disable GitHub PR-merged detection (default: enabled when gh and a GitHub remote are available)",
+    )
     return parser.parse_args(argv)
 
 
@@ -284,6 +289,105 @@ def is_merged(repo: str, branch_info: dict[str, str], base_commit: str) -> tuple
     return False, error_record("merge_check_failed", result.command, result.stderr, branch_info["name"])
 
 
+def parse_github_url(url: str) -> tuple[str, str] | None:
+    if "github.com" not in url:
+        return None
+    path: str | None = None
+    for prefix in (
+        "https://github.com/",
+        "http://github.com/",
+        "ssh://git@github.com/",
+        "git@github.com:",
+    ):
+        if url.startswith(prefix):
+            path = url[len(prefix):]
+            break
+    if path is None:
+        return None
+    if path.endswith(".git"):
+        path = path[:-4]
+    parts = path.strip("/").split("/")
+    if len(parts) != 2 or not parts[0] or not parts[1]:
+        return None
+    return parts[0], parts[1]
+
+
+def discover_github_repo(repo: str, remote: str) -> tuple[str, str] | None:
+    result = run_git(["remote", "get-url", remote], repo)
+    if result.returncode != 0:
+        return None
+    return parse_github_url(result.stdout.strip())
+
+
+def gh_available() -> bool:
+    try:
+        completed = subprocess.run(
+            ["gh", "--version"],
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+            check=False,
+        )
+    except (FileNotFoundError, OSError):
+        return False
+    return completed.returncode == 0
+
+
+def base_branch_name(base: str) -> str:
+    if base.startswith("refs/heads/"):
+        return base.removeprefix("refs/heads/")
+    _remote, branch = base_remote(base)
+    return branch or base
+
+
+def pr_merged_via_gh(
+    repo: str,
+    owner: str,
+    name: str,
+    branch: str,
+    branch_oid: str,
+    base: str,
+) -> tuple[int | None, dict[str, Any] | None]:
+    command = [
+        "gh", "pr", "list",
+        "--repo", f"{owner}/{name}",
+        "--state", "merged",
+        "--head", branch,
+        "--base", base,
+        "--json", "number,headRefOid",
+        "--limit", "20",
+    ]
+    try:
+        completed = subprocess.run(
+            command,
+            cwd=repo,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            encoding="utf-8",
+            check=False,
+        )
+    except (FileNotFoundError, OSError) as exc:
+        return None, error_record("pr_check_failed", command, str(exc), branch)
+    if completed.returncode != 0:
+        return None, error_record("pr_check_failed", command, completed.stderr, branch)
+    try:
+        items = json.loads(completed.stdout or "[]")
+    except json.JSONDecodeError as exc:
+        return None, error_record("pr_check_failed", command, str(exc), branch)
+    # Require the local branch tip to match the PR's recorded head SHA. The
+    # --head filter is a name-only match, so without this check a reused branch
+    # name (old PR merged, new local commits added) would falsely verify and
+    # the subsequent `git branch -D` would destroy the new commits.
+    for item in items:
+        if not isinstance(item, dict):
+            continue
+        if item.get("headRefOid") != branch_oid:
+            continue
+        number = item.get("number")
+        if isinstance(number, int):
+            return number, None
+    return None, None
+
+
 def pattern_matches(branch: str, patterns: list[str]) -> bool:
     return any(fnmatch.fnmatchcase(branch, pattern) for pattern in patterns)
 
@@ -360,17 +464,45 @@ def build_plan(
     initial_branch: str | None,
     branches: dict[str, dict[str, str]],
     worktrees: list[dict[str, Any]],
+    remote: str,
 ) -> tuple[list[dict[str, Any]], list[dict[str, Any]], list[dict[str, Any]]]:
     actions: list[dict[str, Any]] = []
     skipped: list[dict[str, Any]] = []
     errors: list[dict[str, Any]] = []
     merged: dict[str, bool] = {}
+    pr_merged_numbers: dict[str, int] = {}
 
     for branch, info in branches.items():
         branch_merged, error = is_merged(repo, info, base_commit)
         merged[branch] = branch_merged
         if error:
             errors.append(error)
+
+    detect_pr = not args.no_detect_pr_merged and gh_available()
+    gh_repo = discover_github_repo(repo, remote) if detect_pr else None
+    if gh_repo is not None:
+        gh_owner, gh_name = gh_repo
+        # Prefer the resolved local base branch (preserves slashes such as
+        # `release/foo`) over heuristic stripping of `--base`.
+        pr_base = local_base_branch or base_branch_name(args.base)
+        for branch, info in branches.items():
+            if merged.get(branch, False):
+                continue
+            if filter_reason(branch, args.include_pattern, args.exclude_pattern):
+                continue
+            if protected_reason(
+                branch, initial_branch, local_base_branch, args.switch_base, args.exclude_pattern,
+            ):
+                continue
+            number, pr_error = pr_merged_via_gh(
+                repo, gh_owner, gh_name, branch, info["object"], pr_base,
+            )
+            if pr_error:
+                errors.append(pr_error)
+                continue
+            if number is not None:
+                merged[branch] = True
+                pr_merged_numbers[branch] = number
 
     primary_path = worktrees[0]["path"] if worktrees else None
     linked_worktrees = worktrees[1:] if worktrees else []
@@ -426,13 +558,20 @@ def build_plan(
         if dirty:
             skipped.append(skip_record("worktree", path, branch, "dirty"))
             continue
+        if branch in pr_merged_numbers:
+            wt_reason = "merged_clean_worktree_via_pr"
+            wt_detail = f"merged via PR #{pr_merged_numbers[branch]}"
+        else:
+            wt_reason = "merged_clean_worktree"
+            wt_detail = None
         actions.append(
             action_record(
                 "remove_worktree",
                 path,
                 branch,
                 [["git", "worktree", "remove", path]],
-                "merged_clean_worktree",
+                wt_reason,
+                wt_detail,
             )
         )
         remove_worktree_branches.add(branch)
@@ -498,13 +637,22 @@ def build_plan(
                 )
             continue
 
+        if branch in pr_merged_numbers:
+            delete_command = ["git", "branch", "-D", branch]
+            delete_reason = "merged_branch_via_pr"
+            delete_detail = f"merged via PR #{pr_merged_numbers[branch]}"
+        else:
+            delete_command = ["git", "branch", "-d", branch]
+            delete_reason = "merged_branch"
+            delete_detail = None
         actions.append(
             action_record(
                 "delete_branch",
                 branch,
                 branch,
-                [["git", "branch", "-d", branch]],
-                "merged_branch",
+                [delete_command],
+                delete_reason,
+                delete_detail,
             )
         )
 
@@ -777,6 +925,7 @@ def main(argv: list[str] | None = None) -> int:
         initial_branch,
         branches,
         worktrees,
+        remote,
     )
     errors = [*discovery_errors, *plan_errors]
 
