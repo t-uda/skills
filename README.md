@@ -68,6 +68,10 @@ Each skill must live at `skills/<skill-name>/SKILL.md`.
 
 - `github-driven-workflow`: enforce issue-first, PR-gated delivery with no direct main pushes, independent review requirement, and deterministic merge gates
 
+### Randomness
+
+- `randomness`: prefer a bundled PRNG script for random selection; fall back to a String Seed prompt pattern only for low-stakes or creative-diversity use
+
 ## Naming guidance
 
 Prefer short, command-friendly names.

@@ -28,3 +28,4 @@ Current skills:
 - deslop-history
 - devcontainer-cli
 - github-driven-workflow
+- randomness
