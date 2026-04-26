@@ -10,7 +10,7 @@ Use this skill when the user asks for random selection, probabilistic sampling, 
 ## Priority order
 
 1. **Script-backed randomness** (primary): Use the bundled PRNG script when tool execution is available.
-2. **String Seed fallback** (secondary): Use only when tools are unavailable or the goal is creative diversification rather than actual randomness.
+2. **String Seed fallback** (secondary): Use only when tools are unavailable or the goal is creative diversification rather than PRNG-backed sampling.
 3. **Refuse or redirect**: For security-sensitive, fairness-sensitive, scientific, benchmark, simulation, lottery, or reproducibility-critical tasks, redirect to explicit external tooling.
 
 ## Script-backed randomness (primary path)
@@ -46,14 +46,24 @@ Format: `item:weight`. Weights must be non-negative, finite, and sum to greater 
 python3 skills/randomness/scripts/random_choice.py --uniform A B C --json
 ```
 
-Outputs: `{"mode": "uniform", "selected": "A", "method": "python random module"}`
+Outputs:
+
+```json
+{"mode": "uniform", "items": ["A", "B", "C"], "selected": "A", "method": "python random module"}
+```
+
+Weighted JSON output includes the per-item weights:
+
+```json
+{"mode": "weighted", "items": [{"item": "A", "weight": 0.2}, {"item": "B", "weight": 0.8}], "selected": "B", "method": "python random module"}
+```
 
 ## String Seed fallback (secondary path)
 
 Use this pattern **only when**:
 
 - Tool execution is unavailable
-- The goal is creative diversification, not statistically valid randomness
+- The goal is creative diversification, not PRNG-backed sampling
 - The task is low-stakes
 
 ### Fallback procedure
@@ -74,27 +84,33 @@ First, generate a random-looking string of 24–40 mixed characters.
 Then, use the entire string as a seed for the following task.
 Do not choose by intuition or by the most natural/default answer.
 
-For uniform choice among n options:
-- Use the whole seed string to derive a number.
-- Take that number modulo n.
+For uniform choice among n options, use a concrete full-string mapping such as:
+- value = sum(ord(c) for c in seed)
+- selected_index = value % n
 
-For weighted choice:
-- Use the whole seed string to derive a number.
-- Map that number to [0, 1) and select by cumulative probability.
+For weighted choice, use a rolling-hash full-string mapping such as:
+- M = 2**61 - 1
+- h = 0
+- for c in seed: h = (131 * h + ord(c)) % M
+- u = h / M    # u is a value in [0, 1)
+- select the item whose cumulative weight first exceeds u
 ```
 
 ### Prompt template for creative diversification
 
 ```text
 First, generate a random-looking string of 24–40 mixed characters.
-Then, use different parts of the seed to vary:
-- Style
-- Perspective
-- Ordering
-- Examples
-- Emphasis
 
-Do not use default completions unless they are selected through the seed-driven variation.
+Then:
+1. Decompose the output into explicit variation dimensions
+   (for example: style, perspective, ordering, examples, emphasis).
+2. For each dimension, list the candidate values you would otherwise default to.
+3. Slice the seed into one segment per dimension.
+4. For each dimension, derive an integer from its segment
+   (for example: value = sum(ord(c) for c in segment)) and pick
+   candidates[value % len(candidates)].
+5. Do not use default completions unless they are selected through this
+   seed-driven mapping.
 ```
 
 ## Limitations
