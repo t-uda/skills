@@ -60,11 +60,10 @@ Weighted JSON output includes the per-item weights:
 
 ## String Seed fallback (secondary path)
 
-Use this pattern **only when**:
+Use String Seed prompting only for low-stakes tasks, and only in either of these cases:
 
-- Tool execution is unavailable
-- The goal is creative diversification, not PRNG-backed sampling
-- The task is low-stakes
+- Tool execution is unavailable, and a random or probabilistic choice is still needed.
+- Tool execution is available, but the goal is creative diversification rather than PRNG-backed sampling.
 
 ### Fallback procedure
 
