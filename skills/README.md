@@ -29,3 +29,4 @@ Current skills:
 - devcontainer-cli
 - github-driven-workflow
 - randomness
+- headson
