@@ -114,10 +114,10 @@ def remove_existing(target_dir: Path, force: bool) -> None:
         return
 
     if not force:
-            raise ConflictError(
-                f"Refusing to replace existing non-symlink target: {target_dir}. "
-                "Use --force to replace it."
-            )
+        raise ConflictError(
+            f"Refusing to replace existing non-symlink target: {target_dir}. "
+            "Use --force to replace it."
+        )
 
     if target_dir.is_dir():
         shutil.rmtree(target_dir)
