@@ -4,7 +4,9 @@
 from __future__ import annotations
 
 import json
+import os
 import shutil
+import stat
 import subprocess
 import sys
 import tempfile
@@ -15,7 +17,69 @@ from pathlib import Path
 SCRIPT = Path(__file__).with_name("git_prune_worktrees.py")
 
 
-def run(command: list[str], cwd: Path | None = None, check: bool = True) -> subprocess.CompletedProcess[str]:
+def install_fake_gh(root: Path, responses: dict[str, list[dict[str, int]]] | None = None, *, fail: bool = False) -> Path:
+    """Create a fake `gh` executable in a fresh dir and return that dir.
+
+    `responses` maps head-branch name to the JSON array `gh pr list ... --json number` should return.
+    `fail=True` makes every non-version invocation exit nonzero (simulates auth failure).
+    """
+    bin_dir = root / "fake-bin"
+    bin_dir.mkdir(parents=True, exist_ok=True)
+    data_dir = root / "fake-gh-data"
+    data_dir.mkdir(parents=True, exist_ok=True)
+    if responses is not None:
+        for branch, payload in responses.items():
+            (data_dir / f"{branch}.json").write_text(json.dumps(payload), encoding="utf-8")
+    script = bin_dir / "gh"
+    script.write_text(
+        f"""#!/usr/bin/env python3
+import json, os, sys
+args = sys.argv[1:]
+if args[:1] == ["--version"]:
+    print("gh fake 0.0.0")
+    sys.exit(0)
+if {fail!r}:
+    sys.stderr.write("fake gh: simulated failure\\n")
+    sys.exit(1)
+head = ""
+i = 0
+while i < len(args):
+    if args[i] == "--head" and i + 1 < len(args):
+        head = args[i + 1]
+        break
+    i += 1
+data_dir = {str(data_dir)!r}
+path = os.path.join(data_dir, head + ".json")
+if os.path.exists(path):
+    with open(path) as fh:
+        sys.stdout.write(fh.read())
+else:
+    sys.stdout.write("[]")
+sys.exit(0)
+""",
+        encoding="utf-8",
+    )
+    script.chmod(script.stat().st_mode | stat.S_IXUSR | stat.S_IXGRP | stat.S_IXOTH)
+    return bin_dir
+
+
+def env_without_real_gh(extra_bin: Path | None = None) -> dict[str, str]:
+    """Return env with real `gh` removed from PATH; optionally prepend a fake-gh dir."""
+    env = os.environ.copy()
+    parts = env.get("PATH", "").split(os.pathsep)
+    filtered = [p for p in parts if p and not (Path(p) / "gh").exists()]
+    if extra_bin is not None:
+        filtered.insert(0, str(extra_bin))
+    env["PATH"] = os.pathsep.join(filtered)
+    return env
+
+
+def run(
+    command: list[str],
+    cwd: Path | None = None,
+    check: bool = True,
+    env: dict[str, str] | None = None,
+) -> subprocess.CompletedProcess[str]:
     result = subprocess.run(
         command,
         cwd=str(cwd) if cwd else None,
@@ -23,6 +87,7 @@ def run(command: list[str], cwd: Path | None = None, check: bool = True) -> subp
         stderr=subprocess.PIPE,
         encoding="utf-8",
         check=False,
+        env=env,
     )
     if check and result.returncode != 0:
         raise AssertionError(
@@ -61,6 +126,19 @@ def make_unmerged_branch(repo: Path, branch: str) -> None:
     git(repo, "switch", "-c", branch, "main")
     make_commit(repo, branch)
     git(repo, "switch", "main")
+
+
+def make_squash_merged_branch(repo: Path, branch: str) -> None:
+    """Simulate a squash-merge: branch tip is not reachable from main, but its
+    content has been applied to main as a separate commit.
+    """
+    git(repo, "switch", "-c", branch, "main")
+    make_commit(repo, branch)
+    git(repo, "switch", "main")
+    # Apply the same content as a fresh commit on main (as squash merge would).
+    write(repo / f"{branch}.txt", branch)
+    git(repo, "add", f"{branch}.txt")
+    git(repo, "commit", "-m", f"squash {branch}")
 
 
 class RepoFixture:
@@ -105,8 +183,14 @@ class RepoFixture:
 
 
 class GitPruneWorktreesTests(unittest.TestCase):
-    def run_script(self, repo: Path, *args: str, check: bool = True) -> tuple[subprocess.CompletedProcess[str], dict[str, object]]:
-        result = run([sys.executable, str(SCRIPT), "--json", *args], cwd=repo, check=check)
+    def run_script(
+        self,
+        repo: Path,
+        *args: str,
+        check: bool = True,
+        env: dict[str, str] | None = None,
+    ) -> tuple[subprocess.CompletedProcess[str], dict[str, object]]:
+        result = run([sys.executable, str(SCRIPT), "--json", *args], cwd=repo, check=check, env=env)
         data = json.loads(result.stdout)
         return result, data
 
@@ -195,6 +279,121 @@ class GitPruneWorktreesTests(unittest.TestCase):
             self.assertEqual(result.returncode, 0)
             self.assertEqual(data["remote"], "origin")
             self.assertEqual(data["base"]["local_branch"], "release/foo")  # type: ignore[index]
+
+    def _setup_squash_fixture(self, root: Path, branch: str = "issue-99-foo") -> RepoFixture:
+        fixture = RepoFixture.create(root)
+        make_squash_merged_branch(fixture.repo, branch)
+        # Point origin at a GitHub-style URL so PR detection activates.
+        # Fetch is unreachable, so tests must pass --no-fetch.
+        git(fixture.repo, "remote", "set-url", "origin", "git@github.com:fake/repo.git")
+        return fixture
+
+    def test_pr_merged_branch_force_deleted_with_pr_detail(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            fixture = self._setup_squash_fixture(root)
+            bin_dir = install_fake_gh(root, {"issue-99-foo": [{"number": 99}]})
+            env = env_without_real_gh(bin_dir)
+
+            result, data = self.run_script(
+                fixture.repo, "--base", "main", "--no-fetch", "--yes", env=env,
+            )
+
+            self.assertEqual(result.returncode, 0)
+            self.assertFalse(branch_exists(fixture.repo, "issue-99-foo"))
+            done = [a for a in data["actions"] if a["status"] == "done" and a["type"] == "delete_branch"]  # type: ignore[index]
+            self.assertEqual(len(done), 1)
+            self.assertEqual(done[0]["reason"], "merged_branch_via_pr")
+            self.assertIn("PR #99", done[0]["detail"])
+            self.assertEqual(done[0]["command"], ["git", "branch", "-D", "issue-99-foo"])
+
+    def test_no_detect_pr_merged_disables_detection(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            fixture = self._setup_squash_fixture(root)
+            bin_dir = install_fake_gh(root, {"issue-99-foo": [{"number": 99}]})
+            env = env_without_real_gh(bin_dir)
+
+            result, data = self.run_script(
+                fixture.repo, "--base", "main", "--no-fetch", "--no-detect-pr-merged", env=env,
+            )
+
+            self.assertEqual(result.returncode, 0)
+            reasons = {item["reason"] for item in data["skipped"] if item["branch"] == "issue-99-foo"}  # type: ignore[index]
+            self.assertEqual(reasons, {"unmerged"})
+            self.assertTrue(branch_exists(fixture.repo, "issue-99-foo"))
+
+    def test_gh_missing_silently_falls_back(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            fixture = self._setup_squash_fixture(root)
+            env = env_without_real_gh(None)
+
+            result, data = self.run_script(
+                fixture.repo, "--base", "main", "--no-fetch", env=env,
+            )
+
+            self.assertEqual(result.returncode, 0)
+            self.assertEqual(data["errors"], [])
+            reasons = {item["reason"] for item in data["skipped"] if item["branch"] == "issue-99-foo"}  # type: ignore[index]
+            self.assertEqual(reasons, {"unmerged"})
+
+    def test_non_github_remote_skips_detection_silently(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            fixture = RepoFixture.create(root)
+            make_squash_merged_branch(fixture.repo, "issue-99-foo")
+            # Origin already points at the local bare repo (not github.com).
+            bin_dir = install_fake_gh(root, {"issue-99-foo": [{"number": 99}]})
+            env = env_without_real_gh(bin_dir)
+
+            result, data = self.run_script(
+                fixture.repo, "--base", "main", "--no-fetch", env=env,
+            )
+
+            self.assertEqual(result.returncode, 0)
+            self.assertEqual(data["errors"], [])
+            reasons = {item["reason"] for item in data["skipped"] if item["branch"] == "issue-99-foo"}  # type: ignore[index]
+            self.assertEqual(reasons, {"unmerged"})
+
+    def test_gh_failure_recorded_but_does_not_abort(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            fixture = self._setup_squash_fixture(root)
+            # Also create a normally-merged branch that should still be deleted.
+            make_merged_branch(fixture.repo, "merged-delete")
+            bin_dir = install_fake_gh(root, fail=True)
+            env = env_without_real_gh(bin_dir)
+
+            result, data = self.run_script(
+                fixture.repo, "--base", "main", "--no-fetch", "--yes", env=env,
+            )
+
+            self.assertEqual(result.returncode, 0)
+            error_reasons = {e["reason"] for e in data["errors"]}  # type: ignore[index]
+            self.assertIn("pr_check_failed", error_reasons)
+            self.assertFalse(branch_exists(fixture.repo, "merged-delete"))
+            self.assertTrue(branch_exists(fixture.repo, "issue-99-foo"))
+
+    def test_reachability_merged_still_uses_safe_delete(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            fixture = RepoFixture.create(root)
+            make_merged_branch(fixture.repo, "true-merged")
+            git(fixture.repo, "remote", "set-url", "origin", "git@github.com:fake/repo.git")
+            bin_dir = install_fake_gh(root, {})  # No PR data; gh would return [] for any branch.
+            env = env_without_real_gh(bin_dir)
+
+            result, data = self.run_script(
+                fixture.repo, "--base", "main", "--no-fetch", env=env,
+            )
+
+            self.assertEqual(result.returncode, 0)
+            planned = [a for a in data["actions"] if a["type"] == "delete_branch" and a["branch"] == "true-merged"]  # type: ignore[index]
+            self.assertEqual(len(planned), 1)
+            self.assertEqual(planned[0]["reason"], "merged_branch")
+            self.assertEqual(planned[0]["command"], ["git", "branch", "-d", "true-merged"])
+            self.assertNotIn("detail", planned[0])
 
 
 if __name__ == "__main__":
