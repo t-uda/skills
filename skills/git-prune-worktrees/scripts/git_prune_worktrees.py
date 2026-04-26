@@ -344,6 +344,7 @@ def pr_merged_via_gh(
     owner: str,
     name: str,
     branch: str,
+    branch_oid: str,
     base: str,
 ) -> tuple[int | None, dict[str, Any] | None]:
     command = [
@@ -352,8 +353,8 @@ def pr_merged_via_gh(
         "--state", "merged",
         "--head", branch,
         "--base", base,
-        "--json", "number",
-        "--limit", "1",
+        "--json", "number,headRefOid",
+        "--limit", "20",
     ]
     try:
         completed = subprocess.run(
@@ -372,12 +373,19 @@ def pr_merged_via_gh(
         items = json.loads(completed.stdout or "[]")
     except json.JSONDecodeError as exc:
         return None, error_record("pr_check_failed", command, str(exc), branch)
-    if not items:
-        return None, None
-    number = items[0].get("number") if isinstance(items[0], dict) else None
-    if not isinstance(number, int):
-        return None, None
-    return number, None
+    # Require the local branch tip to match the PR's recorded head SHA. The
+    # --head filter is a name-only match, so without this check a reused branch
+    # name (old PR merged, new local commits added) would falsely verify and
+    # the subsequent `git branch -D` would destroy the new commits.
+    for item in items:
+        if not isinstance(item, dict):
+            continue
+        if item.get("headRefOid") != branch_oid:
+            continue
+        number = item.get("number")
+        if isinstance(number, int):
+            return number, None
+    return None, None
 
 
 def pattern_matches(branch: str, patterns: list[str]) -> bool:
@@ -474,7 +482,9 @@ def build_plan(
     gh_repo = discover_github_repo(repo, remote) if detect_pr else None
     if gh_repo is not None:
         gh_owner, gh_name = gh_repo
-        pr_base = base_branch_name(args.base)
+        # Prefer the resolved local base branch (preserves slashes such as
+        # `release/foo`) over heuristic stripping of `--base`.
+        pr_base = local_base_branch or base_branch_name(args.base)
         for branch, info in branches.items():
             if merged.get(branch, False):
                 continue
@@ -484,7 +494,9 @@ def build_plan(
                 branch, initial_branch, local_base_branch, args.switch_base, args.exclude_pattern,
             ):
                 continue
-            number, pr_error = pr_merged_via_gh(repo, gh_owner, gh_name, branch, pr_base)
+            number, pr_error = pr_merged_via_gh(
+                repo, gh_owner, gh_name, branch, info["object"], pr_base,
+            )
             if pr_error:
                 errors.append(pr_error)
                 continue
