@@ -29,6 +29,10 @@ class InstallError(Exception):
     pass
 
 
+class ConflictError(InstallError):
+    """Raised when a non-symlink target exists and --force was not given."""
+
+
 def parse_args(argv: Optional[List[str]] = None) -> argparse.Namespace:
     argv = sys.argv[1:] if argv is None else argv
     parser = argparse.ArgumentParser(
@@ -110,7 +114,7 @@ def remove_existing(target_dir: Path, force: bool) -> None:
         return
 
     if not force:
-        raise InstallError(
+        raise ConflictError(
             f"Refusing to replace existing non-symlink target: {target_dir}. "
             "Use --force to replace it."
         )
@@ -191,17 +195,24 @@ def main() -> int:
     workspace_root = Path(args.workspace_root).expanduser()
     base_dirs = target_base_dirs(workspace_root, args.target)
 
+    skipped = 0
     for skill_name in skill_names(skills_dir, args.skill_name):
         source_dir = skills_dir / skill_name
         for target_base_dir in base_dirs:
-            install_skill(
-                skill_name,
-                source_dir,
-                target_base_dir,
-                copy=args.copy,
-                force=args.force,
-            )
+            try:
+                install_skill(
+                    skill_name,
+                    source_dir,
+                    target_base_dir,
+                    copy=args.copy,
+                    force=args.force,
+                )
+            except ConflictError as error:
+                print(f"warning: {error}", file=sys.stderr)
+                skipped += 1
 
+    if skipped:
+        return 2
     return 0
 
 
