@@ -138,6 +138,18 @@ For notebooks with very large encoded image data, keep `--string-cap` low enough
 4. Use `--head` or `--tail` when the beginning or end of arrays is more relevant.
 5. Switch to exact tools such as `jq` or Python once the required path or schema is known.
 
+## Relation to jq
+
+Use `hson` before `jq` when the structure is unknown or the file is too large to inspect directly. Use `jq` after the relevant path or schema is known.
+
+```sh
+hson -c 1200 huge.json
+jq '.items[] | {id, name}' huge.json
+```
+
+`hson` is for previewing, summarising, and deciding where to look under an explicit output budget.
+`jq` is for exact querying, extraction, filtering, and transformation.
+
 ## Output expectations
 
 When reporting findings from `hson`, state that the output is a preview, not the full file. Mention any budget, grep, head/tail, or string-cap settings that shaped the view when they affect the conclusion.
