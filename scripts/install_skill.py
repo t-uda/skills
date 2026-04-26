@@ -191,17 +191,25 @@ def main() -> int:
     workspace_root = Path(args.workspace_root).expanduser()
     base_dirs = target_base_dirs(workspace_root, args.target)
 
+    warnings: List[str] = []
     for skill_name in skill_names(skills_dir, args.skill_name):
         source_dir = skills_dir / skill_name
         for target_base_dir in base_dirs:
-            install_skill(
-                skill_name,
-                source_dir,
-                target_base_dir,
-                copy=args.copy,
-                force=args.force,
-            )
+            try:
+                install_skill(
+                    skill_name,
+                    source_dir,
+                    target_base_dir,
+                    copy=args.copy,
+                    force=args.force,
+                )
+            except InstallError as error:
+                msg = f"warning: {error}"
+                print(msg, file=sys.stderr)
+                warnings.append(msg)
 
+    if warnings:
+        return 2
     return 0
 
 
