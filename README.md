@@ -48,6 +48,10 @@ Each skill must live at `skills/<skill-name>/SKILL.md`.
 
 - `marimo-reactive-review`: review an existing marimo notebook for reactive design quality and refactor opportunities
 
+### Structured data preview
+
+- `headson`: inspect large JSON, YAML, JSONL, text, source code, and notebook files with structure-aware `hson` previews under explicit budgets
+
 ### Repository guidance
 
 - `growing-agents-md`: seed, lint, or update a compact canonical `AGENTS.md` with deterministic guardrails
