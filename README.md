@@ -48,9 +48,9 @@ Each skill must live at `skills/<skill-name>/SKILL.md`.
 
 - `marimo-reactive-review`: review an existing marimo notebook for reactive design quality and refactor opportunities
 
-### Structured data preview
+### Data inspection
 
-- `headson`: inspect large JSON, YAML, JSONL, text, source code, and notebook files with structure-aware `hson` previews under explicit budgets
+- `headson`: preview large JSON, YAML, JSONL/NDJSON, text, source code, multi-file data, and Jupyter notebooks with structure-aware `hson` previews under explicit budgets
 
 ### Repository guidance
 
