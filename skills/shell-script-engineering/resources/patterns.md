@@ -8,12 +8,13 @@ Use this when a script may run with `sudo`, as root, or without privilege escala
 
 ```bash
 # "sudo" | "" (already root) | "none" (unprivileged)
-if command -v sudo >/dev/null 2>&1; then
-  _priv="sudo"
-elif [ "$(id -u)" -eq 0 ]; then
+if [ "$(id -u)" -eq 0 ]; then
   _priv=""
+elif command -v sudo >/dev/null 2>&1 && sudo -n true >/dev/null 2>&1; then
+  _priv="sudo"
 else
   _priv="none"
+  echo "WARNING: sudo is unavailable or requires an interactive password; privileged operations will be skipped" >&2
 fi
 
 _run() {
@@ -49,7 +50,9 @@ if [ "$_priv" != "none" ]; then
   _run chmod u+rwx "$target"
 else
   echo "WARNING: cannot fix ownership for $target without sudo or root" >&2
-  mkdir -p "$target" 2>/dev/null || true
+  if ! mkdir -p "$target"; then
+    echo "WARNING: failed to create $target without sudo or root" >&2
+  fi
 fi
 ```
 
@@ -126,6 +129,9 @@ if [ "$1" = "--baseline" ]; then
     exit 2
   fi
   baseline="$2"
+elif [[ "$1" == --* ]]; then
+  usage
+  exit 2
 else
   items=("$@")
 fi

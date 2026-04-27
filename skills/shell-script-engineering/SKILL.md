@@ -168,7 +168,10 @@ When practical, run:
 ```bash
 shellcheck path/to/script.sh
 shfmt -d path/to/script.sh
+# Bash scripts:
 bash -n path/to/script.sh
+# POSIX sh scripts (use the actual target shell, e.g. dash):
+sh -n path/to/script.sh
 ```
 
 For scripts with meaningful filesystem, permission, or CLI argument behaviour, add a small fixture test. Prefer Bats when the repository already uses shell testing or when the behaviour is naturally expressed as UNIX command execution.
