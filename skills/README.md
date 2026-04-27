@@ -30,3 +30,4 @@ Current skills:
 - github-driven-workflow
 - randomness
 - headson
+- shell-script-engineering
