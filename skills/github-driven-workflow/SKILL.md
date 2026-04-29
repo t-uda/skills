@@ -233,9 +233,9 @@ gh pr view <N> --json body \
 
 Must return `false`.
 
-**Independent review evidence**
+**Independent review evidence or authorized bypass**
 
-At least one of the following must be present and durably visible on the PR:
+At least one of the following must be present and durably visible on the PR. The first two routes are review evidence; the third is a waiver of the review requirement, not evidence:
 
 - A formal review by a reviewer who is not an implementation author. Implementation authors are the commit authors on the PR (which may differ from the PR opener in split-author flows). The check fails closed when any commit author has no linked GitHub login, because then `$impls` would silently miss a self-review:
   ```sh
