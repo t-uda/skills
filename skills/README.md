@@ -31,3 +31,4 @@ Current skills:
 - randomness
 - headson
 - shell-script-engineering
+- claude-code-advanced-orchestration
