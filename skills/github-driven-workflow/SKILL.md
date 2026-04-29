@@ -250,7 +250,7 @@ At least one of the following must be present and durably visible on the PR:
     '
   ```
   Dismissed and pending review submissions are excluded so that a stale dismissed review cannot satisfy the gate.
-- A review artifact comment (Codex CLI output, agent review summary, or other reviewer-identified review) on the PR.
+- A review artifact comment (Codex CLI output, agent review summary, or other reviewer-identified review) on the PR. This route is trust-based: a comment posted by the implementation actor cannot be cryptographically attributed to the cited agent, so it is auditable rather than tamper-evident. Prefer formal non-author GitHub reviews when integrity matters more than friction.
 - An owner-authorized bypass comment on the PR. The commenter must be verified as the repo owner — or, for org-owned repos, as an explicitly delegated account — per the procedure in step 7. Generic admin permission alone does not satisfy this gate.
 
 Cite the evidence (review id, comment URL, or bypass comment URL plus verified `<commenter-login>`) in the merge note.
