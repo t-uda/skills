@@ -153,14 +153,14 @@ When no review route is viable, the repo owner may waive this gate. Record the b
 gh pr comment <N> --body 'Owner bypass: independent review waived. Reason: <reason>.'
 ```
 
-Then verify the commenter is the repository's actual owner account, not merely a collaborator with admin permission. A visible comment alone is not sufficient — anyone with comment access could otherwise spoof a bypass, and on org repos there may be many admins:
+Then verify the commenter is an authorized bypasser. Generic admin permission is not sufficient — a visible comment alone could otherwise be spoofed, and on org repos there may be many admins. The authorized set is:
 
-```sh
-owner=$(gh repo view <owner>/<repo> --json owner --jq .owner.login)
-test "<commenter-login>" = "$owner"
-```
-
-For org-owned repos where the owner is an organization (no human login matches), the bypass must come from an account that the org owner has explicitly delegated for this purpose; record that delegation context in the bypass comment so the merge note can cite it.
+- the repository's actual owner account (for user-owned repos), verified by:
+  ```sh
+  owner=$(gh repo view <owner>/<repo> --json owner --jq .owner.login)
+  test "<commenter-login>" = "$owner"
+  ```
+- or, for org-owned repos (where the `owner` field is the org login and matches no human account), an account the org owner has explicitly delegated for this purpose. The bypass comment must cite that delegation (e.g. a link to a prior delegation comment, an org-policy doc, or an issue), and verification compares the commenter against the delegated login from that citation, not against the org slug.
 
 Record the verified `<commenter-login>` and the comment URL alongside the bypass evidence cited in step 8.
 
@@ -248,7 +248,7 @@ At least one of the following must be present and durably visible on the PR:
     '
   ```
 - A review artifact comment (Codex CLI output, agent review summary, or other reviewer-identified review) on the PR.
-- An owner-authorized bypass comment on the PR. The commenter must be verified as a repo admin per the procedure in step 7.
+- An owner-authorized bypass comment on the PR. The commenter must be verified as the repo owner — or, for org-owned repos, as an explicitly delegated account — per the procedure in step 7. Generic admin permission alone does not satisfy this gate.
 
 Cite the evidence (review id, comment URL, or bypass comment URL plus verified `<commenter-login>`) in the merge note.
 
