@@ -153,7 +153,14 @@ When no review route is viable, the repo owner may waive this gate. Record the b
 gh pr comment <N> --body 'Owner bypass: independent review waived. Reason: <reason>.'
 ```
 
-The comment must come from a repo-owner account.
+Then verify the commenter actually holds admin permission on the repository. A visible comment alone is not sufficient — anyone with comment access could otherwise spoof a bypass:
+
+```sh
+gh api repos/<owner>/<repo>/collaborators/<commenter-login>/permission \
+  --jq '.permission'
+```
+
+Must return `admin`. Record the verified `<commenter-login>` and the comment URL alongside the bypass evidence cited in step 8.
 
 #### Waiting for review
 
@@ -227,16 +234,19 @@ Must return `false`.
 
 At least one of the following must be present and durably visible on the PR:
 
-- A formal non-author review:
+- A formal review by a reviewer who is not an implementation author. Implementation authors are the commit authors on the PR (which may differ from the PR opener in split-author flows):
   ```sh
-  gh pr view <N> --json reviews,author \
-    --jq '. as $p | [$p.reviews[] | select(.author.login != $p.author.login)] | length > 0'
+  gh pr view <N> --json reviews,commits \
+    --jq '
+      [.commits[].authors[].login] as $impls
+      | [.reviews[] | select(.author.login as $r | $impls | index($r) == null)]
+      | length > 0
+    '
   ```
-  Self-reviews (same login as the implementation author) do not qualify.
 - A review artifact comment (Codex CLI output, agent review summary, or other reviewer-identified review) on the PR.
-- An explicit owner-authorized bypass comment on the PR from a repo-owner account.
+- An owner-authorized bypass comment on the PR. The commenter must be verified as a repo admin per the procedure in step 7.
 
-Cite the evidence (review id, comment URL, or bypass comment URL) in the merge note.
+Cite the evidence (review id, comment URL, or bypass comment URL plus verified `<commenter-login>`) in the merge note.
 
 ### 9. Merge
 
