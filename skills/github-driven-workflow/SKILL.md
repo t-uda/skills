@@ -153,14 +153,16 @@ When no review route is viable, the repo owner may waive this gate. Record the b
 gh pr comment <N> --body 'Owner bypass: independent review waived. Reason: <reason>.'
 ```
 
-Then verify the commenter actually holds admin permission on the repository. A visible comment alone is not sufficient — anyone with comment access could otherwise spoof a bypass:
+Then verify the commenter is the repository's actual owner account, not merely a collaborator with admin permission. A visible comment alone is not sufficient — anyone with comment access could otherwise spoof a bypass, and on org repos there may be many admins:
 
 ```sh
-gh api repos/<owner>/<repo>/collaborators/<commenter-login>/permission \
-  --jq '.permission'
+owner=$(gh repo view <owner>/<repo> --json owner --jq .owner.login)
+test "<commenter-login>" = "$owner"
 ```
 
-Must return `admin`. Record the verified `<commenter-login>` and the comment URL alongside the bypass evidence cited in step 8.
+For org-owned repos where the owner is an organization (no human login matches), the bypass must come from an account that the org owner has explicitly delegated for this purpose; record that delegation context in the bypass comment so the merge note can cite it.
+
+Record the verified `<commenter-login>` and the comment URL alongside the bypass evidence cited in step 8.
 
 #### Waiting for review
 
@@ -234,13 +236,15 @@ Must return `false`.
 
 At least one of the following must be present and durably visible on the PR:
 
-- A formal review by a reviewer who is not an implementation author. Implementation authors are the commit authors on the PR (which may differ from the PR opener in split-author flows):
+- A formal review by a reviewer who is not an implementation author. Implementation authors are the commit authors on the PR (which may differ from the PR opener in split-author flows). The check fails closed when any commit author has no linked GitHub login, because then `$impls` would silently miss a self-review:
   ```sh
   gh pr view <N> --json reviews,commits \
     --jq '
       [.commits[].authors[].login] as $impls
-      | [.reviews[] | select(.author.login as $r | $impls | index($r) == null)]
-      | length > 0
+      | if any($impls[]; . == null or . == "")
+        then error("commit author missing GitHub login; record implementation author logins manually before trusting this gate")
+        else [.reviews[] | select(.author.login as $r | $impls | index($r) == null)] | length > 0
+        end
     '
   ```
 - A review artifact comment (Codex CLI output, agent review summary, or other reviewer-identified review) on the PR.
