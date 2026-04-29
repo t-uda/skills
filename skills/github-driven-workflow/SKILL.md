@@ -68,14 +68,20 @@ The PR must include:
 
 ### 7. Acquire independent review
 
-A qualifying independent review is a formal GitHub PR review submitted by an actor other than the implementation author:
+Independent review is required in principle. A qualifying review is review evidence produced by an actor other than the implementation author, made durably visible on the PR. Acceptable routes:
 
-- A GitHub PR review (approved, changes requested, or commented) by a human actor other than the implementation author.
+- A formal GitHub PR review (approved, changes requested, or commented) by a non-author human.
 - A Copilot code review result visible on the PR.
-- A `@codex` review visible on the PR.
-- A subagent review only when the environment explicitly supports subagents and the PR body contains the subagent review summary and identity.
+- A GitHub `@codex` review on the PR, regardless of who posted the request.
+- A Codex CLI review artifact posted as a PR comment, with the review output included verbatim and the reviewer identity stated.
+- Another review-capable agent (subagent, reviewer bot) when its review summary and reviewer identity are recorded on the PR.
+- An explicit user review on the PR (a formal review, or a comment clearly framed as a review with concrete findings or approval).
 
-PR comments alone do not qualify. Self-reviews, local notes, and unlinked claims do not qualify.
+If no review route is viable, the repository owner may authorize a bypass of this gate by posting a PR comment that explicitly waives independent review and states the rationale. The bypass comment must come from a repo-owner account and remain visible on the PR.
+
+Self-reviews, local notes, and unlinked claims do not qualify. Generic PR comments unrelated to review do not qualify.
+
+Pick the lowest-friction route available. Do not exhaust slow asynchronous routes when a faster durable route (e.g. Codex CLI artifact, owner bypass) is already authorized.
 
 #### Requesting Copilot review
 
@@ -128,15 +134,34 @@ If no Codex response appears after a reasonable wait, the Codex app may not be a
 
 A @codex review counts as independent even when Codex opened the PR; the review agent invoked by mention runs in a separate context.
 
+#### Codex CLI review artifact
+
+When GitHub-side review routes are unavailable or impractical, run a local Codex CLI review and post the verbatim output as a PR comment so the artifact is durable:
+
+```sh
+codex exec "Review PR #<N> in this repo. Inspect the diff and report concrete findings." > /tmp/codex-review.md
+gh pr comment <N> --body-file /tmp/codex-review.md
+```
+
+The comment must identify the reviewer ("Codex CLI review") and cover the actual diff.
+
+#### Owner-authorized bypass
+
+When no review route is viable, the repo owner may waive this gate. Record the bypass on the PR:
+
+```sh
+gh pr comment <N> --body 'Owner bypass: independent review waived. Reason: <reason>.'
+```
+
+The comment must come from a repo-owner account.
+
 #### Waiting for review
 
-Both Copilot and @codex reviews are asynchronous. After requesting:
+Copilot, `@codex`, and other agent reviews are asynchronous. After requesting:
 
 1. Stop and wait. Do not attempt to merge.
 2. Re-check the relevant endpoint periodically.
-3. If no response appears, state the blocking condition and ask for an alternative reviewer.
-
-If no qualifying route is available, stop and request a human reviewer via `gh pr edit <N> --add-reviewer <login>`.
+3. If no response appears within a reasonable wait, switch to a different qualifying route (e.g. Codex CLI artifact, manual user review, or owner bypass) rather than blocking indefinitely.
 
 ### 8. Check merge gates
 
@@ -200,12 +225,18 @@ Must return `false`.
 
 **Independent review evidence**
 
-```sh
-gh pr view <N> --json reviews \
-  --jq '[.reviews[] | {author: .author.login, state: .state}]'
-```
+At least one of the following must be present and durably visible on the PR:
 
-At least one qualifying review must be present. Self-reviews (same login as the implementation author) do not qualify.
+- A formal non-author review:
+  ```sh
+  gh pr view <N> --json reviews,author \
+    --jq '. as $p | [$p.reviews[] | select(.author.login != $p.author.login)] | length > 0'
+  ```
+  Self-reviews (same login as the implementation author) do not qualify.
+- A review artifact comment (Codex CLI output, agent review summary, or other reviewer-identified review) on the PR.
+- An explicit owner-authorized bypass comment on the PR from a repo-owner account.
+
+Cite the evidence (review id, comment URL, or bypass comment URL) in the merge note.
 
 ### 9. Merge
 
@@ -222,7 +253,7 @@ Stop conditions:
 - Current branch is `main`.
 - PR is missing.
 - PR lacks `Closes #<issue>`.
-- Independent review evidence is missing.
+- Independent review evidence is missing and no owner-authorized bypass is recorded on the PR.
 - CI check state is not `SUCCESS`, is pending, or the command errored.
 - Unresolved review thread count is nonzero or the query errored.
 - PR body has unchecked task boxes.
