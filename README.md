@@ -76,6 +76,10 @@ Each skill must live at `skills/<skill-name>/SKILL.md`.
 
 - `randomness`: prefer a bundled PRNG script for random selection; fall back to a String Seed prompt pattern only for low-stakes or creative-diversity use
 
+### Coding-agent orchestration
+
+- `claude-code-advanced-orchestration`: operational guidance for delegating implementation work to Claude Code as a worker behind a coordinator agent (session identity, permission strategy, worktree/tmux patterns, dynamic agents, effort selection, bare-mode auth, MCP trust, remote-control caveats)
+
 ## Naming guidance
 
 Prefer short, command-friendly names.
