@@ -77,11 +77,11 @@ Independent review is required in principle. A qualifying review is review evide
 - Another review-capable agent (subagent, reviewer bot) when its review summary and reviewer identity are recorded on the PR.
 - An explicit user review on the PR (a formal review, or a comment clearly framed as a review with concrete findings or approval).
 
-If no review route is viable, the repository owner may authorize a bypass of this gate by posting a PR comment that explicitly waives independent review and states the rationale. The bypass comment must come from a repo-owner account and remain visible on the PR.
+If no review route is viable, this gate may be bypassed when authorization is recorded on the PR. Authorization may be either an orchestrator-conveyed user instruction (cited by the implementing agent) or a comment from a verified repo-owner account. See "Authorized bypass" below.
 
 Self-reviews, local notes, and unlinked claims do not qualify. Generic PR comments unrelated to review do not qualify.
 
-Pick the lowest-friction route available. Do not exhaust slow asynchronous routes when a faster durable route (e.g. Codex CLI artifact, owner bypass) is already authorized.
+Pick the lowest-friction route available. Do not exhaust slow asynchronous routes when a faster durable route (e.g. Codex CLI artifact, authorized bypass) is already available.
 
 #### Requesting Copilot review
 
@@ -145,24 +145,25 @@ gh pr comment <N> --body-file /tmp/codex-review.md
 
 The comment must identify the reviewer ("Codex CLI review") and cover the actual diff.
 
-#### Owner-authorized bypass
+#### Authorized bypass
 
-When no review route is viable, the repo owner may waive this gate. Record the bypass on the PR:
+When no review route is viable, the agent records the bypass on the PR with a comment citing the authorization:
 
 ```sh
-gh pr comment <N> --body 'Owner bypass: independent review waived. Reason: <reason>.'
+gh pr comment <N> --body 'Bypass: independent review waived. Authorization: <provenance>. Reason: <reason>.'
 ```
 
-Then verify the commenter is an authorized bypasser. Generic admin permission is not sufficient — a visible comment alone could otherwise be spoofed, and on org repos there may be many admins. The authorized set is:
+Accepted authorization provenance:
 
-- the repository's actual owner account (for user-owned repos), verified by:
+- **Orchestrator-conveyed user instruction.** The user has instructed the coding agent or orchestrator to run this workflow with bypass allowed. The bypass comment cites that instruction (e.g. "user instructed orchestrator to run github-driven-workflow with bypass allowed"). No per-PR comment from the repo owner is required on this path.
+- **Repo-owner PR comment.** The repo owner posts the bypass comment directly. Verify the commenter login matches the owner:
   ```sh
   owner=$(gh repo view <owner>/<repo> --json owner --jq .owner.login)
   test "<commenter-login>" = "$owner"
   ```
-- or, for org-owned repos (where the `owner` field is the org login and matches no human account), an account the org owner has explicitly delegated for this purpose. The bypass comment must cite that delegation (e.g. a link to a prior delegation comment, an org-policy doc, or an issue), and verification compares the commenter against the delegated login from that citation, not against the org slug.
+  For org-owned repos (where the `owner` field is the org login and matches no human account), the comment must come from an account the org owner has explicitly delegated and must cite that delegation; verification compares the commenter against the delegated login, not the org slug. Generic admin permission alone is not sufficient on this path.
 
-Record the verified `<commenter-login>` and the comment URL alongside the bypass evidence cited in step 8.
+Record the cited provenance (and, on the repo-owner path, the verified `<commenter-login>`) alongside the bypass evidence in step 8.
 
 #### Waiting for review
 
@@ -251,9 +252,9 @@ At least one of the following must be present and durably visible on the PR:
   ```
   Dismissed and pending review submissions are excluded so that a stale dismissed review cannot satisfy the gate.
 - A review artifact comment (Codex CLI output, agent review summary, or other reviewer-identified review) on the PR. This route is trust-based: a comment posted by the implementation actor cannot be cryptographically attributed to the cited agent, so it is auditable rather than tamper-evident. Prefer formal non-author GitHub reviews when integrity matters more than friction.
-- An owner-authorized bypass comment on the PR. The commenter must be verified as the repo owner — or, for org-owned repos, as an explicitly delegated account — per the procedure in step 7. Generic admin permission alone does not satisfy this gate.
+- An authorized bypass comment on the PR per step 7. The comment must cite the authorization provenance — either an orchestrator-conveyed user instruction, or a verified repo-owner (or org-delegated) account.
 
-Cite the evidence (review id, comment URL, or bypass comment URL plus verified `<commenter-login>`) in the merge note.
+Cite the evidence (review id, comment URL, or bypass comment URL plus the cited provenance) in the merge note.
 
 ### 9. Merge
 
@@ -270,7 +271,7 @@ Stop conditions:
 - Current branch is `main`.
 - PR is missing.
 - PR lacks `Closes #<issue>`.
-- Independent review evidence is missing and no owner-authorized bypass is recorded on the PR.
+- Independent review evidence is missing and no authorized bypass is recorded on the PR.
 - CI check state is not `SUCCESS`, is pending, or the command errored.
 - Unresolved review thread count is nonzero or the query errored.
 - PR body has unchecked task boxes.
