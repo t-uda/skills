@@ -373,18 +373,47 @@ def pr_merged_via_gh(
         items = json.loads(completed.stdout or "[]")
     except json.JSONDecodeError as exc:
         return None, error_record("pr_check_failed", command, str(exc), branch)
-    # Require the local branch tip to match the PR's recorded head SHA. The
-    # --head filter is a name-only match, so without this check a reused branch
-    # name (old PR merged, new local commits added) would falsely verify and
-    # the subsequent `git branch -D` would destroy the new commits.
+    oid_mismatch_candidates: list[tuple[int, str]] = []
     for item in items:
         if not isinstance(item, dict):
             continue
-        if item.get("headRefOid") != branch_oid:
-            continue
+        pr_head_oid = item.get("headRefOid", "")
         number = item.get("number")
-        if isinstance(number, int):
+        if not isinstance(number, int) or not pr_head_oid:
+            continue
+        if pr_head_oid == branch_oid:
+            # Exact match: local tip was the PR head at merge time.
             return number, None
+        oid_mismatch_candidates.append((number, pr_head_oid))
+
+    # OID-mismatch fallback: the remote branch may have diverged from the local
+    # branch (e.g., force-push, rebase, or independent re-creation with the same
+    # content) before merging, causing OID divergence even though all local work
+    # was incorporated. Fetch the PR head then apply two checks:
+    #   1. Tree equality: identical file-tree means identical content regardless
+    #      of commit metadata (timestamp, author). Covers independent re-creation
+    #      and metadata-only rebases.
+    #   2. Ancestry: local tip is a strict ancestor of the PR head, meaning the
+    #      remote branch was extended beyond the local branch before merging.
+    # Either check passing is sufficient evidence of incorporation.
+    # Branch-name reuse is still guarded: new local commits after the PR merged
+    # will differ in tree content and will not be ancestors of the old PR head.
+    for number, pr_head_oid in oid_mismatch_candidates:
+        fetch_result = run_git(["fetch", "origin", pr_head_oid], repo)
+        if fetch_result.returncode != 0:
+            continue  # SHA fetch failed or unsupported; treat as unmerged.
+        local_tree = run_git(["rev-parse", f"{branch_oid}^{{tree}}"], repo)
+        pr_tree = run_git(["rev-parse", f"{pr_head_oid}^{{tree}}"], repo)
+        if (
+            local_tree.returncode == 0
+            and pr_tree.returncode == 0
+            and local_tree.stdout.strip() == pr_tree.stdout.strip()
+        ):
+            return number, None
+        ancestor_result = run_git(["merge-base", "--is-ancestor", branch_oid, pr_head_oid], repo)
+        if ancestor_result.returncode == 0:
+            return number, None
+
     return None, None
 
 

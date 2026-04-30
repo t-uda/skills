@@ -37,8 +37,8 @@ The script is the source of truth for cleanup eligibility. Do not duplicate its 
 
 ## Approval and failure handling
 
-- Dry-run mode uses `git fetch --dry-run --prune`; it should not mutate refs.
-- `--yes` may run `git fetch --prune`, `git worktree remove`, `git switch`, `git merge --ff-only`, `git branch -d`, `git branch -D` (only for PR-verified branches; see Safety model), and `git worktree prune`.
+- Dry-run mode uses `git fetch --dry-run --prune`; it should not mutate refs. However, `git fetch origin <sha>` may be run in both modes to fetch specific PR head commits for ancestry and tree checks; this downloads a loose object only and does not mutate branches.
+- `--yes` may run `git fetch --prune`, `git fetch origin <sha>` (PR head for OID-mismatch checks), `git worktree remove`, `git switch`, `git merge --ff-only`, `git branch -d`, `git branch -D` (only for PR-verified branches; see Safety model), and `git worktree prune`.
 - If network access or `.git` mutation is blocked by the environment, use the environment's normal approval path. Do not bypass Git by deleting files manually.
 - The script must not use `git worktree remove --force`.
 
@@ -47,9 +47,14 @@ The script is the source of truth for cleanup eligibility. Do not duplicate its 
 A branch is considered merged when either condition holds:
 
 1. **Reachability**: the branch tip is reachable from `--base` (true merge or fast-forward). Action uses `git branch -d` and reports `reason: merged_branch`.
-2. **PR-verified**: a merged GitHub PR exists with `head = <branch>` and `base = <base>`, **and** the local branch tip OID equals the PR's recorded `headRefOid` (covers squash and rebase merges). Action uses `git branch -D` and reports `reason: merged_branch_via_pr` with `detail: merged via PR #<N>` recording the evidence.
+2. **PR-verified**: a merged GitHub PR exists with `head = <branch>` and `base = <base>`, and at least one of the following holds:
+   - **(a) exact match**: the local branch tip OID equals the PR's recorded `headRefOid`.
+   - **(b) tree equality**: after fetching the PR head via `git fetch origin <headRefOid>`, the local branch tip and the PR head share the same file-tree OID (`<tip>^{tree} == <pr_head>^{tree}`). Covers cases where commit metadata (timestamp, author) differs but file content is identical — e.g., independent re-creation of the same commit by separate agents.
+   - **(c) ancestry**: after fetching the PR head, the local tip is a strict ancestor (`git merge-base --is-ancestor`). Covers cases where the remote branch was extended beyond the local branch before merging.
 
-`git branch -D` is permitted only for case 2; the recorded PR# is required as the audit trail. The headRefOid match guards against branch-name reuse: if a branch was deleted and recreated (or extended with new local commits) after a PR with the same name was merged, the local tip will not match the merged PR's head and the branch is treated as unmerged. Cherry-picks without an associated merged PR remain manual cleanup cases.
+   If `git fetch origin <headRefOid>` fails (server does not support SHA fetch or network error), the branch is treated as unmerged (safe fallback). Action uses `git branch -D` and reports `reason: merged_branch_via_pr` with `detail: merged via PR #<N>` recording the evidence.
+
+`git branch -D` is permitted only for case 2; the recorded PR# is required as the audit trail. All three sub-checks guard against branch-name reuse: new local commits added after a PR was merged will differ in tree content and will not be ancestors of the old PR's `headRefOid`. Cherry-picks without an associated merged PR remain manual cleanup cases.
 
 PR detection is enabled by default. It is automatically and silently skipped when `gh` is not on PATH or when the selected remote URL does not contain `github.com`. Use `--no-detect-pr-merged` to disable it explicitly. Per-branch `gh` failures are reported as `pr_check_failed` errors but do not abort the run.
 
