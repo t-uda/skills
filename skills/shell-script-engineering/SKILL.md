@@ -1,6 +1,6 @@
 ---
 name: shell-script-engineering
-description: Use when creating, editing, or reviewing Linux shell scripts, especially Bash/sh scripts for containers, devcontainers, CI, provisioning, authentication setup, permission fixes, filesystem mutations, CLI argument parsing, or PR review threads involving shell-script correctness.
+description: Use for non-trivial Bash/sh creation, edits, or review where correctness depends on execution context, permissions, filesystem mutation, argument parsing, idempotency, CI/container/devcontainer behaviour, or repeated shell-script review failures.
 ---
 
 # Shell Script Engineering
@@ -15,7 +15,7 @@ Use shell when the task is mostly invoking existing CLI tools, wiring files, or 
 
 ## Before editing
 
-Identify and state these assumptions before changing behaviour:
+For non-trivial changes, identify only the assumptions that affect correctness:
 
 - Dialect: Bash or POSIX `sh`.
 - Execution context: host, container, devcontainer, CI, login shell, or non-interactive shell.
@@ -203,16 +203,9 @@ Avoid broad rewrites unless the script is already beyond shell's appropriate com
 
 After responding to review comments, re-read the whole edited script once. Do not only patch the commented line. Check whether the fix changed the script's scope, duplicated an existing branch, made comments stale, or invalidated PR description / validation text.
 
-For shell PRs, repeated review rounds often indicate that the design state space was not enumerated up front. If two or more review comments target the same script, pause and restate the script's:
+If two or more review comments target the same script, pause and restate the relevant assumptions from "Before editing" before patching again.
 
-- dialect;
-- execution context;
-- privilege model;
-- filesystem state model;
-- rerun/idempotency model;
-- failure model.
-
-## PR acceptance checklist
+## Final validation checklist
 
 Before considering a shell-script change ready, verify:
 
