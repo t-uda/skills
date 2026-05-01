@@ -1,6 +1,6 @@
 ---
 name: headson
-description: Use this skill when inspecting large JSON, YAML, JSONL, text, source code, or Jupyter notebook files with structure-aware, budgeted previews using the hson CLI.
+description: Use for budgeted, structure-aware previews of large or hard-to-inspect JSON/YAML, logs, code, or notebooks before deciding what to inspect next with `hson`.
 ---
 
 # Headson
@@ -23,28 +23,24 @@ Do not use `hson` when exact extraction, transformation, schema validation, or d
 
 ## Availability check
 
-Before using this skill, check whether `hson` is installed:
+If `hson` availability is unknown, check:
 
 ```sh
 command -v hson
 hson --version
 ```
 
-If it is missing, recommend an explicit user-controlled install.
-
-Preferred pinned Cargo path:
+If missing, recommend a user-controlled install. Prefer pinned Cargo when version control matters:
 
 ```sh
 cargo install headson --version 0.17.0 --locked
 ```
 
-Homebrew convenience path, useful on macOS and Linuxbrew environments:
+Homebrew convenience path:
 
 ```sh
 brew install headson
 ```
-
-Prefer the pinned Cargo path when version control matters. Homebrew is convenient but may lag behind the latest Cargo release.
 
 Do not recommend `pip install headson` as the primary CLI install path. The Python package provides Python bindings, not the normal `hson` CLI workflow expected here.
 
