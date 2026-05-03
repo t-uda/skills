@@ -1,62 +1,17 @@
 ---
 name: lite-spec
-description: Produce a compact execution spec for bounded implementation tasks that are too large to do immediately but do not require `metaplan`.
+description: Produce a compact execution spec for bounded, non-trivial implementation work that needs a short execution brief but does not require `metaplan`.
 ---
 
 # Lite Spec
 
-Produce a compact planning document for medium-complexity implementation work.
-
-This skill covers the middle zone between:
-
-- doing the work immediately
-- sending planning artifacts to `metaplan`
-
-The goal is to create just enough structure to reduce ambiguity and rework without imposing heavy process overhead.
+Create a compact execution brief for bounded implementation work: more than a tiny local edit, but not large or ambiguous enough for `metaplan`.
 
 ## When to use
 
-Use this skill when:
+Use this skill for bounded, non-trivial implementation work — typically spanning multiple files or one subsystem — when a short execution brief would reduce drift by writing down a few of the relevant scope, constraints, risks, or done criteria.
 
-- the task is not trivial
-- some decisions, risks, or boundaries should be made explicit
-- implementation spans multiple files or one bounded subsystem
-- a coding agent would benefit from a concise execution brief
-- full review of detailed planning artifacts would be excessive
-
-Do not use this skill for:
-
-- tiny local edits that can be executed immediately
-- large, high-risk, or highly ambiguous changes that should go through `metaplan`
-
-## Deliverable
-
-Produce a single compact document with these sections.
-
-# Task
-A short statement of what is being changed.
-
-# Goal
-The intended operational outcome.
-
-# Scope
-## In
-What is included.
-
-## Out
-What is excluded.
-
-# Constraints
-Known requirements, assumptions, conventions, or non-negotiable conditions.
-
-# Risks
-The main failure modes, ambiguities, or edge cases.
-
-# Implementation outline
-A short sequence of concrete implementation steps.
-
-# Done criteria
-Observable conditions that determine completion.
+Do not use it for tiny edits that can be done immediately, or for large/high-risk/ambiguous changes that should go through `metaplan`.
 
 ## Style requirements
 
