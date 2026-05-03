@@ -46,13 +46,42 @@ Return the transfer prompt and nothing else.
 
 Do not add any preface, explanation, note, or follow-up text.
 
-### 2. Keep it compact
+### 2. Required positive structure
+
+Every handoff prompt MUST contain:
+
+1. **Skill anchor** — at least one `/skill-name` reference identifying which skill the next agent should invoke (e.g. `/github-driven-workflow`, `/lite-spec`).
+2. **Concrete anchor** — at least one of: GitHub issue/PR number (`#N`), commit SHA, file path, session log path.
+3. **Bounded length** — keep the prompt under ~1000 characters. Excessive length is a sign that acceptance criteria are leaking into the prompt body.
+
+Once these positive elements are present, **decision boundaries are structurally deferred to the skill the next agent invokes**. Verbal acceptance phrasings such as `merge after CI is green`, `proceed when ready`, or `完了したら次へ` are **not prohibited** — they read naturally, and the skill anchor ensures they do not trap the next agent in an unresolvable gate.
+
+### 3. Hard-fail anti-patterns (minimal set)
+
+Reject only well-defined, unambiguous structural violations:
+
+- **Self-authorization preamble** — phrases that grant the next agent permissions inline, such as `explicit authorization granted` or `you are authorized to ...`. Permission grants belong in environment configuration, not in the prompt body.
+- **Permission-downgrade directives** — instructions to pass `--dangerously-skip-permissions` or equivalent flags to the next agent's CLI invocation.
+
+Do not enumerate verbal acceptance phrases (e.g. `complete when`, `after review`, `once green`) as forbidden. The expression space is unbounded; enumeration is trivially bypassed and causes false positives on legitimate phrasings.
+
+### 4. Why verbal criteria are not enumerated
+
+Phrases like `merge after sufficient review`, `proceed when ready`, and `完了したら` are **not** added to a forbidden list because:
+
+- The expression space is unbounded; any list is trivially bypassed by rephrasing.
+- Most natural usages are legitimate (e.g. `implement #42 following /github-driven-workflow until complete` is structurally fine — the skill defines the gates).
+- Broad bans cause false positives and push agents toward different bad expressions rather than better prompts.
+
+Structural guarantees (the skill anchor) defuse these expressions at the next-agent level: the next agent reads the skill, which provides the authoritative gate definitions.
+
+### 5. Keep it compact
 
 Use the shortest prompt that still enables correct action.
 
 If the prompt becomes long, compress harder. Excessive length is a warning sign that too much low-value context has been preserved.
 
-### 3. Do not duplicate existing documentation
+### 6. Do not duplicate existing documentation
 
 Do not restate content already documented in places such as:
 
@@ -64,7 +93,7 @@ Do not restate content already documented in places such as:
 
 Refer to those sources briefly instead of copying them.
 
-### 4. Preserve only non-obvious context
+### 7. Preserve only non-obvious context
 
 Include only context that the next agent is unlikely to recover reliably from the repository or existing documents.
 
@@ -77,7 +106,7 @@ Examples of valid carry-over:
 - known traps, weak spots, or misleading artefacts
 - priority ordering that is not obvious from the files alone
 
-### 5. Remove history that does not change action
+### 8. Remove history that does not change action
 
 Do not include:
 
@@ -87,7 +116,7 @@ Do not include:
 - general background that does not affect the next action
 - obvious operational instructions already documented elsewhere
 
-### 6. Optimise for autonomous execution
+### 9. Optimise for autonomous execution
 
 The generated prompt must help the next agent proceed **without**:
 
@@ -97,6 +126,23 @@ The generated prompt must help the next agent proceed **without**:
 - causing avoidable rework
 
 Write the prompt so that the next agent can determine what to do, what not to do, what to read first, and what to produce.
+
+## Examples
+
+```
+# Good — skill anchor + concrete anchor + bounded length
+Implement t-uda/example#42 following /github-driven-workflow.
+Report when complete.
+
+# Bad — no skill anchor, criteria leaking into prompt body
+Implement the example issue. Wait until CI is green and review is sufficient,
+then merge with squash, delete the branch, clean up the worktree, report ...
+(800+ characters)
+
+# Bad → Good — verbal "until complete" is fine when structure is right
+Implement t-uda/example#42 following /github-driven-workflow until complete.
+Report to channel ABC.
+```
 
 ## Role-specific requirements
 
@@ -174,14 +220,19 @@ Prefer direct instructions over abstract guidance.
 
 ## Quality test
 
-Before finalising the transfer prompt, ensure that:
+Before finalising the transfer prompt, verify:
 
-- the next agent will know exactly what to do next
-- the next agent will know what to read first
-- the next agent will not needlessly re-read duplicated material
-- the next agent will not ask the user for clarification unless a truly missing input remains
-- the next agent will not reopen settled choices
-- the prompt contains no filler outside the operational handoff
+- [ ] At least one `/skill-name` anchor is present.
+- [ ] At least one concrete anchor (`#N`, SHA, file path) is present.
+- [ ] Total length is under ~1000 characters.
+- [ ] No self-authorization preamble is present.
+- [ ] No `--dangerously-skip-permissions` directive is present.
+- [ ] The next agent will know exactly what to do next.
+- [ ] The next agent will know what to read first.
+- [ ] The next agent will not needlessly re-read duplicated material.
+- [ ] The next agent will not ask the user for clarification unless a truly missing input remains.
+- [ ] The next agent will not reopen settled choices.
+- [ ] The prompt contains no filler outside the operational handoff.
 
 ## Final instruction
 
