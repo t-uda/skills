@@ -1,6 +1,6 @@
 ---
 name: lite-spec
-description: Produce a compact execution spec for bounded, medium-complexity implementation tasks that span multiple files or need explicit scope, but do not require `metaplan`.
+description: Produce a compact execution spec for bounded, non-trivial implementation work that needs a short execution brief but does not require `metaplan`.
 ---
 
 # Lite Spec
@@ -9,7 +9,7 @@ Create a compact execution brief for bounded implementation work: more than a ti
 
 ## When to use
 
-Use this skill when implementation spans multiple files or one bounded subsystem, and a coding agent needs explicit scope, constraints, risks, and done criteria.
+Use this skill for bounded, non-trivial implementation work — typically spanning multiple files or one subsystem — when a short execution brief would reduce drift by writing down a few of the relevant scope, constraints, risks, or done criteria.
 
 Do not use it for tiny edits that can be done immediately, or for large/high-risk/ambiguous changes that should go through `metaplan`.
 
