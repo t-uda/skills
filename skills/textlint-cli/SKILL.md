@@ -40,9 +40,20 @@ Before running anything:
 
 ```sh
 ls .textlintrc .textlintrc.js .textlintrc.json .textlintrc.yaml .textlintrc.yml 2>/dev/null
-test -f package.json && jq -e '.textlint, .scripts.lint, .scripts["lint:text"], .devDependencies.textlint, .dependencies.textlint' package.json
+test -f package.json && jq -r '
+  [
+    (if .textlint then "package.json: textlint config" else empty end),
+    (if .scripts.lint then "package.json: scripts.lint" else empty end),
+    (if .scripts["lint:text"] then "package.json: scripts.lint:text" else empty end),
+    (if .scripts["text-lint"] then "package.json: scripts.text-lint" else empty end),
+    (if .devDependencies.textlint then "package.json: devDependencies.textlint" else empty end),
+    (if .dependencies.textlint then "package.json: dependencies.textlint" else empty end)
+  ] | .[]
+' package.json
 test -f .textlintignore && echo "ignore file present"
 ```
+
+The `jq` block lists every textlint indicator that is present; an empty list means `package.json` does not signal a textlint setup. Do not collapse it into a single `jq -e '... or ...'` expression unless that is the only indicator you need to read.
 
 If `package.json` defines a textlint script (commonly `lint:text`, `text-lint`, or `lint`), prefer that script over a raw CLI invocation so repository options stay consistent.
 
@@ -68,9 +79,18 @@ npx textlint --config .textlintrc <files>
 Diff-scoped lint (only files touched on the current branch):
 
 ```sh
-git diff --name-only --diff-filter=ACMR origin/main...HEAD -- '*.md' '*.txt' \
-  | xargs -r npx textlint
+git diff -z --name-only --diff-filter=ACMR origin/main...HEAD -- '*.md' '*.txt' \
+  | xargs -0 npx textlint
 ```
+
+Use `git diff -z` and `xargs -0` so paths with spaces, tabs, or newlines survive the pipe. If the filter could match nothing and you do not want textlint to error with "no files matching", wrap the call in a small portable loop instead of relying on GNU `xargs -r`:
+
+```sh
+git diff -z --name-only --diff-filter=ACMR origin/main...HEAD -- '*.md' '*.txt' \
+  | xargs -0 sh -c '[ "$#" -eq 0 ] || npx textlint "$@"' textlint-runner
+```
+
+The inverted condition (`[ -eq 0 ] || ...`) keeps the script exit clean when there is nothing to lint; using `&&` would leave `sh` with a non-zero exit and surface as `xargs` exit code 123.
 
 Machine-readable output for agents:
 
