@@ -32,3 +32,4 @@ Current skills:
 - headson
 - shell-script-engineering
 - claude-code-advanced-orchestration
+- textlint-cli

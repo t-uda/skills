@@ -80,6 +80,10 @@ Each skill must live at `skills/<skill-name>/SKILL.md`.
 
 - `claude-code-advanced-orchestration`: operational guidance for delegating implementation work to Claude Code as a worker behind a coordinator agent (session identity, permission strategy, worktree/tmux patterns, dynamic agents, effort selection, bare-mode auth, MCP trust, remote-control caveats)
 
+### Text linting
+
+- `textlint-cli`: invoke textlint correctly from the CLI in repositories with existing configuration — detection, repo-local invocation, fix mode, diagnostics, CI-oriented formats, and MCP mode
+
 ## Naming guidance
 
 Prefer short, command-friendly names.
