@@ -1,5 +1,12 @@
 #!/usr/bin/env python3
-"""Safely prune merged Git worktrees and local branches."""
+"""Workspace-level Git cleanup janitor.
+
+Cleans merged local branches, merged linked worktrees, stale remote-tracking
+refs, and stale worktree metadata across one or more repositories under a
+workspace root. The script is the source of truth for cleanup eligibility;
+calling agents only choose a mode (default / --yes / --interactive / --dry-run)
+and do not make per-item judgments.
+"""
 
 from __future__ import annotations
 
@@ -8,14 +15,37 @@ import fnmatch
 import json
 import os
 import shlex
+import shutil
 import subprocess
 import sys
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any
+from typing import Any, Callable, Iterable
 
 
 PROTECTED_BRANCHES = {"main", "master", "develop"}
+
+DISCOVERY_SKIP_DIRS = {
+    ".venv", "node_modules", ".tox", ".cache", "dist", "build",
+    ".git", "__pycache__", ".pytest_cache", ".mypy_cache", ".ruff_cache",
+    "target", "coverage", "htmlcov",
+}
+
+DEFAULT_GARBAGE_GLOBS = [
+    "*.log", "*.tmp", "*.swp", "*.swo", "*.pyc",
+    ".DS_Store", "Thumbs.db",
+    "__pycache__/**", ".pytest_cache/**", ".mypy_cache/**", ".ruff_cache/**",
+    "node_modules/**", "dist/**", "build/**", "target/**",
+    ".venv/**", ".tox/**", ".cache/**",
+    "coverage/**", ".coverage", "htmlcov/**",
+]
+
+LARGE_FILE_THRESHOLD = 10 * 1024 * 1024  # 10 MiB
+
+
+# ---------------------------------------------------------------------------
+# Subprocess helpers
+# ---------------------------------------------------------------------------
 
 
 @dataclass
@@ -46,6 +76,11 @@ def command_text(command: list[str]) -> str:
 
 def git_args(command: list[str]) -> list[str]:
     return command[1:] if command and command[0] == "git" else command
+
+
+# ---------------------------------------------------------------------------
+# Records
+# ---------------------------------------------------------------------------
 
 
 def error_record(
@@ -83,15 +118,17 @@ def skip_record(
 
 
 def action_record(
-    item_type: str,
+    kind: str,
     target: str,
     branch: str | None,
     commands: list[list[str]],
     reason: str,
     detail: str | None = None,
+    *,
+    klass: str | None = None,
 ) -> dict[str, Any]:
     record: dict[str, Any] = {
-        "type": item_type,
+        "kind": kind,
         "target": target,
         "branch": branch,
         "command": commands[0] if commands else [],
@@ -101,41 +138,147 @@ def action_record(
     }
     if detail:
         record["detail"] = detail
+    if klass:
+        record["class"] = klass
     return record
+
+
+# ---------------------------------------------------------------------------
+# Argument parsing
+# ---------------------------------------------------------------------------
 
 
 def parse_args(argv: list[str]) -> argparse.Namespace:
     parser = argparse.ArgumentParser(
-        description="Safely prune clean merged Git worktrees and merged local branches."
+        description=(
+            "Workspace-level Git cleanup janitor. Discovers repositories under "
+            "--root and cleans merged worktrees, merged branches, stale refs, "
+            "and stale metadata."
+        ),
     )
-    parser.add_argument("--base", default="origin/main", help="merge target for reachability checks")
-    parser.add_argument("--remote", default=None, help="remote used for fetch/prune")
-    parser.add_argument("--yes", action="store_true", help="perform cleanup")
+    parser.add_argument("--root", default=None, help="workspace root (default: cwd)")
     parser.add_argument(
-        "--switch-base",
-        action="store_true",
-        help="switch away from a merged current branch before deleting it",
-    )
-    parser.add_argument(
-        "--include-pattern",
+        "--repo",
         action="append",
         default=[],
-        help="shell-style branch glob to include; repeatable",
+        help="restrict cleanup to this repository; repeatable; bypasses discovery",
+    )
+    parser.add_argument("--max-depth", type=int, default=4, help="discovery depth (default: 4)")
+    parser.add_argument("--base", default="origin/main", help="merge target (default: origin/main)")
+    parser.add_argument("--remote", default=None, help="remote (default: origin)")
+    parser.add_argument("--dry-run", action="store_true", help="plan only; no mutation")
+    parser.add_argument(
+        "--yes", action="store_true",
+        help="non-interactive; execute Class A and Class B without prompting",
     )
     parser.add_argument(
-        "--exclude-pattern",
-        action="append",
-        default=[],
-        help="shell-style branch glob to protect; repeatable",
+        "--interactive", action="store_true",
+        help="allow one consolidated y/N prompt for Class B",
     )
-    parser.add_argument("--json", action="store_true", help="print one JSON object")
     parser.add_argument("--no-fetch", action="store_true", help="skip fetch/prune")
+    parser.add_argument("--no-update-base", action="store_true", help="skip base branch fast-forward")
     parser.add_argument(
-        "--no-detect-pr-merged",
-        action="store_true",
-        help="disable GitHub PR-merged detection (default: enabled when gh and a GitHub remote are available)",
+        "--process-policy", choices=("skip", "ask", "ignore"), default="skip",
+        help="how to treat worktrees held by live processes (default: skip)",
     )
+    parser.add_argument(
+        "--garbage-glob", action="append", default=[],
+        help="repeatable; extend the disposable-glob list (additive only)",
+    )
+    parser.add_argument("--json", action="store_true", help="emit one JSON object")
     return parser.parse_args(argv)
+
+
+def resolve_mode(args: argparse.Namespace) -> str:
+    if args.dry_run:
+        return "dry-run"
+    if args.yes and args.interactive:
+        # Defensive: argparse cannot easily express mutual exclusion for two
+        # store_true flags without losing default semantics, so check here.
+        raise SystemExit("error: --yes and --interactive are mutually exclusive")
+    if args.yes:
+        return "yes"
+    if args.interactive:
+        return "interactive"
+    return "default"
+
+
+# ---------------------------------------------------------------------------
+# Repository discovery
+# ---------------------------------------------------------------------------
+
+
+def repo_common_dir(path: Path) -> str | None:
+    result = run_git(["rev-parse", "--git-common-dir"], path)
+    if result.returncode != 0:
+        return None
+    common = result.stdout.strip()
+    common_path = Path(common)
+    if not common_path.is_absolute():
+        common_path = (path / common_path).resolve()
+    return str(common_path.resolve())
+
+
+def is_repo_root(path: Path) -> bool:
+    return (path / ".git").exists()
+
+
+def discover_repositories(root: Path, max_depth: int) -> list[Path]:
+    """Discover Git repositories under root.
+
+    Workspace contract: when subordinate repositories exist, operate on those;
+    only fall back to the root repo when walk finds no subordinate matches.
+    """
+    candidates: list[Path] = []
+
+    def walk(d: Path, depth: int) -> None:
+        if depth > max_depth:
+            return
+        try:
+            entries = sorted(d.iterdir())
+        except (OSError, PermissionError):
+            return
+        for entry in entries:
+            if entry.is_symlink() or not entry.is_dir():
+                continue
+            if entry.name in DISCOVERY_SKIP_DIRS:
+                continue
+            if is_repo_root(entry):
+                candidates.append(entry.resolve())
+                continue  # do not descend further into a found repo
+            walk(entry, depth + 1)
+
+    walk(root, 1)
+
+    # Single-repo fallback: only treat root as a repo when no subordinate
+    # repositories were found. Otherwise running from inside a repo that
+    # contains nested repositories would unexpectedly clean both.
+    if not candidates and is_repo_root(root):
+        candidates.append(root.resolve())
+
+    # Deduplicate by common git dir; prefer candidates where .git is a directory
+    # (the primary worktree) over linked-worktree candidates whose .git is a file.
+    by_id: dict[str, Path] = {}
+    for candidate in candidates:
+        rid = repo_common_dir(candidate)
+        if rid is None:
+            continue
+        marker = candidate / ".git"
+        is_primary = marker.is_dir()
+        existing = by_id.get(rid)
+        if existing is None:
+            by_id[rid] = candidate
+            continue
+        existing_primary = (existing / ".git").is_dir()
+        if is_primary and not existing_primary:
+            by_id[rid] = candidate
+
+    return sorted(by_id.values(), key=lambda p: str(p))
+
+
+# ---------------------------------------------------------------------------
+# Repo-level helpers (preserved from prior implementation)
+# ---------------------------------------------------------------------------
 
 
 def base_remote(base: str) -> tuple[str, str] | tuple[None, None]:
@@ -147,7 +290,7 @@ def base_remote(base: str) -> tuple[str, str] | tuple[None, None]:
     return remote, branch
 
 
-def select_remote(base: str, remote_arg: str | None, repo: str | None = None) -> str:
+def select_remote(base: str, remote_arg: str | None, repo: Path | None = None) -> str:
     remote, _branch = base_remote(base)
     if remote_arg is not None:
         return remote_arg
@@ -156,21 +299,14 @@ def select_remote(base: str, remote_arg: str | None, repo: str | None = None) ->
     return remote or "origin"
 
 
-def discover_repo() -> tuple[str | None, dict[str, Any] | None]:
-    result = run_git(["rev-parse", "--show-toplevel"])
-    if result.returncode != 0:
-        return None, error_record("not_a_git_repo", result.command, result.stderr)
-    return result.stdout.strip(), None
-
-
-def local_branch_exists(repo: str, branch: str) -> bool:
+def local_branch_exists(repo: Path, branch: str) -> bool:
     if not branch:
         return False
     result = run_git(["rev-parse", "--verify", "--quiet", f"refs/heads/{branch}"], repo)
     return result.returncode == 0
 
 
-def resolve_local_base_branch(repo: str, base: str) -> str | None:
+def resolve_local_base_branch(repo: Path, base: str) -> str | None:
     if base.startswith("refs/heads/"):
         candidate = base.removeprefix("refs/heads/")
         return candidate if local_branch_exists(repo, candidate) else None
@@ -182,14 +318,14 @@ def resolve_local_base_branch(repo: str, base: str) -> str | None:
     return None
 
 
-def resolve_base_commit(repo: str, base: str) -> tuple[str | None, dict[str, Any] | None]:
+def resolve_base_commit(repo: Path, base: str) -> tuple[str | None, dict[str, Any] | None]:
     result = run_git(["rev-parse", "--verify", f"{base}^{{commit}}"], repo)
     if result.returncode != 0:
         return None, error_record("base_missing", result.command, result.stderr, base)
     return result.stdout.strip(), None
 
 
-def current_branch(repo: str) -> str | None:
+def current_branch(repo: Path) -> str | None:
     result = run_git(["branch", "--show-current"], repo)
     if result.returncode != 0:
         return None
@@ -206,7 +342,6 @@ def parse_worktrees(output: str) -> list[dict[str, Any]]:
                 worktrees.append(current)
                 current = None
             continue
-
         key, _sep, value = token.partition(" ")
         if key == "worktree":
             if current is not None:
@@ -223,7 +358,6 @@ def parse_worktrees(output: str) -> list[dict[str, Any]]:
                 "prunable_reason": None,
             }
             continue
-
         if current is None:
             continue
         if key == "HEAD":
@@ -241,25 +375,23 @@ def parse_worktrees(output: str) -> list[dict[str, Any]]:
         elif key == "prunable":
             current["prunable"] = True
             current["prunable_reason"] = value or None
-
     if current is not None:
         worktrees.append(current)
     return worktrees
 
 
-def list_worktrees(repo: str) -> tuple[list[dict[str, Any]], dict[str, Any] | None]:
+def list_worktrees(repo: Path) -> tuple[list[dict[str, Any]], dict[str, Any] | None]:
     result = run_git(["worktree", "list", "--porcelain", "-z"], repo)
     if result.returncode != 0:
         return [], error_record("worktree_list_failed", result.command, result.stderr)
     return parse_worktrees(result.stdout), None
 
 
-def list_branches(repo: str) -> tuple[dict[str, dict[str, str]], dict[str, Any] | None]:
+def list_branches(repo: Path) -> tuple[dict[str, dict[str, str]], dict[str, Any] | None]:
     fmt = "%(refname:short)%1f%(objectname)%1f%(upstream:short)%1f%(upstream:track)%1f%(committerdate:iso-strict)%1e"
     result = run_git(["for-each-ref", f"--format={fmt}", "refs/heads"], repo)
     if result.returncode != 0:
         return {}, error_record("branch_list_failed", result.command, result.stderr)
-
     branches: dict[str, dict[str, str]] = {}
     for raw_record in result.stdout.split("\x1e"):
         record = raw_record.strip("\n")
@@ -279,7 +411,7 @@ def list_branches(repo: str) -> tuple[dict[str, dict[str, str]], dict[str, Any] 
     return branches, None
 
 
-def is_merged(repo: str, branch_info: dict[str, str], base_commit: str) -> tuple[bool, dict[str, Any] | None]:
+def is_merged(repo: Path, branch_info: dict[str, str], base_commit: str) -> tuple[bool, dict[str, Any] | None]:
     target = branch_info["object"] or f"refs/heads/{branch_info['name']}"
     result = run_git(["merge-base", "--is-ancestor", target, base_commit], repo)
     if result.returncode == 0:
@@ -312,7 +444,7 @@ def parse_github_url(url: str) -> tuple[str, str] | None:
     return parts[0], parts[1]
 
 
-def discover_github_repo(repo: str, remote: str) -> tuple[str, str] | None:
+def discover_github_repo(repo: Path, remote: str) -> tuple[str, str] | None:
     result = run_git(["remote", "get-url", remote], repo)
     if result.returncode != 0:
         return None
@@ -340,13 +472,19 @@ def base_branch_name(base: str) -> str:
 
 
 def pr_merged_via_gh(
-    repo: str,
+    repo: Path,
     owner: str,
     name: str,
     branch: str,
     branch_oid: str,
     base: str,
+    remote: str = "origin",
 ) -> tuple[int | None, dict[str, Any] | None]:
+    """Look up a merged PR for `branch` and verify the local tip is incorporated.
+
+    Three sub-checks (preserved): exact OID match, tree equality, ancestry.
+    Returns (pr_number, error). pr_number=None means no qualifying PR.
+    """
     command = [
         "gh", "pr", "list",
         "--repo", f"{owner}/{name}",
@@ -359,7 +497,7 @@ def pr_merged_via_gh(
     try:
         completed = subprocess.run(
             command,
-            cwd=repo,
+            cwd=str(repo),
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
             encoding="utf-8",
@@ -382,26 +520,13 @@ def pr_merged_via_gh(
         if not isinstance(number, int) or not pr_head_oid:
             continue
         if pr_head_oid == branch_oid:
-            # Exact match: local tip was the PR head at merge time.
             return number, None
         oid_mismatch_candidates.append((number, pr_head_oid))
 
-    # OID-mismatch fallback: the remote branch may have diverged from the local
-    # branch (e.g., force-push, rebase, or independent re-creation with the same
-    # content) before merging, causing OID divergence even though all local work
-    # was incorporated. Fetch the PR head then apply two checks:
-    #   1. Tree equality: identical file-tree means identical content regardless
-    #      of commit metadata (timestamp, author). Covers independent re-creation
-    #      and metadata-only rebases.
-    #   2. Ancestry: local tip is a strict ancestor of the PR head, meaning the
-    #      remote branch was extended beyond the local branch before merging.
-    # Either check passing is sufficient evidence of incorporation.
-    # Branch-name reuse is still guarded: new local commits after the PR merged
-    # will differ in tree content and will not be ancestors of the old PR head.
     for number, pr_head_oid in oid_mismatch_candidates:
-        fetch_result = run_git(["fetch", "origin", pr_head_oid], repo)
+        fetch_result = run_git(["fetch", remote, pr_head_oid], repo)
         if fetch_result.returncode != 0:
-            continue  # SHA fetch failed or unsupported; treat as unmerged.
+            continue
         local_tree = run_git(["rev-parse", f"{branch_oid}^{{tree}}"], repo)
         pr_tree = run_git(["rev-parse", f"{pr_head_oid}^{{tree}}"], repo)
         if (
@@ -417,32 +542,16 @@ def pr_merged_via_gh(
     return None, None
 
 
-def pattern_matches(branch: str, patterns: list[str]) -> bool:
-    return any(fnmatch.fnmatchcase(branch, pattern) for pattern in patterns)
-
-
-def filter_reason(branch: str, include_patterns: list[str], exclude_patterns: list[str]) -> str | None:
-    if pattern_matches(branch, exclude_patterns):
-        return "protected"
-    if include_patterns and not pattern_matches(branch, include_patterns):
-        return "filtered"
-    return None
-
-
 def protected_reason(
     branch: str,
-    current: str | None,
+    initial_branch: str | None,
     local_base_branch: str | None,
-    switch_base: bool,
-    exclude_patterns: list[str],
 ) -> str | None:
-    if pattern_matches(branch, exclude_patterns):
-        return "protected"
     if branch in PROTECTED_BRANCHES:
         return "protected"
     if local_base_branch and branch == local_base_branch:
         return "protected"
-    if current and branch == current and not switch_base:
+    if initial_branch and branch == initial_branch:
         return "current_branch"
     return None
 
@@ -457,36 +566,412 @@ def checked_out_branches(worktrees: list[dict[str, Any]], removed_branches: set[
     return checked
 
 
-def worktree_status(repo_path: str) -> tuple[bool, dict[str, Any] | None]:
+# ---------------------------------------------------------------------------
+# Process probes
+# ---------------------------------------------------------------------------
+
+
+@dataclass
+class ProbeResult:
+    state: str  # "clear" | "held" | "unavailable"
+    detail: str | None = None
+
+
+def _proc_holders(target: Path) -> tuple[bool, list[str]]:
+    """Return (probe_available, holders) using /proc/*/cwd on Linux."""
+    proc = Path("/proc")
+    if not proc.is_dir():
+        return False, []
+    holders: list[str] = []
+    target_resolved = target.resolve()
+    try:
+        entries = list(proc.iterdir())
+    except OSError:
+        return False, []
+    for entry in entries:
+        if not entry.name.isdigit():
+            continue
+        cwd_link = entry / "cwd"
+        try:
+            cwd = cwd_link.resolve(strict=True)
+        except (OSError, PermissionError, FileNotFoundError):
+            continue
+        try:
+            cwd.relative_to(target_resolved)
+        except ValueError:
+            continue
+        try:
+            comm = (entry / "comm").read_text(encoding="utf-8", errors="replace").strip()
+        except OSError:
+            comm = "?"
+        holders.append(f"pid {entry.name} ({comm})")
+    return True, holders
+
+
+def _lsof_held(target: Path) -> tuple[bool, bool]:
+    """Return (probe_ran, held). probe_ran=False if lsof is missing."""
+    if shutil.which("lsof") is None:
+        return False, False
+    try:
+        completed = subprocess.run(
+            ["lsof", "+D", str(target)],
+            stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+            encoding="utf-8", check=False,
+        )
+    except (OSError, FileNotFoundError):
+        return False, False
+    if completed.returncode not in (0, 1):
+        return False, False
+    lines = [ln for ln in completed.stdout.splitlines()[1:] if ln.strip()]
+    return True, bool(lines)
+
+
+def _fuser_held(target: Path) -> tuple[bool, bool]:
+    if shutil.which("fuser") is None:
+        return False, False
+    try:
+        completed = subprocess.run(
+            ["fuser", "-m", str(target)],
+            stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+            encoding="utf-8", check=False,
+        )
+    except (OSError, FileNotFoundError):
+        return False, False
+    if completed.returncode not in (0, 1):
+        return False, False
+    pids = completed.stdout.split()
+    return True, bool(pids)
+
+
+def _tmux_holders(target: Path) -> list[str]:
+    if shutil.which("tmux") is None:
+        return []
+    try:
+        completed = subprocess.run(
+            ["tmux", "list-panes", "-a", "-F", "#{pane_current_path}\t#{pane_current_command}"],
+            stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+            encoding="utf-8", check=False,
+        )
+    except (OSError, FileNotFoundError):
+        return []
+    if completed.returncode != 0:
+        return []
+    target_resolved = target.resolve()
+    holders: list[str] = []
+    for line in completed.stdout.splitlines():
+        if not line.strip():
+            continue
+        path_str, _tab, cmd = line.partition("\t")
+        try:
+            pane_path = Path(path_str).resolve()
+            pane_path.relative_to(target_resolved)
+        except (ValueError, OSError):
+            continue
+        holders.append(f"tmux pane in {cmd or '?'}")
+    return holders
+
+
+def process_probe_real(worktree_path: str) -> ProbeResult:
+    """Probe for processes holding the worktree by cwd or open files.
+
+    /proc/*/cwd covers cwd-based holders. lsof/fuser cover open-file holders
+    that may have a cwd elsewhere. When both are available we run them and
+    union the results so editors and language servers with files open in the
+    worktree are detected even if the editor was launched from elsewhere.
+    """
+    target = Path(worktree_path)
+    if not target.exists():
+        return ProbeResult("unavailable", "path missing")
+
+    holders: list[str] = []
+    primary_ran = False
+
+    proc_ok, proc_holders = _proc_holders(target)
+    if proc_ok:
+        primary_ran = True
+        holders.extend(proc_holders)
+        holders.extend(_tmux_holders(target))
+
+    lsof_ran, lsof_held = _lsof_held(target)
+    if lsof_ran:
+        primary_ran = True
+        if lsof_held:
+            holders.append("lsof reports open handles")
+
+    if not primary_ran:
+        fuser_ran, fuser_held = _fuser_held(target)
+        if fuser_ran:
+            primary_ran = True
+            if fuser_held:
+                holders.append("fuser reports active processes")
+
+    if not primary_ran:
+        return ProbeResult("unavailable", "no probe available")
+    if holders:
+        return ProbeResult("held", "; ".join(holders[:5]))
+    return ProbeResult("clear", None)
+
+
+# Tests substitute this. Production calls process_probe_real.
+PROCESS_PROBE: Callable[[str], ProbeResult] = process_probe_real
+
+
+# ---------------------------------------------------------------------------
+# Dirty classification
+# ---------------------------------------------------------------------------
+
+
+@dataclass
+class DirtyClassification:
+    klass: str  # "A" | "B" | "C" | "D"
+    tracked_paths: list[str] = field(default_factory=list)
+    untracked_paths: list[str] = field(default_factory=list)
+    evidence: str = ""
+
+    def all_paths(self) -> list[str]:
+        return [*self.tracked_paths, *self.untracked_paths]
+
+
+def parse_porcelain_status(output: str) -> tuple[list[str], list[str], bool, bool]:
+    """Return (tracked_modified_paths, untracked_paths, has_staged, has_conflict)."""
+    tracked: list[str] = []
+    untracked: list[str] = []
+    staged = False
+    conflict = False
+    for raw in output.split("\n"):
+        if not raw:
+            continue
+        if len(raw) < 3:
+            continue
+        x, y, _sp = raw[0], raw[1], raw[2]
+        path = raw[3:]
+        # Conflict states: any of D, A, U, T, etc. with both X and Y non-space and matching unmerged combos.
+        unmerged_combos = {("D", "D"), ("A", "U"), ("U", "D"), ("U", "A"), ("D", "U"),
+                           ("A", "A"), ("U", "U"), ("U", "T"), ("T", "U")}
+        if (x, y) in unmerged_combos:
+            conflict = True
+            tracked.append(path)
+            continue
+        if x == "?" and y == "?":
+            untracked.append(path)
+            continue
+        if x != " " and x != "?":
+            staged = True
+        if y != " " and y != "?":
+            tracked.append(path)
+        elif x != " " and x != "?":
+            tracked.append(path)
+    return tracked, untracked, staged, conflict
+
+
+def get_dirty_status(repo_path: Path) -> tuple[DirtyClassification | None, dict[str, Any] | None]:
+    """Return None if clean; else a DirtyClassification with paths populated.
+
+    Class is initially set without merge/PR context; callers refine to A/B
+    based on subsumption checks. D is final here.
+    """
     result = run_git(["status", "--porcelain=v1", "--untracked-files=normal"], repo_path)
     if result.returncode != 0:
-        return False, error_record("status_failed", result.command, result.stderr, repo_path)
-    return bool(result.stdout.strip()), None
-
-
-def prune_metadata_plan(repo: str, execute: bool) -> tuple[dict[str, Any] | None, dict[str, Any] | None]:
-    command = ["worktree", "prune", "--verbose"] if execute else ["worktree", "prune", "--dry-run", "--verbose"]
-    result = run_git(command, repo)
-    if result.returncode != 0:
-        return None, error_record("worktree_prune_failed", result.command, result.stderr)
-    detail = "\n".join(part.strip() for part in (result.stdout, result.stderr) if part.strip())
-    if not detail:
+        return None, error_record("status_failed", result.command, result.stderr, str(repo_path))
+    if not result.stdout.strip():
         return None, None
-    return (
-        action_record(
-            "prune_metadata",
-            repo,
-            None,
-            [result.command],
-            "stale_metadata",
-            detail,
-        ),
-        None,
-    )
+    tracked, untracked, staged, conflict = parse_porcelain_status(result.stdout)
+
+    if staged:
+        return DirtyClassification("D", tracked, untracked, "staged_changes"), None
+    if conflict:
+        return DirtyClassification("D", tracked, untracked, "merge_conflict"), None
+
+    # Submodule status changes
+    sub_result = run_git(["submodule", "status"], repo_path)
+    if sub_result.returncode == 0 and sub_result.stdout:
+        for line in sub_result.stdout.splitlines():
+            if line[:1] in ("+", "-", "U"):
+                return DirtyClassification("D", tracked, untracked, "submodule_change"), None
+
+    # Large untracked files
+    for u in untracked:
+        full = repo_path / u
+        try:
+            if full.is_file() and full.stat().st_size > LARGE_FILE_THRESHOLD:
+                return DirtyClassification("D", tracked, untracked, f"large_untracked:{u}"), None
+        except OSError:
+            continue
+
+    # Default: not D yet. Caller refines to A/B/C.
+    return DirtyClassification("C", tracked, untracked, ""), None
 
 
-def build_plan(
-    repo: str,
+def matches_garbage_glob(path: str, globs: Iterable[str]) -> bool:
+    for pat in globs:
+        if fnmatch.fnmatchcase(path, pat):
+            return True
+        # Allow glob with "/**" suffix to match nested paths.
+        if pat.endswith("/**"):
+            prefix = pat[:-3]
+            if fnmatch.fnmatchcase(path, prefix) or path.startswith(prefix + "/") or fnmatch.fnmatchcase(path, prefix + "/*"):
+                return True
+        # Allow basename match for simple "*.ext" patterns
+        if "/" not in pat and "/" in path:
+            if fnmatch.fnmatchcase(os.path.basename(path), pat):
+                return True
+    return False
+
+
+def path_is_ignored(repo_path: Path, path: str) -> bool:
+    result = run_git(["check-ignore", "-q", "--", path], repo_path)
+    return result.returncode == 0
+
+
+def all_paths_disposable(repo_path: Path, paths: Iterable[str], garbage_globs: list[str]) -> bool:
+    for p in paths:
+        if matches_garbage_glob(p, garbage_globs):
+            continue
+        if path_is_ignored(repo_path, p):
+            continue
+        return False
+    return True
+
+
+def tracked_diff_matches_base(repo_path: Path, base_commit: str, paths: list[str]) -> bool:
+    """True when working-tree content for `paths` equals their content in base.
+
+    Used by the Class B classifier: a dirty worktree on a PR-verified merged
+    branch is subsumed when its uncommitted tracked edits already match the
+    base tree.
+    """
+    if not paths:
+        return True
+    args = ["diff", "--quiet", base_commit, "--", *paths]
+    result = run_git(args, repo_path)
+    # `git diff --quiet` exits 0 on no diff, 1 on diff, >1 on error.
+    return result.returncode == 0
+
+
+def refine_classification(
+    classification: DirtyClassification,
+    repo_path: Path,
+    branch_pr_merged_number: int | None,
+    base_commit: str,
+    garbage_globs: list[str],
+) -> DirtyClassification:
+    """Promote C to A or B if rules apply. D never demotes."""
+    if classification.klass == "D":
+        return classification
+
+    untracked_disposable = all_paths_disposable(repo_path, classification.untracked_paths, garbage_globs)
+    tracked_disposable = all_paths_disposable(repo_path, classification.tracked_paths, garbage_globs)
+
+    # Class A: every dirty path is gitignore-or-glob disposable.
+    if untracked_disposable and tracked_disposable:
+        return DirtyClassification(
+            "A", classification.tracked_paths, classification.untracked_paths,
+            "all_paths_disposable",
+        )
+
+    # Class B: branch PR-verified merged AND tracked diff matches base AND untracked all disposable.
+    if (
+        branch_pr_merged_number is not None
+        and untracked_disposable
+        and tracked_diff_matches_base(repo_path, base_commit, classification.tracked_paths)
+    ):
+        return DirtyClassification(
+            "B", classification.tracked_paths, classification.untracked_paths,
+            f"subsumed_via_pr:#{branch_pr_merged_number}",
+        )
+
+    return classification  # remains C
+
+
+# ---------------------------------------------------------------------------
+# Per-repo planning
+# ---------------------------------------------------------------------------
+
+
+@dataclass
+class RepoOutcome:
+    path: str
+    base: dict[str, Any]
+    remote: str
+    current_branch: str | None
+    fetch: str = "skipped"
+    base_update: str = "skipped"
+    actions: list[dict[str, Any]] = field(default_factory=list)
+    skipped: list[dict[str, Any]] = field(default_factory=list)
+    dirty: list[dict[str, Any]] = field(default_factory=list)
+    process_probes: list[dict[str, Any]] = field(default_factory=list)
+    errors: list[dict[str, Any]] = field(default_factory=list)
+
+
+def run_fetch(repo: Path, remote: str, dry_run: bool) -> dict[str, Any] | None:
+    args = ["fetch", "--prune", remote]
+    if dry_run:
+        args.insert(1, "--dry-run")
+    result = run_git(args, repo)
+    if result.returncode == 0:
+        return None
+    return error_record("fetch_failed", result.command, result.stderr or result.stdout, remote)
+
+
+def fast_forward_base(
+    repo: Path,
+    base: str,
+    base_commit: str,
+    local_base_branch: str | None,
+    initial_branch: str | None,
+    worktrees: list[dict[str, Any]],
+    dry_run: bool,
+) -> tuple[str, dict[str, Any] | None]:
+    """Return (status, error). status is one of: ff, skipped, already, unsafe, error."""
+    if local_base_branch is None:
+        return "skipped", None
+
+    # Find local-tip OID and compare with base commit.
+    tip = run_git(["rev-parse", "--verify", f"refs/heads/{local_base_branch}^{{commit}}"], repo)
+    if tip.returncode != 0:
+        return "error", error_record("base_resolve_failed", tip.command, tip.stderr, local_base_branch)
+    if tip.stdout.strip() == base_commit:
+        return "already", None
+
+    # Is FF possible? local must be ancestor of base_commit.
+    ancestor = run_git(["merge-base", "--is-ancestor", local_base_branch, base_commit], repo)
+    if ancestor.returncode != 0:
+        return "unsafe", None
+
+    # Is the local base branch checked out anywhere?
+    holding = [w for w in worktrees if w.get("branch") == local_base_branch]
+    if not holding:
+        if dry_run:
+            return "ff", None
+        result = run_git(["fetch", ".", f"{base}:{local_base_branch}"], repo)
+        if result.returncode != 0:
+            return "error", error_record("base_ff_failed", result.command, result.stderr, local_base_branch)
+        return "ff", None
+
+    # Checked out somewhere — safe only if the holding worktree is clean and
+    # is the primary repo (so we can switch+merge in place).
+    if len(holding) != 1 or holding[0]["path"] != str(repo):
+        return "unsafe", None
+    classification, status_err = get_dirty_status(repo)
+    if status_err is not None:
+        return "error", status_err
+    if classification is not None:
+        return "unsafe", None
+
+    if dry_run:
+        return "ff", None
+    if initial_branch != local_base_branch:
+        sw = run_git(["switch", local_base_branch], repo)
+        if sw.returncode != 0:
+            return "error", error_record("base_switch_failed", sw.command, sw.stderr, local_base_branch)
+    merge = run_git(["merge", "--ff-only", base], repo)
+    if merge.returncode != 0:
+        return "error", error_record("base_ff_failed", merge.command, merge.stderr, local_base_branch)
+    return "ff", None
+
+
+def build_repo_plan(
+    repo: Path,
     args: argparse.Namespace,
     base_commit: str,
     local_base_branch: str | None,
@@ -494,10 +979,10 @@ def build_plan(
     branches: dict[str, dict[str, str]],
     worktrees: list[dict[str, Any]],
     remote: str,
-) -> tuple[list[dict[str, Any]], list[dict[str, Any]], list[dict[str, Any]]]:
-    actions: list[dict[str, Any]] = []
-    skipped: list[dict[str, Any]] = []
-    errors: list[dict[str, Any]] = []
+    process_policy: str,
+    garbage_globs: list[str],
+    outcome: RepoOutcome,
+) -> None:
     merged: dict[str, bool] = {}
     pr_merged_numbers: dict[str, int] = {}
 
@@ -505,36 +990,30 @@ def build_plan(
         branch_merged, error = is_merged(repo, info, base_commit)
         merged[branch] = branch_merged
         if error:
-            errors.append(error)
+            outcome.errors.append(error)
 
-    detect_pr = not args.no_detect_pr_merged and gh_available()
+    detect_pr = gh_available()
     gh_repo = discover_github_repo(repo, remote) if detect_pr else None
     if gh_repo is not None:
         gh_owner, gh_name = gh_repo
-        # Prefer the resolved local base branch (preserves slashes such as
-        # `release/foo`) over heuristic stripping of `--base`.
         pr_base = local_base_branch or base_branch_name(args.base)
         for branch, info in branches.items():
             if merged.get(branch, False):
                 continue
-            if filter_reason(branch, args.include_pattern, args.exclude_pattern):
-                continue
-            if protected_reason(
-                branch, initial_branch, local_base_branch, args.switch_base, args.exclude_pattern,
-            ):
+            if protected_reason(branch, initial_branch, local_base_branch):
                 continue
             number, pr_error = pr_merged_via_gh(
-                repo, gh_owner, gh_name, branch, info["object"], pr_base,
+                repo, gh_owner, gh_name, branch, info["object"], pr_base, remote,
             )
             if pr_error:
-                errors.append(pr_error)
+                outcome.errors.append(pr_error)
                 continue
             if number is not None:
                 merged[branch] = True
                 pr_merged_numbers[branch] = number
 
-    primary_path = worktrees[0]["path"] if worktrees else None
-    linked_worktrees = worktrees[1:] if worktrees else []
+    primary_path = str(repo)
+    linked_worktrees = [w for w in worktrees if w["path"] != primary_path]
     remove_worktree_branches: set[str] = set()
 
     for worktree in linked_worktrees:
@@ -543,127 +1022,117 @@ def build_plan(
         exists = os.path.exists(path)
 
         if not exists:
-            skipped.append(
-                skip_record(
-                    "worktree",
-                    path,
-                    branch,
-                    "missing_path",
-                    "Run git worktree prune after confirming the path was not moved; use git worktree repair for moved paths.",
-                )
-            )
+            outcome.skipped.append(skip_record(
+                "worktree", path, branch, "missing_path",
+                "Run git worktree prune after confirming the path was not moved.",
+            ))
             continue
         if worktree.get("locked"):
-            skipped.append(skip_record("worktree", path, branch, "locked", worktree.get("locked_reason")))
+            outcome.skipped.append(skip_record(
+                "worktree", path, branch, "locked", worktree.get("locked_reason"),
+            ))
             continue
         if worktree.get("detached") or not branch:
-            skipped.append(skip_record("worktree", path, branch, "detached"))
+            outcome.skipped.append(skip_record("worktree", path, branch, "detached"))
             continue
-        reason = filter_reason(branch, args.include_pattern, args.exclude_pattern)
-        if reason:
-            skipped.append(skip_record("worktree", path, branch, reason))
-            continue
-        protected = protected_reason(
-            branch,
-            initial_branch,
-            local_base_branch,
-            args.switch_base,
-            args.exclude_pattern,
-        )
+        protected = protected_reason(branch, initial_branch, local_base_branch)
         if protected:
-            skipped.append(skip_record("worktree", path, branch, protected))
+            outcome.skipped.append(skip_record("worktree", path, branch, protected))
             continue
         if branch not in branches:
-            skipped.append(skip_record("worktree", path, branch, "branch_missing"))
+            outcome.skipped.append(skip_record("worktree", path, branch, "branch_missing"))
             continue
-        if not merged.get(branch, False):
-            skipped.append(skip_record("worktree", path, branch, "unmerged"))
+        is_branch_merged = merged.get(branch, False)
+        if not is_branch_merged:
+            outcome.skipped.append(skip_record("worktree", path, branch, "unmerged"))
             continue
-        dirty, error = worktree_status(path)
-        if error:
-            errors.append(error)
-            skipped.append(skip_record("worktree", path, branch, "status_failed"))
+
+        # Process probe
+        probe = PROCESS_PROBE(path)
+        outcome.process_probes.append({
+            "worktree": path, "result": probe.state, "detail": probe.detail,
+        })
+        if probe.state == "held":
+            if process_policy in ("skip", "ask"):
+                # `ask` falls back to skip outside the consolidated confirmation
+                # path. v1 does not surface held worktrees in the prompt.
+                outcome.skipped.append(skip_record(
+                    "worktree", path, branch, "process_held", probe.detail,
+                ))
+                continue
+            # process_policy == "ignore": fall through.
+        if probe.state == "unavailable" and process_policy in ("skip", "ask"):
+            outcome.skipped.append(skip_record(
+                "worktree", path, branch, "process_probe_unavailable", probe.detail,
+            ))
             continue
-        if dirty:
-            skipped.append(skip_record("worktree", path, branch, "dirty"))
+
+        # Dirty classification
+        classification, status_err = get_dirty_status(Path(path))
+        if status_err:
+            outcome.errors.append(status_err)
+            outcome.skipped.append(skip_record("worktree", path, branch, "status_failed"))
             continue
+
+        if classification is not None:
+            classification = refine_classification(
+                classification, Path(path), pr_merged_numbers.get(branch),
+                base_commit, garbage_globs,
+            )
+            outcome.dirty.append({
+                "worktree": path,
+                "class": classification.klass,
+                "tracked_paths": classification.tracked_paths,
+                "untracked_paths": classification.untracked_paths,
+                "evidence": classification.evidence,
+            })
+            if classification.klass == "D":
+                outcome.skipped.append(skip_record(
+                    "worktree", path, branch, "dirty_class_d", classification.evidence,
+                ))
+                continue
+            if classification.klass == "C":
+                outcome.skipped.append(skip_record(
+                    "worktree", path, branch, "dirty_class_c", "potentially_unique_work",
+                ))
+                continue
+            # Class A or B: emit clean_dirty action(s) before remove_worktree
+            outcome.actions.append(_clean_dirty_action(path, branch, classification))
+
         if branch in pr_merged_numbers:
             wt_reason = "merged_clean_worktree_via_pr"
             wt_detail = f"merged via PR #{pr_merged_numbers[branch]}"
         else:
             wt_reason = "merged_clean_worktree"
             wt_detail = None
-        actions.append(
-            action_record(
-                "remove_worktree",
-                path,
-                branch,
-                [["git", "worktree", "remove", path]],
-                wt_reason,
-                wt_detail,
-            )
-        )
+        klass = classification.klass if classification else None
+        outcome.actions.append(action_record(
+            "remove_worktree", path, branch,
+            [["git", "worktree", "remove", path]],
+            wt_reason, wt_detail, klass=klass,
+        ))
         remove_worktree_branches.add(branch)
 
     checked_after_removal = checked_out_branches(worktrees, remove_worktree_branches)
-    switch_planned_for: str | None = None
 
     for branch, info in branches.items():
-        reason = filter_reason(branch, args.include_pattern, args.exclude_pattern)
-        if reason:
-            skipped.append(skip_record("branch", branch, branch, reason))
-            continue
-        protected = protected_reason(
-            branch,
-            initial_branch,
-            local_base_branch,
-            args.switch_base,
-            args.exclude_pattern,
-        )
+        protected = protected_reason(branch, initial_branch, local_base_branch)
         if protected:
-            skipped.append(skip_record("branch", branch, branch, protected))
+            outcome.skipped.append(skip_record("branch", branch, branch, protected))
             continue
         if not merged.get(branch, False):
-            skipped.append(skip_record("branch", branch, branch, "unmerged"))
+            outcome.skipped.append(skip_record("branch", branch, branch, "unmerged"))
             continue
 
-        if initial_branch and branch == initial_branch and args.switch_base:
-            if not local_base_branch:
-                skipped.append(
-                    skip_record(
-                        "branch",
-                        branch,
-                        branch,
-                        "current_branch",
-                        "No local base branch is available for --switch-base.",
-                    )
-                )
-                continue
-            actions.append(
-                action_record(
-                    "switch_base",
-                    local_base_branch,
-                    branch,
-                    [["git", "switch", local_base_branch], ["git", "merge", "--ff-only", args.base]],
-                    "current_branch_merged",
-                )
-            )
-            switch_planned_for = branch
-
         checked_paths = checked_after_removal.get(branch, [])
-        if checked_paths and branch != switch_planned_for:
-            if primary_path and checked_paths == [primary_path]:
-                skipped.append(skip_record("branch", branch, branch, "current_branch"))
+        if checked_paths:
+            if checked_paths == [primary_path]:
+                outcome.skipped.append(skip_record("branch", branch, branch, "current_branch"))
             else:
-                skipped.append(
-                    skip_record(
-                        "branch",
-                        branch,
-                        branch,
-                        "checked_out_elsewhere",
-                        ", ".join(checked_paths),
-                    )
-                )
+                outcome.skipped.append(skip_record(
+                    "branch", branch, branch, "checked_out_elsewhere",
+                    ", ".join(checked_paths),
+                ))
             continue
 
         if branch in pr_merged_numbers:
@@ -674,308 +1143,449 @@ def build_plan(
             delete_command = ["git", "branch", "-d", branch]
             delete_reason = "merged_branch"
             delete_detail = None
-        actions.append(
-            action_record(
-                "delete_branch",
-                branch,
-                branch,
-                [delete_command],
-                delete_reason,
-                delete_detail,
-            )
-        )
+        outcome.actions.append(action_record(
+            "delete_branch", branch, branch, [delete_command], delete_reason, delete_detail,
+        ))
 
-    prune_action, prune_error = prune_metadata_plan(repo, execute=args.yes)
+    # Prune metadata
+    prune_action, prune_error = prune_metadata_plan(repo, execute=False)
     if prune_error:
-        errors.append(prune_error)
+        outcome.errors.append(prune_error)
     if prune_action:
-        actions.append(prune_action)
-
-    return actions, skipped, errors
+        outcome.actions.append(prune_action)
 
 
-def run_fetch(repo: str, remote: str, dry_run: bool) -> dict[str, Any] | None:
-    args = ["fetch", "--prune", remote]
-    if dry_run:
-        args.insert(1, "--dry-run")
-    result = run_git(args, repo)
-    if result.returncode == 0:
-        return None
-    return error_record("fetch_failed", result.command, result.stderr or result.stdout, remote)
+def _clean_dirty_action(
+    worktree_path: str,
+    branch: str | None,
+    classification: DirtyClassification,
+) -> dict[str, Any]:
+    commands: list[list[str]] = []
+    if classification.tracked_paths:
+        commands.append(["git", "checkout", "--", *classification.tracked_paths])
+    if classification.untracked_paths:
+        commands.append(["git", "clean", "-fd", "--", *classification.untracked_paths])
+    return action_record(
+        "clean_dirty", worktree_path, branch, commands or [["true"]],
+        f"dirty_class_{classification.klass.lower()}",
+        classification.evidence or None,
+        klass=classification.klass,
+    )
+
+
+def prune_metadata_plan(repo: Path, execute: bool) -> tuple[dict[str, Any] | None, dict[str, Any] | None]:
+    command = ["worktree", "prune", "--verbose"] if execute else ["worktree", "prune", "--dry-run", "--verbose"]
+    result = run_git(command, repo)
+    if result.returncode != 0:
+        return None, error_record("worktree_prune_failed", result.command, result.stderr)
+    detail = "\n".join(part.strip() for part in (result.stdout, result.stderr) if part.strip())
+    if not detail:
+        return None, None
+    return action_record(
+        "prune_metadata", str(repo), None,
+        [result.command], "stale_metadata", detail,
+    ), None
+
+
+# ---------------------------------------------------------------------------
+# Execution
+# ---------------------------------------------------------------------------
 
 
 def execute_plan(
-    repo: str,
-    args: argparse.Namespace,
+    repo: Path,
     actions: list[dict[str, Any]],
     skipped: list[dict[str, Any]],
     errors: list[dict[str, Any]],
+    *,
+    allow_class_b: bool,
+    process_policy: str = "skip",
 ) -> bool:
-    destructive_failed = False
+    ok = True
 
+    # Phase 1: clean_dirty for Class A always; Class B only if allowed.
     for action in actions:
-        if action["type"] != "switch_base" or action["status"] != "planned":
+        if action["kind"] != "clean_dirty" or action["status"] != "planned":
             continue
-        switch_result = run_git(git_args(action["commands"][0]), repo)
-        if switch_result.returncode != 0:
-            action["status"] = "failed"
-            errors.append(error_record("switch_failed", switch_result.command, switch_result.stderr, action["target"]))
-            destructive_failed = True
-            break
-        merge_result = run_git(git_args(action["commands"][1]), repo)
-        if merge_result.returncode != 0:
-            action["status"] = "failed"
-            errors.append(error_record("fast_forward_failed", merge_result.command, merge_result.stderr, args.base))
-            destructive_failed = True
-            break
-        action["status"] = "done"
+        klass = action.get("class")
+        if klass == "B" and not allow_class_b:
+            action["status"] = "skipped"
+            skipped.append(skip_record(
+                "worktree", action["target"], action["branch"],
+                "class_b_skipped", "use --yes or --interactive to clean",
+            ))
+            continue
+        if klass not in ("A", "B"):
+            action["status"] = "skipped"
+            continue
+        # Run inside the worktree path, not the repo root.
+        cwd = action["target"]
+        for command in action["commands"]:
+            if command == ["true"]:
+                continue
+            result = run_git(git_args(command), cwd)
+            if result.returncode != 0:
+                action["status"] = "failed"
+                errors.append(error_record(
+                    "clean_dirty_failed", result.command, result.stderr, action["target"],
+                ))
+                ok = False
+                break
+        else:
+            action["status"] = "done"
 
-    if destructive_failed:
-        return False
-
+    # Phase 2: remove_worktree (skip if its companion clean_dirty was skipped)
+    skipped_targets = {a["target"] for a in actions if a["kind"] == "clean_dirty" and a["status"] in ("skipped", "failed")}
     for action in actions:
-        if action["type"] != "remove_worktree" or action["status"] != "planned":
+        if action["kind"] != "remove_worktree" or action["status"] != "planned":
             continue
+        if action["target"] in skipped_targets:
+            action["status"] = "skipped"
+            continue
+        # Re-probe just before destructive removal: in --interactive an
+        # arbitrary delay can pass between planning and execution, and a new
+        # shell or editor may have attached to the worktree in the meantime.
+        # `--process-policy=ignore` skips the re-probe.
+        if process_policy != "ignore":
+            recheck = PROCESS_PROBE(action["target"])
+            if recheck.state == "held":
+                action["status"] = "skipped"
+                skipped.append(skip_record(
+                    "worktree", action["target"], action["branch"],
+                    "process_held_at_execute", recheck.detail,
+                ))
+                continue
         result = run_git(git_args(action["commands"][0]), repo)
         if result.returncode != 0:
             action["status"] = "failed"
-            errors.append(error_record("worktree_remove_failed", result.command, result.stderr, action["target"]))
-            destructive_failed = True
-            break
+            errors.append(error_record(
+                "worktree_remove_failed", result.command, result.stderr, action["target"],
+            ))
+            ok = False
+            continue
         action["status"] = "done"
 
-    if destructive_failed:
-        return False
-
+    # Phase 3: delete_branch
     for action in actions:
-        if action["type"] != "delete_branch" or action["status"] != "planned":
+        if action["kind"] != "delete_branch" or action["status"] != "planned":
             continue
         result = run_git(git_args(action["commands"][0]), repo)
         if result.returncode != 0:
             action["status"] = "skipped"
-            skipped.append(
-                skip_record(
-                    "branch",
-                    action["target"],
-                    action["branch"],
-                    "delete_refused",
-                    result.stderr or result.stdout,
-                )
-            )
+            skipped.append(skip_record(
+                "branch", action["target"], action["branch"], "delete_refused",
+                result.stderr or result.stdout,
+            ))
             continue
         action["status"] = "done"
 
-    prune_action = next(
-        (
-            action
-            for action in actions
-            if action["type"] == "prune_metadata" and action["status"] == "planned"
-        ),
-        None,
-    )
-    if prune_action is None:
-        return True
-
-    result = run_git(git_args(prune_action["commands"][0]), repo)
-    if result.returncode != 0:
-        errors.append(error_record("worktree_prune_failed", result.command, result.stderr))
-        return False
-    prune_action["status"] = "done"
-    return True
-
-
-def grouped_actions(actions: list[dict[str, Any]], action_type: str, status: str | None) -> list[dict[str, Any]]:
-    return [
-        action
-        for action in actions
-        if action["type"] == action_type and (status is None or action.get("status") == status)
-    ]
-
-
-def print_action_lines(actions: list[dict[str, Any]]) -> None:
+    # Phase 4: prune_metadata
     for action in actions:
-        branch = f" ({action['branch']})" if action.get("branch") else ""
-        detail = f" - {action['detail']}" if action.get("detail") else ""
-        commands = action.get("commands", [action["command"]])
-        command = " && ".join(command_text(cmd) for cmd in commands)
-        print(f"- {action['target']}{branch}: {command}{detail}")
-
-
-def print_skips(skipped: list[dict[str, Any]]) -> None:
-    for item in skipped:
-        branch = f" ({item['branch']})" if item.get("branch") else ""
-        detail = f" - {item['detail']}" if item.get("detail") else ""
-        print(f"- {item['type']} {item['target']}{branch}: {item['reason']}{detail}")
-
-
-def print_errors(errors: list[dict[str, Any]]) -> None:
-    for item in errors:
-        command = f" [{command_text(item['command'])}]" if item.get("command") else ""
-        target = f" {item['target']}" if item.get("target") else ""
-        detail = f": {item['detail']}" if item.get("detail") else ""
-        print(f"- {item['reason']}{target}{command}{detail}")
-
-
-def print_summary(
-    args: argparse.Namespace,
-    actions: list[dict[str, Any]],
-    skipped: list[dict[str, Any]],
-    errors: list[dict[str, Any]],
-    final_branch: str | None,
-) -> None:
-    dry_run = not args.yes
-    if dry_run:
-        sections = [
-            ("Would switch", grouped_actions(actions, "switch_base", "planned")),
-            ("Would remove", grouped_actions(actions, "remove_worktree", "planned")),
-            ("Would delete", grouped_actions(actions, "delete_branch", "planned")),
-            ("Would prune", grouped_actions(actions, "prune_metadata", "planned")),
-        ]
-    else:
-        sections = [
-            ("Switched", grouped_actions(actions, "switch_base", "done")),
-            ("Removed", grouped_actions(actions, "remove_worktree", "done")),
-            ("Deleted", grouped_actions(actions, "delete_branch", "done")),
-            ("Pruned", grouped_actions(actions, "prune_metadata", "done")),
-        ]
-
-    print("Mode: dry-run" if dry_run else "Mode: yes")
-    for title, items in sections:
-        if not items:
+        if action["kind"] != "prune_metadata" or action["status"] != "planned":
             continue
-        print(f"\n{title}")
-        print_action_lines(items)
+        # Replace dry-run command with executing command.
+        cmd = ["git", "worktree", "prune", "--verbose"]
+        result = run_git(git_args(cmd), repo)
+        if result.returncode != 0:
+            errors.append(error_record(
+                "worktree_prune_failed", result.command, result.stderr,
+            ))
+            ok = False
+            continue
+        action["commands"] = [cmd]
+        action["command"] = cmd
+        action["status"] = "done"
 
-    if skipped:
-        print("\nSkipped")
-        print_skips(skipped)
-    if errors:
-        print("\nErrors")
-        print_errors(errors)
-    if dry_run and any(error["reason"] == "fetch_failed" for error in errors):
-        print("\nPlan may be stale because fetch failed.")
-    print(f"\nFinal branch: {final_branch or '(detached)'}")
+    return ok
 
 
-def emit_result(
-    args: argparse.Namespace,
-    repo: str | None,
-    base_commit: str | None,
-    local_base_branch: str | None,
-    remote: str,
-    initial_branch: str | None,
-    actions: list[dict[str, Any]],
-    skipped: list[dict[str, Any]],
-    errors: list[dict[str, Any]],
-    final_branch: str | None,
+# ---------------------------------------------------------------------------
+# Output
+# ---------------------------------------------------------------------------
+
+
+def outcome_to_dict(outcome: RepoOutcome) -> dict[str, Any]:
+    return {
+        "path": outcome.path,
+        "base": outcome.base,
+        "remote": outcome.remote,
+        "current_branch": outcome.current_branch,
+        "fetch": outcome.fetch,
+        "base_update": outcome.base_update,
+        "actions": outcome.actions,
+        "skipped": outcome.skipped,
+        "dirty": outcome.dirty,
+        "process_probes": outcome.process_probes,
+        "errors": outcome.errors,
+    }
+
+
+def summarize(outcomes: list[RepoOutcome]) -> dict[str, int]:
+    safe = 0
+    class_b = 0
+    skipped = 0
+    errors = 0
+    for o in outcomes:
+        for a in o.actions:
+            if a["status"] != "done" and a["status"] != "planned":
+                continue
+            if a.get("class") == "B":
+                class_b += 1
+            else:
+                safe += 1
+        skipped += len(o.skipped)
+        errors += len(o.errors)
+    return {"safe_actions": safe, "class_b_actions": class_b, "skipped": skipped, "errors": errors}
+
+
+def emit_text(
+    mode: str,
+    root: str,
+    outcomes: list[RepoOutcome],
+    discovery_errors: list[dict[str, Any]],
 ) -> None:
-    if args.json:
-        print(
-            json.dumps(
-                {
-                    "mode": "yes" if args.yes else "dry-run",
-                    "repo": repo,
-                    "base": {
-                        "ref": args.base,
-                        "commit": base_commit,
-                        "local_branch": local_base_branch,
-                    },
-                    "remote": remote,
-                    "current_branch": initial_branch,
-                    "actions": actions,
-                    "skipped": skipped,
-                    "errors": errors,
-                    "final_branch": final_branch,
-                },
-                indent=2,
-                sort_keys=True,
-            )
+    print(f"Mode: {mode}")
+    print(f"Root: {root}")
+    if discovery_errors:
+        print(f"\nDiscovery errors: {len(discovery_errors)}")
+        for e in discovery_errors:
+            target = f" {e['target']}" if e.get("target") else ""
+            detail = f": {e['detail']}" if e.get("detail") else ""
+            print(f"  {e['reason']}{target}{detail}")
+    for outcome in outcomes:
+        print(f"\n[{outcome.path}]")
+        if outcome.fetch != "skipped":
+            print(f"  fetch: {outcome.fetch}")
+        if outcome.base_update != "skipped":
+            print(f"  base_update: {outcome.base_update}")
+        safe_actions = [a for a in outcome.actions if a.get("class") != "B"]
+        b_actions = [a for a in outcome.actions if a.get("class") == "B"]
+        if safe_actions:
+            print(f"  actions: {len(safe_actions)}")
+            for a in safe_actions:
+                detail = f" — {a['detail']}" if a.get("detail") else ""
+                print(f"    {a['kind']} {a['target']} ({a['reason']}){detail} [{a['status']}]")
+        if b_actions:
+            print(f"  class_b_actions: {len(b_actions)}")
+            for a in b_actions:
+                detail = f" — {a['detail']}" if a.get("detail") else ""
+                print(f"    {a['kind']} {a['target']} ({a['reason']}){detail} [{a['status']}]")
+        if outcome.skipped:
+            print(f"  skipped: {len(outcome.skipped)}")
+            for s in outcome.skipped:
+                detail = f" — {s['detail']}" if s.get("detail") else ""
+                print(f"    {s['type']} {s['target']} ({s['reason']}){detail}")
+        if outcome.errors:
+            print(f"  errors: {len(outcome.errors)}")
+            for e in outcome.errors:
+                target = f" {e['target']}" if e.get("target") else ""
+                detail = f": {e['detail']}" if e.get("detail") else ""
+                print(f"    {e['reason']}{target}{detail}")
+    summary = summarize(outcomes)
+    print(
+        f"\nSummary: safe={summary['safe_actions']} "
+        f"class_b={summary['class_b_actions']} "
+        f"skipped={summary['skipped']} errors={summary['errors']}"
+    )
+
+
+def emit_json(
+    mode: str,
+    root: str,
+    outcomes: list[RepoOutcome],
+    discovery_errors: list[dict[str, Any]],
+) -> None:
+    data = {
+        "mode": mode,
+        "root": root,
+        "errors": discovery_errors,
+        "repos": [outcome_to_dict(o) for o in outcomes],
+        "summary": summarize(outcomes),
+    }
+    print(json.dumps(data, indent=2, sort_keys=True))
+
+
+def consolidated_prompt(outcomes: list[RepoOutcome]) -> bool:
+    """Show one y/N prompt for Class B actions across all repos.
+
+    Returns True if user answered yes.
+    """
+    b_actions: list[tuple[str, dict[str, Any]]] = []
+    for o in outcomes:
+        for a in o.actions:
+            if a.get("class") == "B":
+                b_actions.append((o.path, a))
+    if not b_actions:
+        return False
+    print("\nClass B (subsumed by merged work) — proposed cleanup:", file=sys.stderr)
+    for repo_path, a in b_actions:
+        rel = a["target"]
+        detail = f" — {a['detail']}" if a.get("detail") else ""
+        print(f"  - [{repo_path}] {a['kind']} {rel}{detail}", file=sys.stderr)
+    print("Proceed? [y/N] ", end="", file=sys.stderr, flush=True)
+    try:
+        answer = sys.stdin.readline().strip().lower()
+    except (EOFError, KeyboardInterrupt):
+        return False
+    return answer in {"y", "yes"}
+
+
+# ---------------------------------------------------------------------------
+# Top-level orchestration
+# ---------------------------------------------------------------------------
+
+
+def resolve_target_repos(args: argparse.Namespace, root: Path) -> tuple[list[Path], list[dict[str, Any]]]:
+    errors: list[dict[str, Any]] = []
+    if args.repo:
+        repos: list[Path] = []
+        for r in args.repo:
+            p = Path(r).resolve()
+            if not is_repo_root(p):
+                errors.append(error_record("not_a_git_repo", target=str(p)))
+                continue
+            repos.append(p)
+        return repos, errors
+    return discover_repositories(root, args.max_depth), errors
+
+
+def process_repo(
+    repo: Path,
+    args: argparse.Namespace,
+    mode: str,
+    garbage_globs: list[str],
+) -> RepoOutcome:
+    initial_branch = current_branch(repo)
+    remote = select_remote(args.base, args.remote, repo)
+    outcome = RepoOutcome(
+        path=str(repo),
+        base={"ref": args.base, "commit": None, "local_branch": None},
+        remote=remote,
+        current_branch=initial_branch,
+    )
+
+    dry_run = mode == "dry-run"
+
+    if not args.no_fetch:
+        fetch_error = run_fetch(repo, remote, dry_run=dry_run)
+        if fetch_error is None:
+            outcome.fetch = "ok"
+        else:
+            outcome.fetch = "error"
+            outcome.errors.append(fetch_error)
+            if mode == "yes" or mode == "interactive" or mode == "default":
+                # In execution modes, fetch failure aborts further work for this repo.
+                return outcome
+
+    base_commit, base_error = resolve_base_commit(repo, args.base)
+    local_base_branch = resolve_local_base_branch(repo, args.base)
+    outcome.base["local_branch"] = local_base_branch
+    if base_error:
+        outcome.errors.append(base_error)
+        return outcome
+    assert base_commit is not None
+    outcome.base["commit"] = base_commit
+
+    worktrees, worktree_error = list_worktrees(repo)
+    branches, branch_error = list_branches(repo)
+    if worktree_error:
+        outcome.errors.append(worktree_error)
+    if branch_error:
+        outcome.errors.append(branch_error)
+    if worktree_error or branch_error:
+        return outcome
+
+    # Base FF
+    if not args.no_update_base:
+        ff_status, ff_error = fast_forward_base(
+            repo, args.base, base_commit, local_base_branch,
+            initial_branch, worktrees, dry_run,
         )
+        outcome.base_update = ff_status
+        if ff_error:
+            outcome.errors.append(ff_error)
+        # If FF happened, refresh base_commit since local moved; reachability uses origin/<base>.
+        if ff_status == "ff" and not dry_run:
+            new_commit, _err = resolve_base_commit(repo, args.base)
+            if new_commit is not None:
+                outcome.base["commit"] = new_commit
+                base_commit = new_commit
+            # Reload branches in case anything changed.
+            branches, _err = list_branches(repo)
     else:
-        print_summary(args, actions, skipped, errors, final_branch)
+        outcome.base_update = "skipped"
+
+    build_repo_plan(
+        repo, args, base_commit, local_base_branch, initial_branch,
+        branches, worktrees, remote, args.process_policy, garbage_globs, outcome,
+    )
+
+    return outcome
 
 
 def main(argv: list[str] | None = None) -> int:
     args = parse_args(sys.argv[1:] if argv is None else argv)
-    remote = select_remote(args.base, args.remote)
-    repo, repo_error = discover_repo()
-    if repo_error:
-        emit_result(args, None, None, None, remote, None, [], [], [repo_error], None)
+    mode = resolve_mode(args)
+    root = Path(args.root).resolve() if args.root else Path.cwd()
+    garbage_globs = [*DEFAULT_GARBAGE_GLOBS, *args.garbage_glob]
+
+    repos, discovery_errors = resolve_target_repos(args, root)
+
+    outcomes: list[RepoOutcome] = []
+    for repo in repos:
+        outcome = process_repo(repo, args, mode, garbage_globs)
+        outcomes.append(outcome)
+
+    # Mode-specific execution
+    overall_ok = True
+    if mode in ("yes", "default", "interactive"):
+        allow_class_b_modes = {"yes": True, "default": False, "interactive": False}
+        allow_class_b = allow_class_b_modes[mode]
+
+        if mode == "interactive":
+            if any(a.get("class") == "B" for o in outcomes for a in o.actions):
+                allow_class_b = consolidated_prompt(outcomes)
+
+        for outcome in outcomes:
+            ok = execute_plan(
+                Path(outcome.path), outcome.actions, outcome.skipped, outcome.errors,
+                allow_class_b=allow_class_b, process_policy=args.process_policy,
+            )
+            if not ok:
+                overall_ok = False
+            outcome.current_branch = current_branch(Path(outcome.path)) or outcome.current_branch
+
+    if args.json:
+        emit_json(mode, str(root), outcomes, discovery_errors)
+    else:
+        emit_text(mode, str(root), outcomes, discovery_errors)
+
+    # Exit-code semantics:
+    # - 2: configuration / discovery / planning failure (caller should fix the
+    #      invocation: bad --repo, missing base, broken worktree list, etc.)
+    # - 1: execution failure or fetch failure during a non-dry-run mode
+    # - 0: success, or only non-fatal errors such as pr_check_failed
+    DISCOVERY_REASONS = {
+        "not_a_git_repo", "base_missing", "worktree_list_failed",
+        "branch_list_failed", "base_resolve_failed",
+    }
+    if discovery_errors:
         return 2
-    assert repo is not None
-
-    remote = select_remote(args.base, args.remote, repo)
-    initial_branch = current_branch(repo)
-    fetch_error = None
-    if not args.no_fetch:
-        fetch_error = run_fetch(repo, remote, dry_run=not args.yes)
-        if fetch_error and args.yes:
-            emit_result(args, repo, None, None, remote, initial_branch, [], [], [fetch_error], initial_branch)
-            return 1
-
-    base_commit, base_error = resolve_base_commit(repo, args.base)
-    local_base_branch = resolve_local_base_branch(repo, args.base)
-    if base_error:
-        emit_result(args, repo, None, local_base_branch, remote, initial_branch, [], [], [base_error], initial_branch)
-        return 2
-    assert base_commit is not None
-
-    if args.yes and args.switch_base and not local_base_branch:
-        error = error_record(
-            "local_base_missing",
-            detail=f"Create or check out a local branch for base {args.base!r} before using --switch-base.",
-        )
-        emit_result(args, repo, base_commit, local_base_branch, remote, initial_branch, [], [], [error], initial_branch)
+    if any(
+        e["reason"] in DISCOVERY_REASONS
+        for o in outcomes for e in o.errors
+    ):
         return 2
 
-    worktrees, worktree_error = list_worktrees(repo)
-    branches, branch_error = list_branches(repo)
-    discovery_errors = [error for error in (fetch_error, worktree_error, branch_error) if error]
-    if worktree_error or branch_error:
-        emit_result(
-            args,
-            repo,
-            base_commit,
-            local_base_branch,
-            remote,
-            initial_branch,
-            [],
-            [],
-            discovery_errors,
-            initial_branch,
-        )
-        return 2
-
-    actions, skipped, plan_errors = build_plan(
-        repo,
-        args,
-        base_commit,
-        local_base_branch,
-        initial_branch,
-        branches,
-        worktrees,
-        remote,
-    )
-    errors = [*discovery_errors, *plan_errors]
-
-    ok = True
-    if args.yes:
-        ok = execute_plan(repo, args, actions, skipped, errors)
-
-    final_branch = current_branch(repo)
-    emit_result(
-        args,
-        repo,
-        base_commit,
-        local_base_branch,
-        remote,
-        initial_branch,
-        actions,
-        skipped,
-        errors,
-        final_branch,
-    )
-    return 0 if ok else 1
+    returncode = 0
+    if not overall_ok:
+        returncode = 1
+    if mode != "dry-run":
+        for outcome in outcomes:
+            if outcome.fetch == "error":
+                returncode = 1
+                break
+    return returncode
 
 
 if __name__ == "__main__":
