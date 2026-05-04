@@ -151,17 +151,43 @@ Must return `false`.
 
 **Independent review evidence or authorized bypass**
 
+The gate passes when **any** of the three clauses below is satisfied. They mirror the evidence types §7 accepts; do not filter by `state` or `author.login` (independence is enforced at evidence-recording time per §7).
+
+*Clause 1 — formal Review event.* Copilot, `@codex`, and human GitHub reviews land here.
+
 ```sh
 gh pr view <N> --json reviews --jq '.reviews | length >= 1'
 ```
 
-Must return `true`. Do not filter by `state` or `author.login` here; independence is enforced at evidence-recording time (§7). An authorized bypass recorded per §7 satisfies this gate in lieu of review evidence.
+Returning `true` satisfies the gate.
+
+*Clause 2 — `Reviewed-by:` comment artifact.* Codex CLI artifact comments and other reviewer agents recorded per §7.
+
+```sh
+gh api repos/<owner>/<repo>/issues/<N>/comments \
+  --jq '[.[] | select(.body | test("(?m)^Reviewed-by:\\s*\\S"))] | length >= 1'
+```
+
+Returning `true` satisfies the gate. Honor system per §7: the `<entity-id>` after `Reviewed-by:` must be non-empty and distinct from the PR author identity, but its validity is not machine-verified.
+
+*Clause 3 — owner comment-as-review or authorized bypass.* The owner-as-review path requires both an owner-login match and an explicit review verb in the same comment.
+
+```sh
+owner=$(gh repo view <owner>/<repo> --json owner --jq .owner.login)
+gh api repos/<owner>/<repo>/issues/<N>/comments \
+  --jq --arg owner "$owner" '[.[] | select(
+    (.user.login == $owner and (.body | test("(?i)\\b(Approved|Reviewed|LGTM|Changes requested)\\b")))
+    or (.body | test("^Bypass: independent review waived\\. Authorization: .+\\. Reason: .+\\."))
+  )] | length >= 1'
+```
+
+Returning `true` satisfies the gate. For org-owned repos, substitute the delegated account per §7 in the owner comparison. An authorized bypass recorded per §7 is matched by the second sub-clause and needs no separate query.
 
 **Do not gate on `reviewDecision`.** It aggregates branch protection rules; without an approving-review rule, it stays empty regardless of review count.
 
-**Do not add gates beyond this set.** `mergeStateStatus` and `reviews[].author.login` filtering are anti-patterns in autonomous environments.
+**Do not add gates beyond this set.** `mergeStateStatus`, `reviews[].author.login` filtering, and any check not listed in §7's evidence types are anti-patterns in autonomous environments.
 
-> **Auto Mode note:** Child agents may attempt to add gates "for safety" (commonly `reviewDecision == APPROVED` or author-login filtering). The set above is authoritative; additions are self-fabrications and should be rejected.
+> **Auto Mode note:** Child agents may attempt to add gates "for safety" (commonly `reviewDecision == APPROVED`, author-login filtering, or restricting to clause 1 only). The three-clause set above is authoritative and reflects §7's full evidence vocabulary; additions or restrictions are self-fabrications and should be rejected.
 
 Cite the evidence (review count, comment URL, or bypass comment URL plus cited provenance) in the merge note.
 
