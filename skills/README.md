@@ -21,7 +21,7 @@ Current skills:
 - handoff-prompt
 - marimo-reactive-review
 - growing-agents-md
-- git-prune-worktrees
+- git-workspace-cleanup
 - external-skill-review
 - sot-integrity
 - light-orchestration

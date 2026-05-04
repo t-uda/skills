@@ -58,7 +58,7 @@ Each skill must live at `skills/<skill-name>/SKILL.md`.
 
 ### Git maintenance
 
-- `git-prune-worktrees`: safely prune stale refs, clean merged worktrees, merged local branches, and stale worktree metadata
+- `git-workspace-cleanup`: workspace-level Git cleanup — merged branches, merged worktrees, stale remote-tracking refs, and stale worktree metadata across all repos under the workspace root
 
 ### External skills
 

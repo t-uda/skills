@@ -1,9 +1,9 @@
 ---
-name: git-prune-worktrees
+name: git-workspace-cleanup
 description: Workspace-level Git cleanup — discover repositories under the current directory and prune merged branches, merged linked worktrees, stale remote-tracking refs, and stale worktree metadata.
 ---
 
-# Git Prune Worktrees
+# Git Workspace Cleanup
 
 Use this skill when the user asks to clean merged local branches, stale
 remote-tracking refs, linked Git worktrees, or stale worktree metadata —
@@ -24,7 +24,7 @@ chooses one mode based on user intent and runs the script once.
 Pick exactly one. Default invocation:
 
 ```sh
-python3 skills/git-prune-worktrees/scripts/git_prune_worktrees.py --yes
+python3 skills/git-workspace-cleanup/scripts/git_prune_worktrees.py --yes
 ```
 
 The script defaults to workspace mode rooted at the current working directory.
