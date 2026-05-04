@@ -263,25 +263,33 @@ needs-validation items, not as blanket prohibitions.
 `Connected` waiting is a normal state — not a failure — when:
 
 - the pane shows a `Connected` line
-- a `Continue coding in https://claude.ai/code?...` URL is displayed
 - no error or disconnect line is present
+
+A `Continue coding in https://claude.ai/code?...` URL is supporting
+evidence of the same healthy state when present, but its absence does
+not, on its own, indicate failure (the URL is observed *typically*, not
+*always*).
 
 A pane sitting in `Connected` without further output is not, by itself,
 a sign of failure.
 
 When dispatching through tmux, distinguish "characters typed into the
 prompt" from "prompt actually submitted" before suspecting
-remote-control:
+remote-control. Use a single tmux target `<session>` (or
+`<session>:<window>.<pane>`) for both capture and submission so the
+pre/post comparison is apples-to-apples:
 
-- capture the pane before and after sending input —
-  `tmux capture-pane -pt <session>` pre-send and post-`send-keys ... Enter`
+- pre-send capture: `tmux capture-pane -pt <session>`
+- send: `tmux send-keys -t <session> '<input>' Enter`
+- post-send capture: `tmux capture-pane -pt <session>`
 - if the two captures are identical, the input was not submitted; the
   issue is on the tmux side, not remote-control
 - a prompt buffer that still shows typed text without a corresponding
   submission is not a remote-control failure
 
-`<session>` here is whatever tmux session name the caller chose; this
-check does not depend on any particular orchestration framework.
+`<session>` here is whatever tmux target the caller chose; this check
+does not depend on any particular orchestration framework, but the same
+target must be used across all three steps above.
 
 ## Generic delegation handoff template
 
