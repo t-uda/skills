@@ -362,6 +362,6 @@ keep the fallback path in scope.
 
 - Claude Code documentation: https://docs.claude.com/en/docs/claude-code
 - Dev Container CLI (for hermetic delegation): see `devcontainer-cli`
-- Worktree hygiene: see `git-prune-worktrees`
+- Worktree hygiene: see `git-workspace-cleanup`
 - Lightweight orchestration decisions: see `light-orchestration`
 - Handoff prompt rendering: see `handoff-prompt`
