@@ -3,15 +3,21 @@
 # Tries Copilot review → @codex mention → Codex CLI artifact in order.
 # Override by setting REVIEW_ACQUIRE_SCRIPT to a project-specific implementation.
 #
-# Semantics: exit 0 means the review request was *dispatched* (reviewer
-# assigned, mention posted, or artifact comment posted), not that
-# qualifying review evidence is already on the PR. Async routes
-# (Copilot, @codex) require waiting; whether evidence has accrued is
-# decided by the §8 merge gate (`reviews[] | length >= 1`), not here.
+# Semantics: exit 0 means a route succeeded, but the printed token
+# distinguishes whether evidence is already on the PR.
+#   - "route: <name> (dispatched)" — async request sent (reviewer
+#     assigned or @codex mention posted). No evidence yet on the PR;
+#     the §8 merge gate will not pass on this alone. Caller must wait
+#     and re-check, switch routes, or record an authorized bypass.
+#   - "route: <name> (evidence)" — synchronous artifact comment was
+#     posted on the PR (e.g. Codex CLI). Evidence is durably present
+#     and the §8 merge gate can match it directly.
+# Whether evidence has accrued for dispatched routes is decided by
+# the §8 merge gate, not here.
 #
 # Usage: acquire-review.sh <OWNER>/<REPO> <PR_NUMBER>
 # Exit codes:
-#   0   one route was dispatched (printed: "route: <name>")
+#   0   one route succeeded (printed: "route: <name> (dispatched|evidence)")
 #   1   all routes failed; record an authorized bypass per SKILL.md §7
 #   64  usage error
 #   127 precondition error (e.g. `gh` CLI missing)
@@ -60,15 +66,15 @@ route_codex_cli() {
 }
 
 if route_copilot >/dev/null 2>&1; then
-  echo "route: copilot"
+  echo "route: copilot (dispatched)"
   exit 0
 fi
 if route_codex_mention >/dev/null 2>&1; then
-  echo "route: codex_mention"
+  echo "route: codex_mention (dispatched)"
   exit 0
 fi
 if route_codex_cli; then
-  echo "route: codex_cli"
+  echo "route: codex_cli (evidence)"
   exit 0
 fi
 
