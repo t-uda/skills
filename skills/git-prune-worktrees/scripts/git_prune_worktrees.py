@@ -224,9 +224,12 @@ def is_repo_root(path: Path) -> bool:
 
 
 def discover_repositories(root: Path, max_depth: int) -> list[Path]:
+    """Discover Git repositories under root.
+
+    Workspace contract: when subordinate repositories exist, operate on those;
+    only fall back to the root repo when walk finds no subordinate matches.
+    """
     candidates: list[Path] = []
-    if is_repo_root(root):
-        candidates.append(root.resolve())
 
     def walk(d: Path, depth: int) -> None:
         if depth > max_depth:
@@ -246,6 +249,12 @@ def discover_repositories(root: Path, max_depth: int) -> list[Path]:
             walk(entry, depth + 1)
 
     walk(root, 1)
+
+    # Single-repo fallback: only treat root as a repo when no subordinate
+    # repositories were found. Otherwise running from inside a repo that
+    # contains nested repositories would unexpectedly clean both.
+    if not candidates and is_repo_root(root):
+        candidates.append(root.resolve())
 
     # Deduplicate by common git dir; prefer candidates where .git is a directory
     # (the primary worktree) over linked-worktree candidates whose .git is a file.
@@ -469,6 +478,7 @@ def pr_merged_via_gh(
     branch: str,
     branch_oid: str,
     base: str,
+    remote: str = "origin",
 ) -> tuple[int | None, dict[str, Any] | None]:
     """Look up a merged PR for `branch` and verify the local tip is incorporated.
 
@@ -514,7 +524,7 @@ def pr_merged_via_gh(
         oid_mismatch_candidates.append((number, pr_head_oid))
 
     for number, pr_head_oid in oid_mismatch_candidates:
-        fetch_result = run_git(["fetch", "origin", pr_head_oid], repo)
+        fetch_result = run_git(["fetch", remote, pr_head_oid], repo)
         if fetch_result.returncode != 0:
             continue
         local_tree = run_git(["rev-parse", f"{branch_oid}^{{tree}}"], repo)
@@ -662,32 +672,44 @@ def _tmux_holders(target: Path) -> list[str]:
 
 
 def process_probe_real(worktree_path: str) -> ProbeResult:
+    """Probe for processes holding the worktree by cwd or open files.
+
+    /proc/*/cwd covers cwd-based holders. lsof/fuser cover open-file holders
+    that may have a cwd elsewhere. When both are available we run them and
+    union the results so editors and language servers with files open in the
+    worktree are detected even if the editor was launched from elsewhere.
+    """
     target = Path(worktree_path)
     if not target.exists():
         return ProbeResult("unavailable", "path missing")
 
-    proc_ok, proc_holders = _proc_holders(target)
-    tmux_holders = _tmux_holders(target) if proc_ok else []
+    holders: list[str] = []
+    primary_ran = False
 
+    proc_ok, proc_holders = _proc_holders(target)
     if proc_ok:
-        all_holders = proc_holders + tmux_holders
-        if all_holders:
-            return ProbeResult("held", "; ".join(all_holders[:5]))
-        return ProbeResult("clear", None)
+        primary_ran = True
+        holders.extend(proc_holders)
+        holders.extend(_tmux_holders(target))
 
     lsof_ran, lsof_held = _lsof_held(target)
     if lsof_ran:
+        primary_ran = True
         if lsof_held:
-            return ProbeResult("held", "lsof reports open handles")
-        return ProbeResult("clear", None)
+            holders.append("lsof reports open handles")
 
-    fuser_ran, fuser_held = _fuser_held(target)
-    if fuser_ran:
-        if fuser_held:
-            return ProbeResult("held", "fuser reports active processes")
-        return ProbeResult("clear", None)
+    if not primary_ran:
+        fuser_ran, fuser_held = _fuser_held(target)
+        if fuser_ran:
+            primary_ran = True
+            if fuser_held:
+                holders.append("fuser reports active processes")
 
-    return ProbeResult("unavailable", "no probe available")
+    if not primary_ran:
+        return ProbeResult("unavailable", "no probe available")
+    if holders:
+        return ProbeResult("held", "; ".join(holders[:5]))
+    return ProbeResult("clear", None)
 
 
 # Tests substitute this. Production calls process_probe_real.
@@ -812,13 +834,18 @@ def all_paths_disposable(repo_path: Path, paths: Iterable[str], garbage_globs: l
 
 
 def tracked_diff_matches_base(repo_path: Path, base_commit: str, paths: list[str]) -> bool:
+    """True when working-tree content for `paths` equals their content in base.
+
+    Used by the Class B classifier: a dirty worktree on a PR-verified merged
+    branch is subsumed when its uncommitted tracked edits already match the
+    base tree.
+    """
     if not paths:
         return True
-    args = ["diff", f"{base_commit}...HEAD", "--", *paths]
+    args = ["diff", "--quiet", base_commit, "--", *paths]
     result = run_git(args, repo_path)
-    if result.returncode != 0:
-        return False
-    return not result.stdout.strip()
+    # `git diff --quiet` exits 0 on no diff, 1 on diff, >1 on error.
+    return result.returncode == 0
 
 
 def refine_classification(
@@ -976,7 +1003,7 @@ def build_repo_plan(
             if protected_reason(branch, initial_branch, local_base_branch):
                 continue
             number, pr_error = pr_merged_via_gh(
-                repo, gh_owner, gh_name, branch, info["object"], pr_base,
+                repo, gh_owner, gh_name, branch, info["object"], pr_base, remote,
             )
             if pr_error:
                 outcome.errors.append(pr_error)
@@ -1172,6 +1199,7 @@ def execute_plan(
     errors: list[dict[str, Any]],
     *,
     allow_class_b: bool,
+    process_policy: str = "skip",
 ) -> bool:
     ok = True
 
@@ -1214,6 +1242,19 @@ def execute_plan(
         if action["target"] in skipped_targets:
             action["status"] = "skipped"
             continue
+        # Re-probe just before destructive removal: in --interactive an
+        # arbitrary delay can pass between planning and execution, and a new
+        # shell or editor may have attached to the worktree in the meantime.
+        # `--process-policy=ignore` skips the re-probe.
+        if process_policy != "ignore":
+            recheck = PROCESS_PROBE(action["target"])
+            if recheck.state == "held":
+                action["status"] = "skipped"
+                skipped.append(skip_record(
+                    "worktree", action["target"], action["branch"],
+                    "process_held_at_execute", recheck.detail,
+                ))
+                continue
         result = run_git(git_args(action["commands"][0]), repo)
         if result.returncode != 0:
             action["status"] = "failed"
@@ -1297,9 +1338,20 @@ def summarize(outcomes: list[RepoOutcome]) -> dict[str, int]:
     return {"safe_actions": safe, "class_b_actions": class_b, "skipped": skipped, "errors": errors}
 
 
-def emit_text(mode: str, root: str, outcomes: list[RepoOutcome]) -> None:
+def emit_text(
+    mode: str,
+    root: str,
+    outcomes: list[RepoOutcome],
+    discovery_errors: list[dict[str, Any]],
+) -> None:
     print(f"Mode: {mode}")
     print(f"Root: {root}")
+    if discovery_errors:
+        print(f"\nDiscovery errors: {len(discovery_errors)}")
+        for e in discovery_errors:
+            target = f" {e['target']}" if e.get("target") else ""
+            detail = f": {e['detail']}" if e.get("detail") else ""
+            print(f"  {e['reason']}{target}{detail}")
     for outcome in outcomes:
         print(f"\n[{outcome.path}]")
         if outcome.fetch != "skipped":
@@ -1337,10 +1389,16 @@ def emit_text(mode: str, root: str, outcomes: list[RepoOutcome]) -> None:
     )
 
 
-def emit_json(mode: str, root: str, outcomes: list[RepoOutcome]) -> None:
+def emit_json(
+    mode: str,
+    root: str,
+    outcomes: list[RepoOutcome],
+    discovery_errors: list[dict[str, Any]],
+) -> None:
     data = {
         "mode": mode,
         "root": root,
+        "errors": discovery_errors,
         "repos": [outcome_to_dict(o) for o in outcomes],
         "summary": summarize(outcomes),
     }
@@ -1478,18 +1536,6 @@ def main(argv: list[str] | None = None) -> int:
         outcome = process_repo(repo, args, mode, garbage_globs)
         outcomes.append(outcome)
 
-    # Discovery-level errors attach to a synthetic outcome for emission only if no real outcomes exist.
-    if discovery_errors and not outcomes:
-        outcomes.append(RepoOutcome(
-            path=str(root),
-            base={"ref": args.base, "commit": None, "local_branch": None},
-            remote=select_remote(args.base, args.remote),
-            current_branch=None,
-            errors=discovery_errors,
-        ))
-    elif discovery_errors:
-        outcomes[0].errors.extend(discovery_errors)
-
     # Mode-specific execution
     overall_ok = True
     if mode in ("yes", "default", "interactive"):
@@ -1503,19 +1549,33 @@ def main(argv: list[str] | None = None) -> int:
         for outcome in outcomes:
             ok = execute_plan(
                 Path(outcome.path), outcome.actions, outcome.skipped, outcome.errors,
-                allow_class_b=allow_class_b,
+                allow_class_b=allow_class_b, process_policy=args.process_policy,
             )
             if not ok:
                 overall_ok = False
             outcome.current_branch = current_branch(Path(outcome.path)) or outcome.current_branch
 
     if args.json:
-        emit_json(mode, str(root), outcomes)
+        emit_json(mode, str(root), outcomes, discovery_errors)
     else:
-        emit_text(mode, str(root), outcomes)
+        emit_text(mode, str(root), outcomes, discovery_errors)
 
-    if not outcomes:
-        return 0
+    # Exit-code semantics:
+    # - 2: configuration / discovery / planning failure (caller should fix the
+    #      invocation: bad --repo, missing base, broken worktree list, etc.)
+    # - 1: execution failure or fetch failure during a non-dry-run mode
+    # - 0: success, or only non-fatal errors such as pr_check_failed
+    DISCOVERY_REASONS = {
+        "not_a_git_repo", "base_missing", "worktree_list_failed",
+        "branch_list_failed", "base_resolve_failed",
+    }
+    if discovery_errors:
+        return 2
+    if any(
+        e["reason"] in DISCOVERY_REASONS
+        for o in outcomes for e in o.errors
+    ):
+        return 2
 
     returncode = 0
     if not overall_ok:

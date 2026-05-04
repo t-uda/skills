@@ -277,7 +277,7 @@ class CoreFlowTests(unittest.TestCase):
             fixture.add_standard_cases()
             result, data = run_script_v2(fixture.repo, "--dry-run", "--base", "main", "--no-fetch")
             self.assertEqual(result.returncode, 0)
-            self.assertEqual(set(data), {"mode", "root", "repos", "summary"})
+            self.assertEqual(set(data), {"mode", "root", "errors", "repos", "summary"})
             self.assertEqual(data["mode"], "dry-run")
             r = self.repo_data(data)
             self.assertEqual(set(r) >= {"path", "actions", "skipped", "errors", "dirty",
@@ -650,6 +650,134 @@ class ProcessProbeTests(unittest.TestCase):
             )
             self.assertEqual(result.returncode, 0, msg=str(data))
             self.assertFalse(wt.exists())
+
+
+class ClassBAndInteractiveTests(unittest.TestCase):
+    """Class B: PR-verified merged branch + dirty disposable content."""
+
+    def _setup_class_b_fixture(self, root: Path) -> tuple[RepoFixture, Path, str]:
+        """Construct a Class B scenario:
+
+        - branch issue-99-foo modifies README.md to v2 (PR head OID recorded)
+        - main is updated separately to v3 (representing the squash-merge that
+          extended the branch on the remote)
+        - worktree on issue-99-foo has README.md = v2 at HEAD
+        - working tree edits README.md to v3 (matches base, dirty vs HEAD)
+
+        The script must classify this as Class B (PR-verified merged + tracked
+        diff matches base + no problematic untracked).
+        """
+        fixture = RepoFixture.create(root)
+        git(fixture.repo, "remote", "set-url", "origin", "git@github.com:fake/repo.git")
+        # Branch X with v2.
+        git(fixture.repo, "switch", "-c", "issue-99-foo", "main")
+        write(fixture.repo / "README.md", "v2\n")
+        git(fixture.repo, "add", "README.md")
+        git(fixture.repo, "commit", "-m", "v2 on issue-99-foo")
+        oid = branch_oid(fixture.repo, "issue-99-foo")
+        # main moves to v3 (representing the squash that extended the PR).
+        git(fixture.repo, "switch", "main")
+        write(fixture.repo / "README.md", "v3\n")
+        git(fixture.repo, "add", "README.md")
+        git(fixture.repo, "commit", "-m", "v3 on main")
+        # Worktree on issue-99-foo, then edit README.md to v3 (matches base).
+        wt = root / "feature-wt"
+        git(fixture.repo, "worktree", "add", str(wt), "issue-99-foo")
+        write(wt / "README.md", "v3\n")
+        return fixture, wt, oid
+
+    def test_class_b_classified_and_gated_by_yes(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            fixture, wt, oid = self._setup_class_b_fixture(root)
+            bin_dir = install_fake_gh(
+                root, {("issue-99-foo", "main"): [{"number": 99, "headRefOid": oid}]},
+            )
+            env = env_without_real_gh(bin_dir)
+
+            # Default mode: Class B is skipped, worktree stays.
+            result, data = run_script_v2(
+                fixture.repo, "--base", "main", "--no-fetch", env=env,
+            )
+            self.assertEqual(result.returncode, 0, msg=str(data))
+            self.assertTrue(wt.exists())
+            r = data["repos"][0]  # type: ignore[index]
+            classes = {d["class"] for d in r["dirty"]}
+            self.assertEqual(classes, {"B"}, msg=str(data))
+
+            # --yes mode: Class B is executed.
+            result, data = run_script_v2(
+                fixture.repo, "--yes", "--base", "main", "--no-fetch", env=env,
+            )
+            self.assertEqual(result.returncode, 0, msg=str(data))
+            self.assertFalse(wt.exists())
+            self.assertFalse(branch_exists(fixture.repo, "issue-99-foo"))
+
+    def test_interactive_prompt_yes_executes_class_b(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            fixture, wt, oid = self._setup_class_b_fixture(root)
+            bin_dir = install_fake_gh(
+                root, {("issue-99-foo", "main"): [{"number": 99, "headRefOid": oid}]},
+            )
+            env = env_without_real_gh(bin_dir)
+
+            result, data = run_script_v2(
+                fixture.repo, "--interactive", "--base", "main", "--no-fetch",
+                env=env, stdin="y\n",
+            )
+            self.assertEqual(result.returncode, 0, msg=str(data))
+            self.assertFalse(wt.exists())
+            self.assertFalse(branch_exists(fixture.repo, "issue-99-foo"))
+
+    def test_interactive_prompt_no_keeps_class_b(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            fixture, wt, oid = self._setup_class_b_fixture(root)
+            bin_dir = install_fake_gh(
+                root, {("issue-99-foo", "main"): [{"number": 99, "headRefOid": oid}]},
+            )
+            env = env_without_real_gh(bin_dir)
+
+            result, data = run_script_v2(
+                fixture.repo, "--interactive", "--base", "main", "--no-fetch",
+                env=env, stdin="n\n",
+            )
+            self.assertEqual(result.returncode, 0, msg=str(data))
+            self.assertTrue(wt.exists())
+            self.assertTrue(branch_exists(fixture.repo, "issue-99-foo"))
+
+
+class ExitCodeTests(unittest.TestCase):
+    def test_invalid_repo_arg_returns_2(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            result, data = run_script_v2(
+                Path(tmp), "--repo", str(Path(tmp) / "does-not-exist"),
+                "--base", "main", "--no-fetch", check=False,
+            )
+            self.assertEqual(result.returncode, 2)
+            self.assertEqual(data["errors"][0]["reason"], "not_a_git_repo")  # type: ignore[index]
+
+
+class DiscoverySingleRepoFallbackTests(unittest.TestCase):
+    def test_root_repo_skipped_when_subordinates_exist(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            outer = RepoFixture.create(root)
+            inner = RepoFixture.create(root / "nested")
+            make_merged_branch(outer.repo, "outer-merged")
+            make_merged_branch(inner.repo, "inner-merged")
+            # Run from the outer.repo directory so root is itself a repo and
+            # discovery walks into nested/.
+            result, data = run_script_v2(
+                outer.repo.parent, "--base", "main", "--no-fetch", "--dry-run",
+            )
+            self.assertEqual(result.returncode, 0, msg=str(data))
+            paths = {r["path"] for r in data["repos"]}  # type: ignore[index]
+            # outer.repo is a repo at root/repo; inner.repo is at root/nested/repo
+            # Discovery walks from `tmp` → finds tmp/repo (outer) and tmp/nested/repo (inner).
+            # Both are subordinates of `tmp` itself, which isn't a repo.
+            self.assertEqual(len(paths), 2)
 
 
 class ModeMutualExclusionTests(unittest.TestCase):

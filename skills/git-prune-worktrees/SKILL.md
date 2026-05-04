@@ -116,35 +116,15 @@ local base branch}` plus any branch checked out as the current branch.
 
 `git worktree remove --force` is forbidden.
 
-## Dirty classification
+## Dirty worktrees and process probes
 
-For each dirty worktree, the script applies deterministic rules; the first
-matching class wins.
+The script classifies each dirty worktree (A/B/C/D) and probes for live
+processes holding it before removal. Both are deterministic and live in the
+script; do not restate the rules in prose. Inspect `--dry-run --json` fields
+`dirty[].class` and `process_probes[].result` for the actual decisions.
 
-- **Class D — high-risk** (always skipped): staged changes, merge conflicts,
-  submodule status changes, untracked files >10 MiB, dirty state on a
-  protected branch.
-- **Class A — disposable**: every dirty path is gitignore-ignored or matches
-  the built-in disposable-glob list (logs, caches, `__pycache__`,
-  `node_modules`, build outputs, etc., extended via `--garbage-glob`).
-  Cleaned with path-scoped `git checkout -- <paths>` and
-  `git clean -fd -- <paths>`.
-- **Class B — subsumed**: branch is PR-verified merged AND tracked diff
-  matches base AND every untracked path is Class-A-disposable. Same cleanup
-  as Class A; gated by `--yes` or `--interactive`.
-- **Class C — potentially unique**: anything else. Always skipped. Not
-  auto-discarded.
-
-The script does not stash. Stashing is not part of any flow.
-
-## Process probes
-
-Before removing a worktree, the script probes for live processes whose cwd or
-open files lie inside the worktree path. Probes degrade
-`/proc/*/cwd` → `lsof +D` → `fuser -m`; tmux pane scan augments best-effort.
-
-Outcomes: `clear` / `held` / `unavailable`.
-
-`--process-policy` default is `skip`: both `held` and `unavailable` skip the
-worktree. `ignore` proceeds regardless. `ask` falls back to `skip` outside
-the consolidated confirmation path.
+- Class A (disposable: gitignore + glob list) is always cleaned path-scoped.
+  The script never stashes.
+- Class B (subsumed by merged PR) is gated by `--yes` or `--interactive`.
+- Class C / D and `held` / `unavailable` probes are always skipped under the
+  default `--process-policy=skip`. `ignore` overrides probe skips.
