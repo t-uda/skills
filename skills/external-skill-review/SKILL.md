@@ -34,7 +34,7 @@ Work through these steps in order. Stop at the first blocking condition.
 Read `.agents/approved-external-skills.json` in the target workspace using the bundled script:
 
 ```sh
-python3 skills/external-skill-review/scripts/catalog.py get <repo> <skill_path> <pinned_ref>
+python3 scripts/catalog.py get <repo> <skill_path> <pinned_ref>
 ```
 
 If the script prints an entry, an exact match on `(repo, skill_path, pinned_ref)` with `review_status: approved` exists — skip to step 8 and reuse the stored provenance.
@@ -163,10 +163,10 @@ Use the bundled script to read and write the catalog reliably:
 
 ```sh
 # Look up an entry (repo, skill_path, pinned_ref must all match)
-python3 skills/external-skill-review/scripts/catalog.py get owner/repo skills/example abc1234
+python3 scripts/catalog.py get owner/repo skills/example abc1234
 
 # Add or update an entry (pass JSON string)
-python3 skills/external-skill-review/scripts/catalog.py add '{"repo":"owner/repo","skill_path":"skills/example",...}'
+python3 scripts/catalog.py add '{"repo":"owner/repo","skill_path":"skills/example",...}'
 ```
 
 The home directory is not the source of truth. Keep the catalog project-local.
