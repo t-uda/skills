@@ -26,11 +26,30 @@ for util in mktemp rm cat printf bash sh dirname cd echo command; do
   fi
 done
 
+GH_LOG="${WORK}/gh.log"
+
 write_fake_gh() {
   # $1: copilot api outcome (0=success, nonzero=failure)
   # $2: codex-mention outcome (0=success, nonzero=failure)
+  : >"${GH_LOG}"
   cat >"${BIN}/gh" <<EOF
 #!/usr/bin/env bash
+{
+  printf 'argv:%s\n' "\$*"
+  if [[ "\$*" == *"--body-file"* ]]; then
+    for arg in "\$@"; do :; done
+    # Find the body-file arg and append its contents under a marker.
+    while [[ \$# -gt 0 ]]; do
+      if [[ "\$1" == "--body-file" ]]; then
+        printf 'body-file:\n'
+        cat "\$2" 2>/dev/null
+        printf 'body-end\n'
+        break
+      fi
+      shift
+    done
+  fi
+} >>"${GH_LOG}"
 case "\$*" in
   *requested_reviewers*) exit $1 ;;
   *issues/*comments*)    exit $2 ;;
@@ -106,6 +125,10 @@ EOF
 chmod +x "${BIN}/codex"
 out="$(run_acquire owner/repo 1)"
 check '[[ "$out" == *"route: codex_cli"* ]]' "codex CLI fallback ⇒ route: codex_cli"
+check 'grep -q "argv:.*pr comment.*--body-file" "${GH_LOG}"' "codex CLI fallback ⇒ gh pr comment invoked with --body-file"
+check 'grep -q "## Codex CLI review" "${GH_LOG}"' "codex CLI body has 'Codex CLI review' header"
+check 'grep -q "Reviewed-by: codex-cli" "${GH_LOG}"' "codex CLI body has 'Reviewed-by: codex-cli' line"
+check 'grep -q "Codex CLI review artifact" "${GH_LOG}"' "codex CLI body contains the artifact"
 
 echo
 echo "Result: ${pass} passed, ${fail} failed"

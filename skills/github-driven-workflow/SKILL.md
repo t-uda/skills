@@ -67,6 +67,7 @@ The bundled default tries Copilot → `@codex` mention → Codex CLI artifact in
 - A Copilot code review result.
 - A `@codex` review (independent regardless of who posted the request).
 - A Codex CLI review artifact posted as a PR comment, identifying the reviewer and covering the diff.
+- An explicit user PR comment clearly framed as a review (concrete findings or approval), even if not posted as a formal GitHub Review event.
 - Another reviewer agent recorded with `Reviewed-by: <reviewing-entity-id>` distinct from the implementer. Independence is judged by the recorded identity, not by the GitHub poster.
 
 Self-reviews, local notes, unlinked claims, and generic comments do not qualify. Pick the lowest-friction route available; do not exhaust slow async routes when a faster durable route is already available. Asynchronous routes (Copilot, `@codex`) require waiting; if no response appears within a reasonable wait, switch routes rather than block indefinitely.

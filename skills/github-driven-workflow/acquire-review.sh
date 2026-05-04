@@ -3,9 +3,15 @@
 # Tries Copilot review → @codex mention → Codex CLI artifact in order.
 # Override by setting REVIEW_ACQUIRE_SCRIPT to a project-specific implementation.
 #
+# Semantics: exit 0 means the review request was *dispatched* (reviewer
+# assigned, mention posted, or artifact comment posted), not that
+# qualifying review evidence is already on the PR. Async routes
+# (Copilot, @codex) require waiting; whether evidence has accrued is
+# decided by the §8 merge gate (`reviews[] | length >= 1`), not here.
+#
 # Usage: acquire-review.sh <OWNER>/<REPO> <PR_NUMBER>
 # Exit codes:
-#   0   one route succeeded (printed: "route: <name>")
+#   0   one route was dispatched (printed: "route: <name>")
 #   1   all routes failed; record an authorized bypass per SKILL.md §7
 #   64  usage error
 #   127 precondition error (e.g. `gh` CLI missing)
@@ -36,15 +42,20 @@ route_codex_mention() {
 
 route_codex_cli() {
   command -v codex >/dev/null 2>&1 || return 1
-  local tmp
-  tmp="$(mktemp)"
-  if codex exec "Review PR #${PR} in ${REPO}. Inspect the diff and report concrete findings." >"$tmp" 2>/dev/null \
-     && [[ -s "$tmp" ]] \
-     && gh pr comment "${PR}" --repo "${REPO}" --body-file "$tmp" >/dev/null 2>&1; then
-    rm -f "$tmp"
-    return 0
+  local raw final
+  raw="$(mktemp)"
+  final="$(mktemp)"
+  trap 'rm -f "$raw" "$final"' RETURN
+  if codex exec "Review PR #${PR} in ${REPO}. Inspect the diff and report concrete findings." >"$raw" 2>/dev/null \
+     && [[ -s "$raw" ]]; then
+    {
+      printf '## Codex CLI review\n\n'
+      printf 'Reviewed-by: codex-cli\n\n'
+      cat "$raw"
+    } >"$final"
+    gh pr comment "${PR}" --repo "${REPO}" --body-file "$final" >/dev/null 2>&1
+    return $?
   fi
-  rm -f "$tmp"
   return 1
 }
 
