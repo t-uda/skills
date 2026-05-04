@@ -235,36 +235,61 @@ Operational rules:
   delegation prompt and document its scope; do not rely on whatever the
   worker's environment happens to load
 
-## Remote-control: rare user-facing handoff only
+## Remote-control: applicability conditions and verification
 
-Claude Code's remote-control / `--spawn=worktree` paths are sometimes
-described as a way to dispatch work from a local orchestrator to a remote
-session. **Do not treat them as a normal autonomous-execution backend.**
+Claude Code's remote-control / `--spawn=worktree` paths dispatch work to
+a claude.ai (or mobile) session. Whether this fits a given task depends
+on a few verifiable conditions; record unverified failure modes as
+needs-validation items, not as blanket prohibitions.
 
-What remote-control actually is:
+### Observed CLI behaviour
 
-- a **user-facing handoff** to a claude.ai (or mobile) session
-- not a reliable mechanism for transferring local context, handoff
-  prompts, or PR/session state back to the local coordinator
-- expensive when it gets stuck; can burn usage with little progress
+- launching remote-control transitions the local pane to a `Connected`
+  state and typically displays a `Continue coding in https://claude.ai/code?...`
+  URL while waiting for the user
+- the standard CLI options (`--spawn=worktree`, `--permission-mode`,
+  etc.) accept arguments as documented in `claude --help`
 
-Use remote-control only when **the user themselves** should observe or
-intervene through claude.ai or mobile, for example:
+### Apply remote-control when
 
-- monitoring PR progress while away from the workstation
-- responding to user-only confirmation points
-- decisions that require the user's authority, authorship, or judgement
-- situations where the coordinator must not act on the user's behalf
+- the user themselves should observe or intervene through claude.ai or
+  mobile (for example, monitoring PR progress while away from the
+  workstation)
+- a decision requires the user's authority, authorship, or judgement
+- the coordinator must not act on the user's behalf
 
-Do not escalate to remote-control merely because a local Claude task is
-mildly stuck. That tends to be context-inefficient and leaves the user
-with poor handoff context. If a task should run remotely, decide that at
-the start of the task, not midstream.
+### Verify before treating remote-control as failed
 
-Mark `remote-control --spawn=worktree` as a **needs-validation** recipe
-in this repository; do not promote it to a recommended autonomous
-delegation pattern without specific tests covering context handoff,
-session/PR survivability, and recovery on the user's side.
+`Connected` waiting is a normal state — not a failure — when:
+
+- the pane shows a `Connected` line
+- no error or disconnect line is present
+
+A `Continue coding in https://claude.ai/code?...` URL is supporting
+evidence of the same healthy state when present, but its absence does
+not, on its own, indicate failure (the URL is observed *typically*, not
+*always*).
+
+A pane sitting in `Connected` without further output is not, by itself,
+a sign of failure.
+
+When dispatching through tmux, distinguish "characters typed into the
+prompt" from "prompt actually submitted" before suspecting
+remote-control. Use a single tmux target `<session>` (or
+`<session>:<window>.<pane>`) for both capture and submission so the
+pre/post comparison is apples-to-apples:
+
+- pre-send capture: `tmux capture-pane -pt <session>`
+- send: `tmux send-keys -t <session> '<input>' Enter`
+- post-send capture: `tmux capture-pane -pt <session>`
+- if the two captures are identical, the input was not submitted; the
+  issue is on the tmux side, not remote-control
+- a prompt buffer that still shows typed text without a corresponding
+  submission is not a remote-control failure
+
+`<session>` here is whatever tmux target the caller chose; this check
+does not depend on any particular orchestration framework, but the same
+target must be used across all three steps above.
 
 ## Generic delegation handoff template
 
@@ -311,7 +336,11 @@ own instructions, not here.
 - stream-json orchestration event shape and stability
 - `--permission-mode` edge cases for specific tools / MCP combinations
 - `remote-control --spawn=worktree` as a context-preserving dispatch
-  mechanism (currently treated as user-facing handoff only)
+  mechanism, including:
+  - stop-reason observability for remote-controlled sessions
+  - reliability of context propagation between local coordinator and
+    remote pane
+  - recovery cost when a remote-controlled session stalls
 
 When using a needs-validation feature, mark it explicitly in the task and
 keep the fallback path in scope.
@@ -324,7 +353,8 @@ keep the fallback path in scope.
 - run MCP-spawning commands only in trusted directories
 - prefer `--strict-mcp-config` for delegated runs
 - never silently take over a delegate's task after it stops
-- treat remote-control as a user-facing intervention path, not a backend
+- apply remote-control under the documented Connected and
+  typed-vs-submitted checks before treating it as failed
 - do not paste raw `claude --help` output into project documentation;
   link to it instead
 
