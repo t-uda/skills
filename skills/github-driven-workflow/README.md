@@ -45,7 +45,7 @@ Implementations are encouraged but not required to use exit `64` for usage error
 
 ### Self-reference safety
 
-If `REVIEW_ACQUIRE_SCRIPT` happens to resolve to the bundled script's own realpath, the bundled script ignores the override and runs its built-in routes. This prevents accidental infinite `exec` recursion when an operator mis-points the variable.
+The bundled script unsets `REVIEW_ACQUIRE_SCRIPT` from the environment before `exec`'ing the override. If the operator points the env var back at this script (or the override re-invokes the bundled script), the child process sees no override and falls through to built-in routes — no infinite recursion regardless of platform.
 
 ### Why an env var (not SKILL.md text)
 
@@ -53,10 +53,10 @@ The override mechanism is a *project environment* concern, not part of the skill
 
 ## `scripts/test_acquire_review.sh`
 
-Smoke tests for `acquire-review.sh`. Shadows `gh` and `codex` with fake binaries on `PATH` to drive each route without touching real GitHub. Run it from anywhere:
+Smoke tests for `acquire-review.sh`. Shadows `gh` and `codex` with fake binaries on `PATH` to drive each route without touching real GitHub. Run from this skill's root:
 
 ```sh
-bash skills/github-driven-workflow/scripts/test_acquire_review.sh
+bash scripts/test_acquire_review.sh
 ```
 
-Covers usage error, missing-`gh` precondition, each route's success path, all-routes-failed, and `REVIEW_ACQUIRE_SCRIPT` delegation.
+Covers usage error, missing-`gh` precondition, each route's success path, all-routes-failed, and `REVIEW_ACQUIRE_SCRIPT` delegation (including the self-reference fall-through).

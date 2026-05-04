@@ -21,7 +21,7 @@ BIN="${WORK}/bin"
 mkdir -p "$BIN"
 
 # Provide minimal POSIX utilities the script needs (mktemp, rm, cat, etc).
-for util in mktemp rm cat printf bash sh dirname cd echo command readlink; do
+for util in mktemp rm cat printf bash sh dirname cd echo command; do
   if real="$(command -v "$util")"; then
     ln -sf "$real" "${BIN}/${util}"
   fi

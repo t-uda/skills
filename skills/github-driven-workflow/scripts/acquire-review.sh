@@ -33,14 +33,15 @@ if [[ $# -lt 2 ]]; then
 fi
 
 # Project override: delegate fully to $REVIEW_ACQUIRE_SCRIPT when set.
-# Compare realpaths to avoid self-recursion if the env var points back
-# at this very script.
+# Unset the env var before exec'ing so that even if the operator points
+# it back at this script (or the override re-invokes us), the child
+# process sees no override and falls through to built-in routes — no
+# infinite recursion. Avoids the portability hazard of `readlink -f`
+# (GNU-only).
 if [[ -n "${REVIEW_ACQUIRE_SCRIPT:-}" ]]; then
-  override_real="$(readlink -f "$REVIEW_ACQUIRE_SCRIPT" 2>/dev/null || true)"
-  self_real="$(readlink -f "${BASH_SOURCE[0]}" 2>/dev/null || true)"
-  if [[ -n "$override_real" && "$override_real" != "$self_real" ]]; then
-    exec "$REVIEW_ACQUIRE_SCRIPT" "$@"
-  fi
+  override="$REVIEW_ACQUIRE_SCRIPT"
+  unset REVIEW_ACQUIRE_SCRIPT
+  exec "$override" "$@"
 fi
 
 REPO="$1"
