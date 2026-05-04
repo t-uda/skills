@@ -1,54 +1,38 @@
 ---
 name: github-driven-workflow
-description: Enforce issue-first, PR-gated delivery with no direct main pushes, independent review requirement, and deterministic merge gates. Use when assigned by an orchestrator to govern the full delivery lifecycle for a GitHub issue, when enforcing PR-gated delivery, when requiring independent review, or when checking merge readiness.
+description: Issue-first, PR-gated delivery — no direct main pushes, independent review required, deterministic merge gates. Use whenever a task implements a GitHub issue and ships through a PR (assigned by an orchestrator, by project rules, or self-invoked by the implementing agent).
 ---
 
 # github-driven-workflow
 
 Enforce a fail-closed GitHub delivery workflow: every change traces to an issue, lands on a branch, ships through a PR, and merges only when all gates pass.
 
-This skill governs the entire delivery lifecycle. It is assigned by an orchestrator or project rules to bind the implementing agent to this workflow for the duration of a task.
-
 ## When to use
 
-Use this skill when an orchestrator or project instructions assign it to govern a delivery task. It controls the full lifecycle from issue intake through merge.
+Whenever a task implements a change from a GitHub issue and delivers it through a PR — invoked by an orchestrator, by project instructions, or by the implementing agent itself. It controls the full lifecycle from issue intake through merge.
 
-Assign this skill for tasks that involve:
-
-- implementing a change from a GitHub issue (issue-first delivery)
-- delivering work through a PR (PR-gated delivery)
-- requiring independent review before merge
-- checking or enforcing merge gate readiness
-
-Do not invoke this skill for a single sub-step (e.g. "open a PR" or "check CI") unless the full workflow context is already established and the orchestrator has scoped the invocation explicitly.
+Do not invoke for a single sub-step (e.g. "open a PR", "check CI") unless the full workflow context is already established.
 
 ## Workflow
 
 ### 1. Resolve state
 
-Before writing any code:
+Before writing code:
 
 - Identify the target GitHub issue.
 - Confirm the default branch (`main` or equivalent).
-- Confirm no uncommitted changes that belong to a different issue.
+- Confirm no uncommitted changes belong to a different issue.
 
-If no issue is identified, stop. Request or create one before continuing.
+If no issue is identified, stop and request or create one.
 
 ### 2. Check issue readiness
 
-Inspect the issue for:
-
-- **Scope**: what is in scope and what is not.
-- **Acceptance criteria**: conditions under which the issue is complete.
-
-If either is missing or ambiguous, update the issue or request updates before writing any code.
+Inspect the issue for **scope** and **acceptance criteria**. If either is missing or ambiguous, update the issue or request updates before writing code.
 
 ### 3. Branch
 
-- Do not implement on `main`.
-- Do not push directly to `main`.
-- Create a branch named `issue-<id>-<slug>` from the current default branch.
-- Switch to that branch before making any changes.
+- Do not implement on or push to `main`.
+- Create `issue-<id>-<slug>` from the default branch and switch to it.
 
 ### 4. Implement
 
@@ -56,7 +40,7 @@ Implement the change on the `issue-<id>-<slug>` branch.
 
 ### 5. Validate locally
 
-Run the validation commands appropriate to this repository. Record the commands and their output.
+Run repo-appropriate validation. Record commands and output.
 
 ### 6. Create a PR
 
@@ -68,114 +52,49 @@ The PR must include:
 
 ### 7. Acquire independent review
 
-Independent review is required in principle. A qualifying review is review evidence produced by an actor other than the implementation author, made durably visible on the PR. Acceptable routes:
+Independent review is required in principle. A qualifying review is review evidence produced by an actor other than the implementation author, durably visible on the PR.
+
+Run the review acquisition script:
+
+```sh
+"${REVIEW_ACQUIRE_SCRIPT:-<skill-dir>/acquire-review.sh}" <OWNER>/<REPO> <PR_NUMBER>
+```
+
+`<skill-dir>` is this skill's installation directory (commonly `.claude/skills/github-driven-workflow/`, `.agents/skills/github-driven-workflow/`, or `.github/skills/github-driven-workflow/`). Set `REVIEW_ACQUIRE_SCRIPT` to override with a project-specific implementation; an override must accept `<OWNER>/<REPO> <PR_NUMBER>` and exit 0 on success.
+
+The bundled default tries Copilot → `@codex` mention → Codex CLI artifact in order and prints `route: <name>` on success. Acceptable evidence on the PR:
 
 - A formal GitHub PR review (approved, changes requested, or commented) by a non-author human.
-- A Copilot code review result visible on the PR.
-- A GitHub `@codex` review on the PR, regardless of who posted the request.
-- A Codex CLI review artifact posted as a PR comment, with the review output included verbatim and the reviewer identity stated.
-- Another review-capable agent (subagent, reviewer bot) when its review summary and reviewer identity are recorded on the PR. Subagent review evidence MUST include `Reviewed-by: <reviewing-entity-id>` in the body, where the reviewing entity is distinct from the implementing entity. Independence is judged by the identity recorded in the evidence, not by the GitHub `author.login` of whoever posted it.
-- An explicit user review on the PR (a formal review, or a comment clearly framed as a review with concrete findings or approval).
+- A Copilot code review result.
+- A `@codex` review (independent regardless of who posted the request).
+- A Codex CLI review artifact posted as a PR comment, identifying the reviewer and covering the diff.
+- Another reviewer agent recorded with `Reviewed-by: <reviewing-entity-id>` distinct from the implementer. Independence is judged by the recorded identity, not by the GitHub poster.
 
-If no review route is viable, this gate may be bypassed when authorization is recorded on the PR. Authorization may be either an orchestrator-conveyed user instruction (cited by the implementing agent) or a comment from a verified repo-owner account. See "Authorized bypass" below.
-
-Self-reviews, local notes, and unlinked claims do not qualify. Generic PR comments unrelated to review do not qualify.
-
-Pick the lowest-friction route available. Do not exhaust slow asynchronous routes when a faster durable route (e.g. Codex CLI artifact, authorized bypass) is already available.
-
-#### Requesting Copilot review
-
-Copilot code review requires the `copilot-pull-request-reviewer` GitHub App to be installed on the repository. Assign Copilot as a reviewer using the REST API with a JSON body:
-
-```sh
-gh api repos/<owner>/<repo>/pulls/<N>/requested_reviewers \
-  -X POST --input - <<'EOF'
-{"reviewers": ["copilot-pull-request-reviewer[bot]"]}
-EOF
-```
-
-- HTTP 200 with `requested_reviewers` containing `"login": "Copilot"` → reviewer added successfully.
-- HTTP 422 ("not a collaborator") → the Copilot app is not installed on this repository. Use a different qualifying route.
-
-Do not use `-f 'reviewers[]=Copilot'` or `gh pr edit --add-reviewer Copilot`; both silently fail or produce a GraphQL error.
-
-Verify assignment:
-```sh
-gh pr view <N> --json reviewRequests \
-  --jq '[.reviewRequests[].requestedReviewer.login]'
-```
-Should include `"Copilot"`.
-
-Verify completion: poll `gh pr view <N> --json reviews` until a review entry with `author.login` of `copilot-pull-request-reviewer[bot]` appears.
-
-#### Requesting @codex review
-
-Post a mention comment to request a @codex review:
-
-```sh
-gh api repos/<owner>/<repo>/issues/<N>/comments \
-  -X POST -f body='@codex please review this PR'
-```
-
-The comment always posts successfully. Verify that Codex received the notification:
-```sh
-gh api repos/<owner>/<repo>/issues/<N>/timeline \
-  --jq '[.[] | select(.event == "mentioned") | .actor.login]'
-```
-Should include `"codex"`.
-
-Verify completion by polling comments until a response from the Codex bot appears:
-```sh
-gh api repos/<owner>/<repo>/issues/<N>/comments \
-  --jq '[.[] | select(.user.login | ascii_downcase | contains("codex")) | {author: .user.login, body: .body[:120]}]'
-```
-
-If no Codex response appears after a reasonable wait, the Codex app may not be active on this repository. Use a different qualifying route.
-
-A @codex review counts as independent even when Codex opened the PR; the review agent invoked by mention runs in a separate context.
-
-#### Codex CLI review artifact
-
-When GitHub-side review routes are unavailable or impractical, run a local Codex CLI review and post the verbatim output as a PR comment so the artifact is durable:
-
-```sh
-codex exec "Review PR #<N> in this repo. Inspect the diff and report concrete findings." > /tmp/codex-review.md
-gh pr comment <N> --body-file /tmp/codex-review.md
-```
-
-The comment must identify the reviewer ("Codex CLI review") and cover the actual diff.
+Self-reviews, local notes, unlinked claims, and generic comments do not qualify. Pick the lowest-friction route available; do not exhaust slow async routes when a faster durable route is already available. Asynchronous routes (Copilot, `@codex`) require waiting; if no response appears within a reasonable wait, switch routes rather than block indefinitely.
 
 #### Authorized bypass
 
-When no review route is viable, the agent records the bypass on the PR with a comment citing the authorization:
+When no review route is viable, record the bypass on the PR with a comment citing the authorization:
 
 ```sh
 gh pr comment <N> --body 'Bypass: independent review waived. Authorization: <provenance>. Reason: <reason>.'
 ```
 
-Accepted authorization provenance:
+Accepted provenance:
 
-- **Orchestrator-conveyed user instruction.** The user has instructed the coding agent or orchestrator to run this workflow with bypass allowed. The bypass comment cites that instruction (e.g. "user instructed orchestrator to run github-driven-workflow with bypass allowed"). No per-PR comment from the repo owner is required on this path.
-- **Repo-owner PR comment.** The repo owner posts the bypass comment directly. Verify the commenter login matches the owner:
+- **Orchestrator-conveyed user instruction** — cite the instruction (e.g. "user instructed orchestrator to run github-driven-workflow with bypass allowed"). No per-PR owner comment required.
+- **Repo-owner PR comment** — verify the commenter login matches the repo owner:
   ```sh
   owner=$(gh repo view <owner>/<repo> --json owner --jq .owner.login)
   test "<commenter-login>" = "$owner"
   ```
-  For org-owned repos (where the `owner` field is the org login and matches no human account), the comment must come from an account the org owner has explicitly delegated and must cite that delegation; verification compares the commenter against the delegated login, not the org slug. Generic admin permission alone is not sufficient on this path.
+  For org-owned repos (where `owner` is the org login matching no human account), the comment must come from an account the org owner has explicitly delegated, citing that delegation; verification compares the commenter against the delegated login. Generic admin permission alone is not sufficient.
 
-Record the cited provenance (and, on the repo-owner path, the verified `<commenter-login>`) alongside the bypass evidence in step 8.
-
-#### Waiting for review
-
-Copilot, `@codex`, and other agent reviews are asynchronous. After requesting:
-
-1. Stop and wait. Do not attempt to merge.
-2. Re-check the relevant endpoint periodically.
-3. If no response appears within a reasonable wait, switch to a different qualifying route (e.g. Codex CLI artifact, manual user review, or owner bypass) rather than blocking indefinitely.
+Record the cited provenance (and verified `<commenter-login>` on the owner path) alongside the bypass evidence in §8.
 
 ### 8. Check merge gates
 
-Run all checks before merging. Each check uses a concrete command.
+Run all checks before merging.
 
 **PR state**
 
@@ -193,9 +112,7 @@ gh pr view <N> --json statusCheckRollup \
   --jq '.statusCheckRollup | map({name, state})'
 ```
 
-- If the array is empty, no checks are configured; this gate passes.
-- If any check has `state` other than `SUCCESS`, stop.
-- If the command errors, stop.
+Empty array ⇒ pass. Any non-`SUCCESS` state, or command error ⇒ stop.
 
 **Labels**
 
@@ -222,40 +139,35 @@ gh api graphql -f query='
 }'
 ```
 
-Count nodes where `isResolved` is `false`. Must be zero. If `pageInfo.hasNextPage` is `true`, repeat with `after: "<endCursor>"` until all pages are checked. If the query errors, stop.
+Count nodes where `isResolved` is `false`. Must be zero. Paginate with `after: "<endCursor>"` while `hasNextPage` is `true`. Query error ⇒ stop.
 
 **Unchecked task boxes**
 
 ```sh
-gh pr view <N> --json body \
-  --jq '.body | test("- \\[ \\]|\\* \\[ \\]")'
+gh pr view <N> --json body --jq '.body | test("- \\[ \\]|\\* \\[ \\]")'
 ```
 
 Must return `false`.
 
 **Independent review evidence or authorized bypass**
 
-Review sufficiency = `reviews[]` has at least one entry:
-
 ```sh
 gh pr view <N> --json reviews --jq '.reviews | length >= 1'
 ```
 
-Must return `true`. `state` and `author.login` are NOT gates at this step; do not filter by them here. Independence is enforced at evidence-recording time (§7), not re-checked by `author.login` at gate evaluation time.
+Must return `true`. Do not filter by `state` or `author.login` here; independence is enforced at evidence-recording time (§7). An authorized bypass recorded per §7 satisfies this gate in lieu of review evidence.
 
-**Do not gate merge on `reviewDecision`.** This field aggregates branch protection rules. For repositories without a branch protection rule that requires approving reviews, it is permanently empty regardless of how many reviews are posted. If you find yourself waiting for `reviewDecision` to flip to `APPROVED`, you are evaluating the wrong field.
+**Do not gate on `reviewDecision`.** It aggregates branch protection rules; without an approving-review rule, it stays empty regardless of review count.
 
-An authorized bypass (per §7) recorded on the PR satisfies this gate in lieu of review evidence. The bypass comment must cite the authorization provenance.
+**Do not add gates beyond this set.** `mergeStateStatus` and `reviews[].author.login` filtering are anti-patterns in autonomous environments.
+
+> **Auto Mode note:** Child agents may attempt to add gates "for safety" (commonly `reviewDecision == APPROVED` or author-login filtering). The set above is authoritative; additions are self-fabrications and should be rejected.
 
 Cite the evidence (review count, comment URL, or bypass comment URL plus cited provenance) in the merge note.
 
-**Do not add merge gates beyond the explicit set defined in this section** (PR state, CI checks, labels, unresolved review threads, unchecked task boxes, independent review evidence). Fields such as `reviewDecision`, `mergeStateStatus`, and `reviews[].author.login` filtering are anti-patterns in autonomous execution environments; they are not part of this skill's gate set and must not be added.
-
-> **Auto Mode note:** When invoked under Auto Mode, child agents may attempt to add gates "for safety" (most commonly `reviewDecision == APPROVED` or `reviews[].author.login != PR author` filtering). The declarations above are the authoritative gate set; any addition is a self-fabrication that should be rejected.
-
 ### 9. Merge
 
-Merge only when every gate passes. If any gate fails, fix, revalidate, or leave the PR open with a PR comment stating the exact blocking condition.
+Merge only when every gate passes. If any gate fails, fix, revalidate, or leave the PR open with a comment stating the exact blocking condition.
 
 ## Fail-closed behavior
 
@@ -263,20 +175,17 @@ Stop before implementation or merge when any required state cannot be verified.
 
 Stop conditions:
 
-- Issue is missing or ambiguous.
-- Issue Scope or Acceptance is missing.
-- Current branch is `main`.
-- PR is missing.
+- Issue missing or ambiguous, or missing Scope/Acceptance.
+- Current branch is `main`, or PR is missing or draft.
 - PR lacks `Closes #<issue>`.
-- Independent review evidence is missing and no authorized bypass is recorded on the PR.
-- CI check state is not `SUCCESS`, is pending, or the command errored.
-- Unresolved review thread count is nonzero or the query errored.
+- Independent review evidence missing and no authorized bypass recorded.
+- CI not `SUCCESS`, pending, or command errored.
+- Unresolved review thread count nonzero or query errored.
 - PR body has unchecked task boxes.
 - PR has a blocking label.
-- PR is draft.
 
-When stopped, state the exact condition that blocked progress and the action needed to unblock it.
+When stopped, state the exact blocking condition and the action needed to unblock.
 
 ## Scope
 
-This skill provides procedural guidance only. It does not configure GitHub branch protection rules, CI workflows, or repository permissions.
+Procedural guidance only. Does not configure GitHub branch protection, CI workflows, or repository permissions.
