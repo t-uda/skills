@@ -1,9 +1,10 @@
 #!/usr/bin/env bash
-# Smoke tests for skills/github-driven-workflow/acquire-review.sh.
+# Smoke tests for skills/github-driven-workflow/scripts/acquire-review.sh.
 #
 # Strategy: shadow `gh` and `codex` with fake binaries on PATH to drive
 # each route without touching real GitHub. Verifies usage handling, route
-# selection, and the all-routes-failed exit code.
+# selection, the all-routes-failed exit code, and REVIEW_ACQUIRE_SCRIPT
+# delegation.
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -129,6 +130,34 @@ check 'grep -q "argv:.*pr comment.*--body-file" "${GH_LOG}"' "codex CLI fallback
 check 'grep -q "## Codex CLI review" "${GH_LOG}"' "codex CLI body has 'Codex CLI review' header"
 check 'grep -q "Reviewed-by: codex-cli" "${GH_LOG}"' "codex CLI body has 'Reviewed-by: codex-cli' line"
 check 'grep -q "Codex CLI review artifact" "${GH_LOG}"' "codex CLI body contains the artifact"
+
+# --- REVIEW_ACQUIRE_SCRIPT delegation ---
+# When the env var points at a different executable, the bundled script
+# must exec it. The bundled script's own routes (and gh check) must be
+# bypassed entirely — exec replaces the process before reaching them.
+OVERRIDE="${WORK}/override.sh"
+cat >"${OVERRIDE}" <<'EOF'
+#!/usr/bin/env bash
+echo "route: project_override (evidence)"
+echo "argv:$*"
+exit 0
+EOF
+chmod +x "${OVERRIDE}"
+rm -f "${BIN}/gh"; remove_codex  # prove gh is not consulted on the delegation path
+set +e
+out="$(PATH="${BIN}" REVIEW_ACQUIRE_SCRIPT="${OVERRIDE}" "$ACQUIRE" owner/repo 7 2>&1)"
+rc=$?
+set -e
+check '[[ "$rc" == "0" ]]' "REVIEW_ACQUIRE_SCRIPT delegation ⇒ exit 0"
+check '[[ "$out" == *"route: project_override (evidence)"* ]]' "REVIEW_ACQUIRE_SCRIPT delegation ⇒ override stdout surfaces"
+check '[[ "$out" == *"argv:owner/repo 7"* ]]' "REVIEW_ACQUIRE_SCRIPT delegation ⇒ args forwarded"
+
+# --- self-reference safety: REVIEW_ACQUIRE_SCRIPT pointing at the script itself ---
+# Must not infinitely exec; falls through to built-in routes. Use a
+# working `gh` so a route can succeed and prove fall-through.
+write_fake_gh 0 0; remove_codex
+out="$(PATH="${BIN}" REVIEW_ACQUIRE_SCRIPT="${ACQUIRE}" "$ACQUIRE" owner/repo 1 2>&1)"
+check '[[ "$out" == *"route: copilot (dispatched)"* ]]' "REVIEW_ACQUIRE_SCRIPT pointing at self ⇒ falls through to built-in"
 
 echo
 echo "Result: ${pass} passed, ${fail} failed"

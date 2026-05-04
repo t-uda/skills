@@ -18,8 +18,8 @@ Use this skill when the user asks for random selection, probabilistic sampling, 
 When tool execution is available, use the bundled script:
 
 ```sh
-python3 skills/randomness/scripts/random_choice.py --uniform A B C
-python3 skills/randomness/scripts/random_choice.py --weighted A:0.2 B:0.8
+python3 scripts/random_choice.py --uniform A B C
+python3 scripts/random_choice.py --weighted A:0.2 B:0.8
 ```
 
 The script uses Python's `random` module (PRNG). It is not cryptographically secure and not suitable for fair lotteries or security-sensitive tasks.
@@ -27,7 +27,7 @@ The script uses Python's `random` module (PRNG). It is not cryptographically sec
 ### Uniform choice
 
 ```sh
-python3 skills/randomness/scripts/random_choice.py --uniform option1 option2 option3
+python3 scripts/random_choice.py --uniform option1 option2 option3
 ```
 
 Outputs the selected item to stdout.
@@ -35,7 +35,7 @@ Outputs the selected item to stdout.
 ### Weighted choice
 
 ```sh
-python3 skills/randomness/scripts/random_choice.py --weighted item1:0.3 item2:0.7
+python3 scripts/random_choice.py --weighted item1:0.3 item2:0.7
 ```
 
 Format: `item:weight`. Weights must be non-negative, finite, and sum to greater than zero.
@@ -43,7 +43,7 @@ Format: `item:weight`. Weights must be non-negative, finite, and sum to greater 
 ### JSON output
 
 ```sh
-python3 skills/randomness/scripts/random_choice.py --uniform A B C --json
+python3 scripts/random_choice.py --uniform A B C --json
 ```
 
 Outputs:

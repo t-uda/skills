@@ -54,12 +54,13 @@ The PR must include:
 
 Independent review is required in principle. A qualifying review is review evidence produced by an actor other than the implementation author, durably visible on the PR.
 
-Run the review acquisition script with `<OWNER>/<REPO> <PR_NUMBER>`:
+Run the bundled acquisition script:
 
-- If `REVIEW_ACQUIRE_SCRIPT` is set, run `"$REVIEW_ACQUIRE_SCRIPT" <OWNER>/<REPO> <PR_NUMBER>`.
-- Otherwise, locate `acquire-review.sh` under this skill's installation directory and run it. Common install paths: `.claude/skills/github-driven-workflow/acquire-review.sh`, `.agents/skills/github-driven-workflow/acquire-review.sh`, `.github/skills/github-driven-workflow/acquire-review.sh`. Resolve to a real path (no literal `<skill-dir>` placeholder) before invoking.
+```sh
+scripts/acquire-review.sh <OWNER>/<REPO> <PR_NUMBER>
+```
 
-A project-specific override must accept the same `<OWNER>/<REPO> <PR_NUMBER>` arguments and exit 0 on success. Exit-code matrices may differ between implementations; **callers should treat any nonzero exit as "review not acquired"** and proceed to authorized bypass per below. Implementations are encouraged but not required to use exit 64 for usage error and exit 127 for missing dependencies.
+Treat any nonzero exit as "review not acquired" and proceed to authorized bypass per below. Project-level customization of acquisition logic is documented in the skill's `README.md`.
 
 The bundled default tries Copilot → `@codex` mention → Codex CLI artifact in order and prints `route: <name> (dispatched)` or `route: <name> (evidence)` on success. The token distinguishes whether evidence is already on the PR: `(dispatched)` means only that an async request was sent (Copilot reviewer assigned, `@codex` mention posted) and the §8 evidence gate is **not** yet satisfied; `(evidence)` means a synchronous artifact comment was posted (e.g. Codex CLI) and the §8 gate can match it directly. **Callers must not equate `route: <name>` alone with merge-readiness — only the §8 gate determines that.** For dispatched routes, wait briefly and re-check §8; if evidence does not accrue within a reasonable wait, switch routes or proceed to authorized bypass per below.
 

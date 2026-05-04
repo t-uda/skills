@@ -24,7 +24,7 @@ chooses one mode based on user intent and runs the script once.
 Pick exactly one. Default invocation:
 
 ```sh
-python3 skills/git-workspace-cleanup/scripts/git_prune_worktrees.py --yes
+python3 scripts/git_prune_worktrees.py --yes
 ```
 
 The script defaults to workspace mode rooted at the current working directory.

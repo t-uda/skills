@@ -17,7 +17,7 @@ Use it when:
 The bundled script is the source of truth for scaffold shape, guard comments, placeholder rules, section rendering, and the counted-line budget:
 
 ```sh
-python3 skills/growing-agents-md/scripts/growing_agents_md.py <command>
+python3 scripts/growing_agents_md.py <command>
 ```
 
 ## Workflow
@@ -31,9 +31,9 @@ python3 skills/growing-agents-md/scripts/growing_agents_md.py <command>
 ## Commands
 
 ```sh
-python3 skills/growing-agents-md/scripts/growing_agents_md.py init
-python3 skills/growing-agents-md/scripts/growing_agents_md.py lint
-python3 skills/growing-agents-md/scripts/growing_agents_md.py apply --input agents.json
+python3 scripts/growing_agents_md.py init
+python3 scripts/growing_agents_md.py lint
+python3 scripts/growing_agents_md.py apply --input agents.json
 ```
 
 `apply` expects JSON shaped like:

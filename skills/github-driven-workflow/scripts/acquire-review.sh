@@ -1,7 +1,11 @@
 #!/usr/bin/env bash
-# Default review acquisition for github-driven-workflow §7.
+# Bundled review acquisition for github-driven-workflow §7.
 # Tries Copilot review → @codex mention → Codex CLI artifact in order.
-# Override by setting REVIEW_ACQUIRE_SCRIPT to a project-specific implementation.
+#
+# Project override: set REVIEW_ACQUIRE_SCRIPT to a project-specific
+# implementation; this script will exec it with the same arguments,
+# and its exit code / stdout surface unchanged. See this skill's
+# README.md for the override contract.
 #
 # Semantics: exit 0 means a route succeeded, but the printed token
 # distinguishes whether evidence is already on the PR.
@@ -15,7 +19,7 @@
 # Whether evidence has accrued for dispatched routes is decided by
 # the §8 merge gate, not here.
 #
-# Usage: acquire-review.sh <OWNER>/<REPO> <PR_NUMBER>
+# Usage: scripts/acquire-review.sh <OWNER>/<REPO> <PR_NUMBER>
 # Exit codes:
 #   0   one route succeeded (printed: "route: <name> (dispatched|evidence)")
 #   1   all routes failed; record an authorized bypass per SKILL.md §7
@@ -26,6 +30,18 @@ set -euo pipefail
 if [[ $# -lt 2 ]]; then
   echo "Usage: $0 <OWNER>/<REPO> <PR_NUMBER>" >&2
   exit 64
+fi
+
+# Project override: delegate fully to $REVIEW_ACQUIRE_SCRIPT when set.
+# Unset the env var before exec'ing so that even if the operator points
+# it back at this script (or the override re-invokes us), the child
+# process sees no override and falls through to built-in routes — no
+# infinite recursion. Avoids the portability hazard of `readlink -f`
+# (GNU-only).
+if [[ -n "${REVIEW_ACQUIRE_SCRIPT:-}" ]]; then
+  override="$REVIEW_ACQUIRE_SCRIPT"
+  unset REVIEW_ACQUIRE_SCRIPT
+  exec "$override" "$@"
 fi
 
 REPO="$1"
