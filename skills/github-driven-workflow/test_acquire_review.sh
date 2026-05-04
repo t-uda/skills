@@ -101,12 +101,12 @@ check '[[ "$rc" == "127" ]]' "gh missing ⇒ exit 127"
 # --- copilot route succeeds ---
 write_fake_gh 0 0; remove_codex
 out="$(run_acquire owner/repo 1)"
-check '[[ "$out" == *"route: copilot"* ]]' "copilot success ⇒ route: copilot"
+check '[[ "$out" == *"route: copilot (dispatched)"* ]]' "copilot success ⇒ route: copilot (dispatched)"
 
 # --- copilot fails, codex_mention succeeds ---
 write_fake_gh 1 0; remove_codex
 out="$(run_acquire owner/repo 1)"
-check '[[ "$out" == *"route: codex_mention"* ]]' "copilot 422 ⇒ codex_mention"
+check '[[ "$out" == *"route: codex_mention (dispatched)"* ]]' "copilot 422 ⇒ codex_mention (dispatched)"
 
 # --- both gh routes fail, no codex CLI ⇒ exit 1 ---
 write_fake_gh 1 1; remove_codex
@@ -124,7 +124,7 @@ echo "Codex CLI review artifact"
 EOF
 chmod +x "${BIN}/codex"
 out="$(run_acquire owner/repo 1)"
-check '[[ "$out" == *"route: codex_cli"* ]]' "codex CLI fallback ⇒ route: codex_cli"
+check '[[ "$out" == *"route: codex_cli (evidence)"* ]]' "codex CLI fallback ⇒ route: codex_cli (evidence)"
 check 'grep -q "argv:.*pr comment.*--body-file" "${GH_LOG}"' "codex CLI fallback ⇒ gh pr comment invoked with --body-file"
 check 'grep -q "## Codex CLI review" "${GH_LOG}"' "codex CLI body has 'Codex CLI review' header"
 check 'grep -q "Reviewed-by: codex-cli" "${GH_LOG}"' "codex CLI body has 'Reviewed-by: codex-cli' line"

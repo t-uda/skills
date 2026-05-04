@@ -61,7 +61,9 @@ Run the review acquisition script with `<OWNER>/<REPO> <PR_NUMBER>`:
 
 A project-specific override must accept the same `<OWNER>/<REPO> <PR_NUMBER>` arguments and exit 0 on success. Exit-code matrices may differ between implementations; **callers should treat any nonzero exit as "review not acquired"** and proceed to authorized bypass per below. Implementations are encouraged but not required to use exit 64 for usage error and exit 127 for missing dependencies.
 
-The bundled default tries Copilot → `@codex` mention → Codex CLI artifact in order and prints `route: <name>` on success. Acceptable evidence on the PR:
+The bundled default tries Copilot → `@codex` mention → Codex CLI artifact in order and prints `route: <name> (dispatched)` or `route: <name> (evidence)` on success. The token distinguishes whether evidence is already on the PR: `(dispatched)` means only that an async request was sent (Copilot reviewer assigned, `@codex` mention posted) and the §8 evidence gate is **not** yet satisfied; `(evidence)` means a synchronous artifact comment was posted (e.g. Codex CLI) and the §8 gate can match it directly. **Callers must not equate `route: <name>` alone with merge-readiness — only the §8 gate determines that.** For dispatched routes, wait briefly and re-check §8; if evidence does not accrue within a reasonable wait, switch routes or proceed to authorized bypass per below.
+
+Acceptable evidence on the PR:
 
 - A formal GitHub PR review (approved, changes requested, or commented) by a non-author human.
 - A Copilot code review result.
