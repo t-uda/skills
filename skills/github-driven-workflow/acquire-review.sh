@@ -5,9 +5,10 @@
 #
 # Usage: acquire-review.sh <OWNER>/<REPO> <PR_NUMBER>
 # Exit codes:
-#   0  one route succeeded (printed: "route: <name>")
-#   1  all routes failed; record an authorized bypass per SKILL.md §7
-#   64 usage error
+#   0   one route succeeded (printed: "route: <name>")
+#   1   all routes failed; record an authorized bypass per SKILL.md §7
+#   64  usage error
+#   127 precondition error (e.g. `gh` CLI missing)
 set -euo pipefail
 
 if [[ $# -lt 2 ]]; then
@@ -20,7 +21,7 @@ PR="$2"
 
 if ! command -v gh >/dev/null 2>&1; then
   echo "ERROR: gh not found on PATH" >&2
-  exit 1
+  exit 127
 fi
 
 route_copilot() {

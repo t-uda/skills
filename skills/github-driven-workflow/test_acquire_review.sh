@@ -71,6 +71,14 @@ rc=$?
 set -e
 check '[[ "$rc" == "64" ]]' "no args ⇒ exit 64"
 
+# --- precondition error: gh missing ⇒ exit 127 ---
+rm -f "${BIN}/gh"; remove_codex
+set +e
+PATH="${BIN}" "$ACQUIRE" owner/repo 1 >/dev/null 2>&1
+rc=$?
+set -e
+check '[[ "$rc" == "127" ]]' "gh missing ⇒ exit 127"
+
 # --- copilot route succeeds ---
 write_fake_gh 0 0; remove_codex
 out="$(run_acquire owner/repo 1)"

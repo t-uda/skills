@@ -54,13 +54,12 @@ The PR must include:
 
 Independent review is required in principle. A qualifying review is review evidence produced by an actor other than the implementation author, durably visible on the PR.
 
-Run the review acquisition script:
+Run the review acquisition script with `<OWNER>/<REPO> <PR_NUMBER>`:
 
-```sh
-"${REVIEW_ACQUIRE_SCRIPT:-<skill-dir>/acquire-review.sh}" <OWNER>/<REPO> <PR_NUMBER>
-```
+- If `REVIEW_ACQUIRE_SCRIPT` is set, run `"$REVIEW_ACQUIRE_SCRIPT" <OWNER>/<REPO> <PR_NUMBER>`.
+- Otherwise, locate `acquire-review.sh` under this skill's installation directory and run it. Common install paths: `.claude/skills/github-driven-workflow/acquire-review.sh`, `.agents/skills/github-driven-workflow/acquire-review.sh`, `.github/skills/github-driven-workflow/acquire-review.sh`. Resolve to a real path (no literal `<skill-dir>` placeholder) before invoking.
 
-`<skill-dir>` is this skill's installation directory (commonly `.claude/skills/github-driven-workflow/`, `.agents/skills/github-driven-workflow/`, or `.github/skills/github-driven-workflow/`). Set `REVIEW_ACQUIRE_SCRIPT` to override with a project-specific implementation; an override must accept `<OWNER>/<REPO> <PR_NUMBER>` and exit 0 on success.
+A project-specific override must accept the same `<OWNER>/<REPO> <PR_NUMBER>` arguments and exit 0 on success. Exit-code matrices may differ between implementations; **callers should treat any nonzero exit as "review not acquired"** and proceed to authorized bypass per below. Implementations are encouraged but not required to use exit 64 for usage error and exit 127 for missing dependencies.
 
 The bundled default tries Copilot → `@codex` mention → Codex CLI artifact in order and prints `route: <name>` on success. Acceptable evidence on the PR:
 
