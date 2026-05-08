@@ -25,11 +25,18 @@ trap 'rm -rf "$WORK"' EXIT
 BIN="${WORK}/bin"
 mkdir -p "$BIN"
 
-# python3 must be discoverable in the hermetic PATH alongside the POSIX
-# utilities the script needs. Include grep/sed/tr/awk/head/basename so a
-# pyenv-style python3 shim (which shells out to those before launching
-# Python) does not fail with "command not found" before the script starts.
-for util in python3 mktemp rm cat printf bash sh dirname basename cd echo command grep sed tr awk head tail; do
+# Resolve python3 to its real interpreter binary (not a pyenv-style shim
+# script) so the hermetic PATH does not need to mirror every helper a shim
+# might invoke (grep, sed, tr, awk, sort, cut, …). sys.executable points at
+# the underlying binary regardless of how python3 was discovered on $PATH.
+PYTHON3_REAL="$(python3 -c 'import sys; print(sys.executable)' 2>/dev/null)"
+if [[ -z "$PYTHON3_REAL" || ! -x "$PYTHON3_REAL" ]]; then
+  echo "FAIL: could not resolve python3 interpreter binary" >&2
+  exit 1
+fi
+ln -sf "$PYTHON3_REAL" "${BIN}/python3"
+
+for util in mktemp rm cat printf bash sh dirname basename cd echo command; do
   if real="$(command -v "$util")"; then
     ln -sf "$real" "${BIN}/${util}"
   fi
