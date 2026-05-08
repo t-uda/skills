@@ -26,8 +26,10 @@ BIN="${WORK}/bin"
 mkdir -p "$BIN"
 
 # python3 must be discoverable in the hermetic PATH alongside the POSIX
-# utilities the script needs.
-for util in python3 mktemp rm cat printf bash sh dirname cd echo command; do
+# utilities the script needs. Include grep/sed/tr/awk/head/basename so a
+# pyenv-style python3 shim (which shells out to those before launching
+# Python) does not fail with "command not found" before the script starts.
+for util in python3 mktemp rm cat printf bash sh dirname basename cd echo command grep sed tr awk head tail; do
   if real="$(command -v "$util")"; then
     ln -sf "$real" "${BIN}/${util}"
   fi
