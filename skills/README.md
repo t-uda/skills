@@ -33,3 +33,4 @@ Current skills:
 - shell-script-engineering
 - claude-code-advanced-orchestration
 - textlint-cli
+- github-project-board-maintenance
