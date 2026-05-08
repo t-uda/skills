@@ -57,18 +57,18 @@ Independent review is required in principle. A qualifying review is review evide
 Run the bundled acquisition script:
 
 ```sh
-scripts/acquire-review.sh <OWNER>/<REPO> <PR_NUMBER>
+scripts/acquire-review.py <OWNER>/<REPO> <PR_NUMBER> [kind]
 ```
 
 Treat any nonzero exit as "review not acquired" and proceed to authorized bypass per below. Project-level customization of acquisition logic is documented in the skill's `README.md`.
 
-The bundled default tries Copilot → `@codex` mention → Codex CLI artifact in order and prints `route: <name> (dispatched)` or `route: <name> (evidence)` on success. The token distinguishes whether evidence is already on the PR: `(dispatched)` means only that an async request was sent (Copilot reviewer assigned, `@codex` mention posted) and the §8 evidence gate is **not** yet satisfied; `(evidence)` means a synchronous artifact comment was posted (e.g. Codex CLI) and the §8 gate can match it directly. **Callers must not equate `route: <name>` alone with merge-readiness — only the §8 gate determines that.** For dispatched routes, wait briefly and re-check §8; if evidence does not accrue within a reasonable wait, switch routes or proceed to authorized bypass per below.
+The bundled default is reviewer-neutral: it picks `copilot` or `codex` uniformly at random (or honors an explicit `[kind]` third argument) and dispatches a single asynchronous review request, printing `route: <kind> (dispatched)` on success. The bundled script does not prefer any specific automatic reviewer; projects that want a different selection policy supply one via the `REVIEW_ACQUIRE_SCRIPT` override (see the skill's `README.md`). `(dispatched)` means only that an async request was sent — the §8 evidence gate is **not** yet satisfied. **Callers must not equate `route: <name>` alone with merge-readiness — only the §8 gate determines that.** Wait briefly and re-check §8; if evidence does not accrue within a reasonable wait, dispatch a different kind or proceed to authorized bypass per below. Override implementations may also emit `(evidence)` when their route posts a durable artifact at dispatch time.
 
 Acceptable evidence on the PR:
 
 - A formal GitHub PR review (approved, changes requested, or commented) by a non-author human.
 - A Copilot code review result.
-- A `@codex` review (independent regardless of who posted the request).
+- A `@codex` review (independent regardless of who posted the request) — typically a formal Review event, occasionally a top-level comment that the agent recognizes as a review.
 - A Codex CLI review artifact posted as a PR comment, identifying the reviewer and covering the diff.
 - An explicit user PR comment clearly framed as a review (concrete findings or approval), even if not posted as a formal GitHub Review event.
 - Another reviewer agent recorded with `Reviewed-by: <reviewing-entity-id>` distinct from the implementer. Independence is judged by the recorded identity, not by the GitHub poster.
@@ -156,7 +156,7 @@ Must return `false`.
 
 The gate passes when **any** of the three clauses below is satisfied. They mirror the evidence types §7 accepts; do not filter by `state` or `author.login` (independence is enforced at evidence-recording time per §7).
 
-*Clause 1 — formal Review event.* Copilot, `@codex`, and human GitHub reviews land here.
+*Clause 1 — formal Review event.* Any formal GitHub PR Review event satisfies this clause regardless of the reviewer's identity (humans, Copilot, Codex, or other reviewer accounts that produce formal reviews). Reviewer agents that respond as a normal comment rather than a formal Review event are matched by Clause 2 (`Reviewed-by:` marker) or, when owner-authored with a review verb, by Clause 3.
 
 ```sh
 gh pr view <N> --json reviews --jq '.reviews | length >= 1'
