@@ -236,14 +236,15 @@ def load_status_map(path: str) -> tuple[bool, dict, str]:
 
 def match_items(snapshot: dict, repo: str) -> dict[tuple[str, int], dict]:
     """Build (type, number) -> snapshot item index for the target repo."""
+    repo_lc = repo.lower()
     out: dict[tuple[str, int], dict] = {}
     for node in snapshot["items"]:
         content = node.get("content") or {}
         typename = content.get("__typename")
         if typename not in ("Issue", "PullRequest"):
             continue
-        repo_name = (content.get("repository") or {}).get("nameWithOwner")
-        if repo_name != repo:
+        repo_name = (content.get("repository") or {}).get("nameWithOwner") or ""
+        if repo_name.lower() != repo_lc:
             continue
         kind = "issue" if typename == "Issue" else "pr"
         num = content.get("number")
