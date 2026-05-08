@@ -73,7 +73,14 @@ Acceptable evidence on the PR:
 - An explicit user PR comment clearly framed as a review (concrete findings or approval), even if not posted as a formal GitHub Review event.
 - Another reviewer agent recorded with `Reviewed-by: <reviewing-entity-id>` distinct from the implementer. Independence is judged by the recorded identity, not by the GitHub poster.
 
-Self-reviews, local notes, unlinked claims, and generic comments do not qualify. Pick the lowest-friction route available; do not exhaust slow async routes when a faster durable route is already available. Asynchronous routes (Copilot, `@codex`) require waiting; if no response appears within a reasonable wait, switch routes rather than block indefinitely.
+Self-reviews, local notes, unlinked claims, and generic comments do not qualify. Asynchronous routes (Copilot, `@codex`) require waiting for review evidence to accrue.
+
+Once a route has been dispatched on a PR, the agent must **not silently dispatch a different kind on the same PR** to "fix up" a route that did not produce a review. That reproduces the double-dispatch / quota-waste failure mode the bundled wrapper was designed to prevent (the project-side incident behind reviewer-neutral routing). When a dispatched route silent-fails (no response within a reasonable wait) **or** responds with a configuration-failure boilerplate (e.g. the `@codex` bot replying with `To use Codex here, create a Codex account and connect to github…` rather than a review), the only sanctioned next moves are:
+
+1. **Escalate to the repo owner** so the configuration can be fixed (e.g. enable the Codex connector, or grant the bot account the access it needs), then re-dispatch the same kind on the same PR after the fix.
+2. **Record an authorized bypass** per the below.
+
+A second dispatch on the same PR with a *different* kind is permitted only when the caller (or a project policy) explicitly chooses it as the route for this PR — not as an agent-side silent retry.
 
 #### Authorized bypass
 
