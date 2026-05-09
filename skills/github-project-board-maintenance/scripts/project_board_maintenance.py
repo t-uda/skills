@@ -42,6 +42,14 @@ def gh_auth_ok() -> bool:
 def gh_api_json(args: list[str]) -> tuple[bool, Any, str]:
     rc, out, err = run_gh(["api", *args])
     if rc != 0:
+        # gh exits non-zero for partial GraphQL errors (e.g. user vs org ambiguity)
+        # but still emits a JSON body with a "data" key — try to salvage it.
+        try:
+            parsed = json.loads(out)
+            if isinstance(parsed, dict) and "data" in parsed:
+                return True, parsed, ""
+        except (json.JSONDecodeError, ValueError):
+            pass
         return False, None, (err.strip() or out.strip())[:500]
     try:
         return True, json.loads(out), ""
@@ -184,9 +192,16 @@ def fetch_project_snapshot(
         ok, data, err = gh_api_json(args)
         if not ok:
             return False, {}, err
-        if isinstance(data, dict) and data.get("errors"):
-            return False, {}, json.dumps(data["errors"])[:500]
         d = data.get("data", {}) if isinstance(data, dict) else {}
+        if isinstance(data, dict) and data.get("errors"):
+            # Partial errors (e.g. user-not-found when owner is an org) are tolerated
+            # as long as we can resolve the project from the data that did come back.
+            proj_check = (
+                (d.get("organization") or {}).get("projectV2")
+                or (d.get("user") or {}).get("projectV2")
+            )
+            if not proj_check:
+                return False, {}, json.dumps(data["errors"])[:500]
         proj = (
             (d.get("organization") or {}).get("projectV2")
             or (d.get("user") or {}).get("projectV2")
