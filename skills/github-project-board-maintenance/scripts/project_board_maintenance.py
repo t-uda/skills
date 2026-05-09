@@ -46,7 +46,7 @@ def gh_api_json(args: list[str]) -> tuple[bool, Any, str]:
         # but still emits a JSON body with a "data" key — try to salvage it.
         try:
             parsed = json.loads(out)
-            if isinstance(parsed, dict) and "data" in parsed:
+            if isinstance(parsed, dict) and isinstance(parsed.get("data"), dict):
                 return True, parsed, ""
         except (json.JSONDecodeError, ValueError):
             pass
@@ -192,16 +192,24 @@ def fetch_project_snapshot(
         ok, data, err = gh_api_json(args)
         if not ok:
             return False, {}, err
-        d = data.get("data", {}) if isinstance(data, dict) else {}
+        d = (data.get("data") or {}) if isinstance(data, dict) else {}
         if isinstance(data, dict) and data.get("errors"):
-            # Partial errors (e.g. user-not-found when owner is an org) are tolerated
-            # as long as we can resolve the project from the data that did come back.
+            errors_list = data["errors"]
+            # Only tolerate the known user-not-found error from the dual org+user query.
+            # Any other error (auth, rate-limit, null field resolution, etc.) is fatal.
+            _user_res_re = re.compile(
+                r"Could not resolve to a (User|Organization) with the login of"
+            )
+            non_tolerable = [
+                e for e in errors_list
+                if not (isinstance(e, dict) and _user_res_re.search(e.get("message", "")))
+            ]
             proj_check = (
                 (d.get("organization") or {}).get("projectV2")
                 or (d.get("user") or {}).get("projectV2")
             )
-            if not proj_check:
-                return False, {}, json.dumps(data["errors"])[:500]
+            if non_tolerable or not proj_check:
+                return False, {}, json.dumps(errors_list)[:500]
         proj = (
             (d.get("organization") or {}).get("projectV2")
             or (d.get("user") or {}).get("projectV2")
