@@ -198,7 +198,7 @@ def fetch_project_snapshot(
             # Only tolerate the known user-not-found error from the dual org+user query.
             # Any other error (auth, rate-limit, null field resolution, etc.) is fatal.
             _user_res_re = re.compile(
-                r"Could not resolve to a (User|Organization) with the login of"
+                r"Could not resolve to an? (User|Organization) with the login of"
             )
             non_tolerable = [
                 e for e in errors_list
