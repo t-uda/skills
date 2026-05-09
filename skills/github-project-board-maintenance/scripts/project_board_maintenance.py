@@ -42,6 +42,14 @@ def gh_auth_ok() -> bool:
 def gh_api_json(args: list[str]) -> tuple[bool, Any, str]:
     rc, out, err = run_gh(["api", *args])
     if rc != 0:
+        # gh exits non-zero for partial GraphQL errors (e.g. user vs org ambiguity)
+        # but still emits a JSON body with a "data" key — try to salvage it.
+        try:
+            parsed = json.loads(out)
+            if isinstance(parsed, dict) and isinstance(parsed.get("data"), dict):
+                return True, parsed, ""
+        except (json.JSONDecodeError, ValueError):
+            pass
         return False, None, (err.strip() or out.strip())[:500]
     try:
         return True, json.loads(out), ""
@@ -184,9 +192,24 @@ def fetch_project_snapshot(
         ok, data, err = gh_api_json(args)
         if not ok:
             return False, {}, err
+        d = (data.get("data") or {}) if isinstance(data, dict) else {}
         if isinstance(data, dict) and data.get("errors"):
-            return False, {}, json.dumps(data["errors"])[:500]
-        d = data.get("data", {}) if isinstance(data, dict) else {}
+            errors_list = data["errors"]
+            # Only tolerate the known user-not-found error from the dual org+user query.
+            # Any other error (auth, rate-limit, null field resolution, etc.) is fatal.
+            _user_res_re = re.compile(
+                r"Could not resolve to a (User|Organization) with the login of"
+            )
+            non_tolerable = [
+                e for e in errors_list
+                if not (isinstance(e, dict) and _user_res_re.search(e.get("message", "")))
+            ]
+            proj_check = (
+                (d.get("organization") or {}).get("projectV2")
+                or (d.get("user") or {}).get("projectV2")
+            )
+            if non_tolerable or not proj_check:
+                return False, {}, json.dumps(errors_list)[:500]
         proj = (
             (d.get("organization") or {}).get("projectV2")
             or (d.get("user") or {}).get("projectV2")
