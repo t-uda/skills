@@ -531,7 +531,7 @@ class PreservedSafetyModelTests(unittest.TestCase):
             bin_dir = install_fake_gh(
                 root,
                 search_responses={
-                    ("issue-18", "main"): [{
+                    ("head:issue-18", "main"): [{
                         "number": 18,
                         "headRefName": "issue-18-context-harness-guardrails-plan",
                         "headRefOid": oid,

@@ -480,6 +480,10 @@ def issue_branch_prefix(branch: str) -> str | None:
     return match.group(1)
 
 
+def issue_branch_head_search(prefix: str) -> str:
+    return f"head:{prefix}"
+
+
 def gh_list_merged_prs(
     repo: Path,
     owner: str,
@@ -551,7 +555,7 @@ def pr_merged_via_gh(
         prefix = issue_branch_prefix(branch)
         if prefix is not None:
             search_items, error = gh_list_merged_prs(
-                repo, owner, name, base, search=prefix,
+                repo, owner, name, base, search=issue_branch_head_search(prefix),
             )
             if error is not None or search_items is None:
                 return None, error
