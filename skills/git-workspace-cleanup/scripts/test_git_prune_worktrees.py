@@ -36,6 +36,7 @@ def install_fake_gh(
     root: Path,
     responses: dict[tuple[str, str], list[dict[str, object]]] | None = None,
     *,
+    search_responses: dict[tuple[str, str], list[dict[str, object]]] | None = None,
     fail: bool = False,
 ) -> Path:
     bin_dir = root / "fake-bin"
@@ -47,7 +48,13 @@ def install_fake_gh(
         for i, ((head, base), payload) in enumerate(responses.items()):
             data_path = data_dir / f"resp-{i}.json"
             data_path.write_text(json.dumps(payload), encoding="utf-8")
-            index[f"{head}\0{base}"] = str(data_path)
+            index[f"head\0{head}\0{base}"] = str(data_path)
+    if search_responses is not None:
+        offset = len(index)
+        for i, ((search, base), payload) in enumerate(search_responses.items(), start=offset):
+            data_path = data_dir / f"resp-{i}.json"
+            data_path.write_text(json.dumps(payload), encoding="utf-8")
+            index[f"search\0{search}\0{base}"] = str(data_path)
     index_path = data_dir / "index.json"
     index_path.write_text(json.dumps(index), encoding="utf-8")
     script = bin_dir / "gh"
@@ -61,17 +68,24 @@ if args[:1] == ["--version"]:
 if {fail!r}:
     sys.stderr.write("fake gh: simulated failure\\n")
     sys.exit(1)
-head = base = ""
+head = base = search = ""
 i = 0
 while i < len(args):
     if args[i] == "--head" and i + 1 < len(args):
         head = args[i + 1]
+    elif args[i] == "--search" and i + 1 < len(args):
+        search = args[i + 1]
     elif args[i] == "--base" and i + 1 < len(args):
         base = args[i + 1]
     i += 1
 with open({str(index_path)!r}) as fh:
     index = json.load(fh)
-key = head + "\\x00" + base
+if head:
+    key = "head\\x00" + head + "\\x00" + base
+elif search:
+    key = "search\\x00" + search + "\\x00" + base
+else:
+    key = ""
 path = index.get(key)
 if path and os.path.exists(path):
     with open(path) as fh:
@@ -509,6 +523,33 @@ class PreservedSafetyModelTests(unittest.TestCase):
             self.assertEqual(done[0]["reason"], "merged_branch_via_pr")
             self.assertIn("PR #50", done[0]["detail"])
 
+    def test_prefix_search_matches_renamed_issue_branch(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            branch = "issue-18-merge-gate"
+            fixture, oid = self._setup_squash_fixture(root, branch)
+            bin_dir = install_fake_gh(
+                root,
+                search_responses={
+                    ("head:issue-18", "main"): [{
+                        "number": 18,
+                        "headRefName": "issue-18-context-harness-guardrails-plan",
+                        "headRefOid": oid,
+                    }],
+                },
+            )
+            env = env_without_real_gh(bin_dir)
+            result, data = run_script_v2(
+                fixture.repo, "--yes", "--base", "main", "--no-fetch", env=env,
+            )
+            self.assertEqual(result.returncode, 0, msg=str(data))
+            self.assertFalse(branch_exists(fixture.repo, branch))
+            r = self.repo_data(data)
+            done = [a for a in r["actions"] if a["status"] == "done" and a["branch"] == branch]
+            self.assertEqual(len(done), 1)
+            self.assertEqual(done[0]["reason"], "merged_branch_via_pr")
+            self.assertIn("PR #18", done[0]["detail"])
+
 
 class WorkspaceDiscoveryTests(unittest.TestCase):
     def test_discovers_multiple_repos_under_root(self) -> None:
@@ -614,7 +655,11 @@ class ProcessProbeTests(unittest.TestCase):
             self.assertEqual(result.returncode, 0, msg=str(data))
             self.assertTrue(wt.exists())
             r = data["repos"][0]  # type: ignore[index]
-            reasons = {s["reason"] for s in r["skipped"] if s["target"] == str(wt)}
+            reasons = {
+                s["reason"]
+                for s in r["skipped"]
+                if Path(s["target"]).resolve() == wt.resolve()
+            }
             self.assertIn("process_held", reasons)
             probe_states = {p["result"] for p in r["process_probes"]}
             self.assertIn("held", probe_states)
@@ -633,7 +678,11 @@ class ProcessProbeTests(unittest.TestCase):
             self.assertEqual(result.returncode, 0)
             self.assertTrue(wt.exists())
             r = data["repos"][0]  # type: ignore[index]
-            reasons = {s["reason"] for s in r["skipped"] if s["target"] == str(wt)}
+            reasons = {
+                s["reason"]
+                for s in r["skipped"]
+                if Path(s["target"]).resolve() == wt.resolve()
+            }
             self.assertIn("process_probe_unavailable", reasons)
 
     def test_ignore_policy_proceeds_despite_held(self) -> None:

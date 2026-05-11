@@ -14,6 +14,7 @@ import argparse
 import fnmatch
 import json
 import os
+import re
 import shlex
 import shutil
 import subprocess
@@ -41,6 +42,7 @@ DEFAULT_GARBAGE_GLOBS = [
 ]
 
 LARGE_FILE_THRESHOLD = 10 * 1024 * 1024  # 10 MiB
+ISSUE_BRANCH_PREFIX_RE = re.compile(r"^(issue-\d+)(?:$|[-_/])")
 
 
 # ---------------------------------------------------------------------------
@@ -471,6 +473,64 @@ def base_branch_name(base: str) -> str:
     return branch or base
 
 
+def issue_branch_prefix(branch: str) -> str | None:
+    match = ISSUE_BRANCH_PREFIX_RE.match(branch)
+    if match is None:
+        return None
+    return match.group(1)
+
+
+def issue_branch_head_search(prefix: str) -> str:
+    return f"head:{prefix}"
+
+
+def gh_list_merged_prs(
+    repo: Path,
+    owner: str,
+    name: str,
+    base: str,
+    *,
+    head: str | None = None,
+    search: str | None = None,
+) -> tuple[list[dict[str, Any]] | None, dict[str, Any] | None]:
+    command = [
+        "gh", "pr", "list",
+        "--repo", f"{owner}/{name}",
+        "--state", "merged",
+        "--base", base,
+        "--json", "number,headRefName,headRefOid",
+        "--limit", "100",
+    ]
+    if head is not None:
+        command.extend(["--head", head])
+    if search is not None:
+        command.extend(["--search", search])
+    try:
+        completed = subprocess.run(
+            command,
+            cwd=str(repo),
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            encoding="utf-8",
+            check=False,
+        )
+    except (FileNotFoundError, OSError) as exc:
+        branch = head if head is not None else search or ""
+        return None, error_record("pr_check_failed", command, str(exc), branch)
+    if completed.returncode != 0:
+        branch = head if head is not None else search or ""
+        return None, error_record("pr_check_failed", command, completed.stderr, branch)
+    try:
+        items = json.loads(completed.stdout or "[]")
+    except json.JSONDecodeError as exc:
+        branch = head if head is not None else search or ""
+        return None, error_record("pr_check_failed", command, str(exc), branch)
+    if not isinstance(items, list):
+        branch = head if head is not None else search or ""
+        return None, error_record("pr_check_failed", command, "invalid gh response", branch)
+    return items, None
+
+
 def pr_merged_via_gh(
     repo: Path,
     owner: str,
@@ -485,32 +545,27 @@ def pr_merged_via_gh(
     Three sub-checks (preserved): exact OID match, tree equality, ancestry.
     Returns (pr_number, error). pr_number=None means no qualifying PR.
     """
-    command = [
-        "gh", "pr", "list",
-        "--repo", f"{owner}/{name}",
-        "--state", "merged",
-        "--head", branch,
-        "--base", base,
-        "--json", "number,headRefOid",
-        "--limit", "20",
-    ]
-    try:
-        completed = subprocess.run(
-            command,
-            cwd=str(repo),
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-            encoding="utf-8",
-            check=False,
-        )
-    except (FileNotFoundError, OSError) as exc:
-        return None, error_record("pr_check_failed", command, str(exc), branch)
-    if completed.returncode != 0:
-        return None, error_record("pr_check_failed", command, completed.stderr, branch)
-    try:
-        items = json.loads(completed.stdout or "[]")
-    except json.JSONDecodeError as exc:
-        return None, error_record("pr_check_failed", command, str(exc), branch)
+    items, error = gh_list_merged_prs(
+        repo, owner, name, base, head=branch,
+    )
+    if error is not None or items is None:
+        return None, error
+
+    if not items:
+        prefix = issue_branch_prefix(branch)
+        if prefix is not None:
+            search_items, error = gh_list_merged_prs(
+                repo, owner, name, base, search=issue_branch_head_search(prefix),
+            )
+            if error is not None or search_items is None:
+                return None, error
+            items = [
+                item
+                for item in search_items
+                if isinstance(item, dict)
+                and issue_branch_prefix(str(item.get("headRefName", ""))) == prefix
+            ]
+
     oid_mismatch_candidates: list[tuple[int, str]] = []
     for item in items:
         if not isinstance(item, dict):
