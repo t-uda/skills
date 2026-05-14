@@ -35,6 +35,7 @@ Each skill must live at `skills/<skill-name>/SKILL.md`.
 ### Artifact cleanup
 
 - `deslop-history`: clean final user-visible artifacts from accepted decisions or issue/PR discussion by removing historical residue and process framing
+- `deslop-prose`: clean academic or professional prose by removing hype, generic metadiscourse, decorative structure, and claim-evidence mismatch while preserving technical meaning
 
 ### Orchestration
 
