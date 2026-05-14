@@ -25,6 +25,7 @@ Do not use this skill for:
 - historical records, changelogs, postmortems, or audit artifacts where history is required content
 - unresolved design discussions
 - legal, regulatory, or compliance material where provenance must be preserved
+- broad prose polishing when the main problem is inflated, generic, or AI-sounding writing without discussion residue
 
 Do not remove:
 
@@ -59,6 +60,7 @@ Use these categories.
 - `current-state-essential` — current decisions, interfaces, contracts, responsibility splits, active constraints, active assumptions, and operational open issues
 - `operational-rationale` — rationale still needed to prevent misimplementation or misuse
 - `historical-meta-residue` — discussion provenance, superseded alternatives, prior drafts, process notes, defensive explanations, and agent-facing framing
+- `historical-meta-residue` also includes negative definitions that mainly answer an earlier misunderstanding instead of stating the current role directly
 - `nonessential-context` — background that may be interesting but does not change the reader's action
 
 Keep `current-state-essential`.
@@ -81,6 +83,8 @@ Candidates for deletion or rewriting include:
 - "In review ..."
 - "For now" when it reflects discussion timing rather than a real boundary
 - migration or backward-compatibility framing with no current operational effect
+- "This is not X" when it mainly reacts to earlier discussion rather than preventing a likely current misuse
+- internal protocol detail that exists only to coordinate drafting or review
 
 Candidates for retention include:
 
@@ -99,6 +103,10 @@ Candidates for retention include:
 - Remove defensive framing about why the artifact exists.
 - Remove agent-facing process commentary from user-facing outputs.
 - Keep caveats that affect execution, but make them operational.
+- Rewrite negative definitions into positive current-state statements when possible.
+- Keep negative framing only when it prevents a likely misuse by the intended reader.
+- Separate process from structure: describe the actual responsibility boundary, interface, or user model, not the planning discussion that produced it.
+- Replace internal coordination protocols with reader-facing abstractions unless the reader must execute the protocol.
 - Preserve links only when they define current authority, unresolved boundaries, or required follow-up.
 - Do not introduce new decisions, broaden scope, or erase active constraints.
 
@@ -112,6 +120,16 @@ After: Preserve compatibility notes when they affect current behaviour.
 ```text
 Before: This supersedes the earlier direction to include the full discussion.
 After: Include only current decisions and operational constraints.
+```
+
+```text
+Before: This is not intended to replace the existing evaluation framework.
+After: This complements the existing evaluation framework by handling final prose cleanup.
+```
+
+```text
+Before: The 12-tier scoring protocol and 9 failure-mode taxonomy are used to synchronise agent review.
+After: The review uses a structured evaluation framework to identify common failure modes.
 ```
 
 ## Output
@@ -140,9 +158,11 @@ Before finishing, verify:
 - deleting removed text cannot cause likely misimplementation
 - the artifact reads as if written directly in final form
 - open issue references remain only when operationally useful
+- internal review or coordination protocol details are either removed or rewritten for the intended reader
 
 ## Relationship to Other Skills
 
 - Use `sot-integrity` when the artifact's authority or factual grounding must be audited.
 - Use `metaplan` when a plan or spec still needs execution-readiness review.
 - Use `handoff-prompt` when the output is a transfer prompt for another agent.
+- Use `deslop-prose` when the main problem is inflated, generic, or over-polished prose rather than issue-history residue.
