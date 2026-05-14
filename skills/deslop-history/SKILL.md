@@ -59,8 +59,7 @@ Use these categories.
 
 - `current-state-essential` — current decisions, interfaces, contracts, responsibility splits, active constraints, active assumptions, and operational open issues
 - `operational-rationale` — rationale still needed to prevent misimplementation or misuse
-- `historical-meta-residue` — discussion provenance, superseded alternatives, prior drafts, process notes, defensive explanations, and agent-facing framing
-- `historical-meta-residue` also includes negative definitions that mainly answer an earlier misunderstanding instead of stating the current role directly
+- `historical-meta-residue` — discussion provenance, superseded alternatives, prior drafts, process notes, defensive explanations, agent-facing framing, and negative definitions that mainly answer an earlier misunderstanding instead of stating the current role directly
 - `nonessential-context` — background that may be interesting but does not change the reader's action
 
 Keep `current-state-essential`.
