@@ -54,11 +54,13 @@ The PR must include:
 
 Independent review is required in principle. A qualifying review is review evidence produced by an actor other than the implementation author, durably visible on the PR.
 
-Run the bundled acquisition script:
+Run the bundled acquisition script. Resolve this path from the `github-driven-workflow` skill root, not from the target repository root:
 
 ```sh
 scripts/acquire-review.py <OWNER>/<REPO> <PR_NUMBER> [kind]
 ```
+
+In this source repository the same helper lives at `skills/github-driven-workflow/scripts/acquire-review.py`; in an installed skill it remains `scripts/acquire-review.py` relative to the installed skill directory.
 
 Treat any nonzero exit as "review not acquired" and proceed to authorized bypass per below. Project-level customization of acquisition logic is documented in the skill's `README.md`.
 
