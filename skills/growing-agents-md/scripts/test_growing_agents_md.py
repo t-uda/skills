@@ -50,6 +50,7 @@ EXPECTED_SCAFFOLD = """# Agent Guidelines
 - Update commands and architecture when workflows change.
 - Keep durable rules here; move detail to dedicated docs.
 """
+POPULATED_GUARD = "<!-- Managed section: update with apply input, or omit/pass [] to remove. -->"
 
 
 def run_script(
@@ -144,7 +145,9 @@ class GrowingAgentsMdTests(unittest.TestCase):
             self.assertIn("## Commands", text)
             self.assertIn("## Code Conventions", text)
             self.assertIn("## Architecture", text)
+            self.assertIn(POPULATED_GUARD, text)
             self.assertNotIn("[TODO:", text)
+            self.assertNotIn("Remove the placeholder", text)
             self.assertIn("## Maintenance Notes", text)
             self.assertEqual(run_script(root, "lint").returncode, 0)
 
@@ -172,6 +175,49 @@ class GrowingAgentsMdTests(unittest.TestCase):
             self.assertNotIn("## Commands", text)
             self.assertNotIn("## Code Conventions", text)
             self.assertNotIn("## Architecture", text)
+
+    def test_minimal_commands_and_architecture_file_is_lint_valid(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            run_script(root, "init")
+
+            result = run_script(
+                root,
+                "apply",
+                "--input",
+                "-",
+                input_text=json.dumps(
+                    {
+                        "commands": ["~~~sh", "python3 -m unittest", "~~~"],
+                        "architecture": ["- Keep deterministic scaffold logic in bundled scripts."],
+                    }
+                ),
+            )
+
+            self.assertEqual(result.returncode, 0)
+            text = (root / "AGENTS.md").read_text(encoding="utf-8")
+            self.assertNotIn("## Project Overview", text)
+            self.assertIn("## Commands", text)
+            self.assertNotIn("## Code Conventions", text)
+            self.assertIn("## Architecture", text)
+            self.assertNotIn("Remove the placeholder", text)
+            self.assertEqual(run_script(root, "lint").returncode, 0)
+
+    def test_lint_rejects_populated_sections_with_placeholder_guard(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            write(
+                root / "AGENTS.md",
+                EXPECTED_SCAFFOLD.replace(
+                    "- [TODO: add stable repo overview]",
+                    "- Stable repo summary.",
+                ),
+            )
+
+            result = run_script(root, "lint", check=False)
+
+            self.assertNotEqual(result.returncode, 0)
+            self.assertIn("Project Overview must use the populated-section guard comment", result.stderr)
 
     def test_lint_fails_when_placeholder_tokens_remain_in_populated_section(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
