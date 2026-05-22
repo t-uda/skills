@@ -33,7 +33,8 @@ FORBIDDEN_HEADINGS = {"notes", "misc", "context", "important context", "other"}
 class ReplaceableSection:
     key: str
     heading: str
-    comment: str
+    placeholder_comment: str
+    content_comment: str
     placeholder_lines: tuple[str, ...]
     kind: str
 
@@ -42,28 +43,32 @@ REPLACEABLE_SECTIONS = (
     ReplaceableSection(
         key="project_overview",
         heading="Project Overview",
-        comment="<!-- Replace this section in-place. Remove the placeholder line once filled. -->",
+        placeholder_comment="<!-- Replace this section in-place. Remove the placeholder line once filled. -->",
+        content_comment="<!-- Managed section: update with apply input, or omit/pass [] to remove. -->",
         placeholder_lines=("- [TODO: add stable repo overview]",),
         kind="bullets",
     ),
     ReplaceableSection(
         key="commands",
         heading="Commands",
-        comment="<!-- Replace this section in-place. Remove the placeholder block once filled. -->",
+        placeholder_comment="<!-- Replace this section in-place. Remove the placeholder block once filled. -->",
+        content_comment="<!-- Managed section: update with apply input, or omit/pass [] to remove. -->",
         placeholder_lines=("~~~sh", "# [TODO: add only high-value commands]", "~~~"),
         kind="commands",
     ),
     ReplaceableSection(
         key="code_conventions",
         heading="Code Conventions",
-        comment="<!-- Replace this section in-place. Remove the placeholder line once filled. -->",
+        placeholder_comment="<!-- Replace this section in-place. Remove the placeholder line once filled. -->",
+        content_comment="<!-- Managed section: update with apply input, or omit/pass [] to remove. -->",
         placeholder_lines=("- [TODO: add only non-obvious repo-specific conventions]",),
         kind="bullets",
     ),
     ReplaceableSection(
         key="architecture",
         heading="Architecture",
-        comment="<!-- Replace this section in-place. Remove the placeholder line once filled. -->",
+        placeholder_comment="<!-- Replace this section in-place. Remove the placeholder line once filled. -->",
+        content_comment="<!-- Managed section: update with apply input, or omit/pass [] to remove. -->",
         placeholder_lines=("- [TODO: add only stable architecture boundaries or entry points]",),
         kind="bullets",
     ),
@@ -259,13 +264,21 @@ def validate_section_body(
         return []
 
     section = SECTION_BY_HEADING[heading]
-    expected_prefix = ["", section.comment]
-    if body[:2] != expected_prefix:
+    if len(body) < 2 or body[0] != "":
         return [f"{heading} must keep its canonical guard comment"]
     content = body[2:]
     if not content:
         return [f"{heading} must contain placeholder content or final content"]
-    return validate_content_lines(section, content, allow_placeholder=True, context=heading)
+    is_placeholder = content == list(section.placeholder_lines)
+    content_errors = validate_content_lines(section, content, allow_placeholder=True, context=heading)
+    if content_errors:
+        return content_errors
+    expected_comment = section.placeholder_comment if is_placeholder else section.content_comment
+    if body[1] != expected_comment:
+        if not is_placeholder and body[1] == section.placeholder_comment:
+            return [f"{heading} must use the populated-section guard comment"]
+        return [f"{heading} must keep its canonical guard comment"]
+    return []
 
 
 def validate_content_lines(
@@ -373,7 +386,12 @@ def render_document(section_content: dict[str, list[str] | None]) -> str:
         content = section_content[section.key]
         if not content:
             continue
-        lines.extend([f"## {section.heading}", "", section.comment, *content, ""])
+        comment = (
+            section.placeholder_comment
+            if content == list(section.placeholder_lines)
+            else section.content_comment
+        )
+        lines.extend([f"## {section.heading}", "", comment, *content, ""])
     lines.extend([f"## {MAINTENANCE_HEADING}", "", MAINTENANCE_GUARD, *MAINTENANCE_LINES])
     return "\n".join(lines) + "\n"
 
