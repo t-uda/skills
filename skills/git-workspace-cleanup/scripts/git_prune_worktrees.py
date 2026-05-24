@@ -488,17 +488,20 @@ def gh_list_merged_prs(
     repo: Path,
     owner: str,
     name: str,
-    base: str,
     *,
     head: str | None = None,
     search: str | None = None,
 ) -> tuple[list[dict[str, Any]] | None, dict[str, Any] | None]:
+    # `--base` is intentionally omitted: stacked-PR workflows merge children
+    # into an intermediate integration branch, not directly into the cleanup
+    # base. Filtering by base here would drop those candidates before the
+    # content checks can run. Reachability into base_commit is re-verified in
+    # pr_merged_via_gh via the returned baseRefName / mergeCommit fields.
     command = [
         "gh", "pr", "list",
         "--repo", f"{owner}/{name}",
         "--state", "merged",
-        "--base", base,
-        "--json", "number,headRefName,headRefOid",
+        "--json", "number,headRefName,headRefOid,baseRefName,mergeCommit",
         "--limit", "100",
     ]
     if head is not None:
@@ -538,16 +541,20 @@ def pr_merged_via_gh(
     branch: str,
     branch_oid: str,
     base: str,
+    base_commit: str,
     remote: str = "origin",
 ) -> tuple[int | None, dict[str, Any] | None]:
-    """Look up a merged PR for `branch` and verify the local tip is incorporated.
+    """Look up a merged PR for `branch` and verify the local tip is incorporated into `base_commit`.
 
-    Three sub-checks (preserved): exact OID match, tree equality, ancestry.
+    Two layers:
+      (1) Content match against the PR head: exact OID, tree equality, or ancestry.
+      (2) Reachability into base_commit: either the PR's baseRefName equals the
+          cleanup base branch (direct merge), or the PR's mergeCommit.oid is an
+          ancestor of base_commit (stacked / intermediate-base merge).
+
     Returns (pr_number, error). pr_number=None means no qualifying PR.
     """
-    items, error = gh_list_merged_prs(
-        repo, owner, name, base, head=branch,
-    )
+    items, error = gh_list_merged_prs(repo, owner, name, head=branch)
     if error is not None or items is None:
         return None, error
 
@@ -555,7 +562,7 @@ def pr_merged_via_gh(
         prefix = issue_branch_prefix(branch)
         if prefix is not None:
             search_items, error = gh_list_merged_prs(
-                repo, owner, name, base, search=issue_branch_head_search(prefix),
+                repo, owner, name, search=issue_branch_head_search(prefix),
             )
             if error is not None or search_items is None:
                 return None, error
@@ -566,7 +573,64 @@ def pr_merged_via_gh(
                 and issue_branch_prefix(str(item.get("headRefName", ""))) == prefix
             ]
 
-    oid_mismatch_candidates: list[tuple[int, str]] = []
+    target_base = base_branch_name(base)
+
+    def _is_ancestor(child_oid: str, parent_oid: str) -> bool:
+        ancestor = run_git(["merge-base", "--is-ancestor", child_oid, parent_oid], repo)
+        if ancestor.returncode == 0:
+            return True
+        if ancestor.returncode == 1:
+            return False
+        # Unknown — try fetching both refs and retry.
+        for oid in (child_oid, parent_oid):
+            run_git(["fetch", remote, oid], repo)
+        ancestor = run_git(["merge-base", "--is-ancestor", child_oid, parent_oid], repo)
+        return ancestor.returncode == 0
+
+    def _reaches_base(
+        item: dict[str, Any],
+        visited: set[str] | None = None,
+        depth: int = 0,
+    ) -> bool:
+        if item.get("baseRefName") == target_base:
+            return True
+        if depth >= 8:
+            return False
+        merge_commit = item.get("mergeCommit") or {}
+        merge_oid = merge_commit.get("oid") if isinstance(merge_commit, dict) else None
+        if not merge_oid:
+            return False
+        # Direct: intermediate's merge commit is reachable from base_commit.
+        if _is_ancestor(merge_oid, base_commit):
+            return True
+        # Stacked / squash-of-integration: walk one step up the chain by
+        # looking for a merged PR whose head is this PR's base branch. Our
+        # merge_commit must be reachable from that next PR's head OID
+        # (i.e., the integration branch contained our merge commit at the
+        # time it was merged onward), and that PR must itself reach base.
+        base_ref = item.get("baseRefName")
+        if not base_ref:
+            return False
+        visited = set() if visited is None else visited
+        if base_ref in visited:
+            return False
+        visited = visited | {base_ref}
+        next_items, _next_err = gh_list_merged_prs(repo, owner, name, head=base_ref)
+        if not next_items:
+            return False
+        for next_item in next_items:
+            if not isinstance(next_item, dict):
+                continue
+            next_head_oid = next_item.get("headRefOid")
+            if not next_head_oid:
+                continue
+            if _is_ancestor(merge_oid, next_head_oid) and _reaches_base(
+                next_item, visited, depth + 1,
+            ):
+                return True
+        return False
+
+    oid_mismatch_candidates: list[tuple[int, str, dict[str, Any]]] = []
     for item in items:
         if not isinstance(item, dict):
             continue
@@ -575,10 +639,12 @@ def pr_merged_via_gh(
         if not isinstance(number, int) or not pr_head_oid:
             continue
         if pr_head_oid == branch_oid:
-            return number, None
-        oid_mismatch_candidates.append((number, pr_head_oid))
+            if _reaches_base(item):
+                return number, None
+            continue
+        oid_mismatch_candidates.append((number, pr_head_oid, item))
 
-    for number, pr_head_oid in oid_mismatch_candidates:
+    for number, pr_head_oid, item in oid_mismatch_candidates:
         fetch_result = run_git(["fetch", remote, pr_head_oid], repo)
         if fetch_result.returncode != 0:
             continue
@@ -589,9 +655,11 @@ def pr_merged_via_gh(
             and pr_tree.returncode == 0
             and local_tree.stdout.strip() == pr_tree.stdout.strip()
         ):
-            return number, None
+            if _reaches_base(item):
+                return number, None
+            continue
         ancestor_result = run_git(["merge-base", "--is-ancestor", branch_oid, pr_head_oid], repo)
-        if ancestor_result.returncode == 0:
+        if ancestor_result.returncode == 0 and _reaches_base(item):
             return number, None
 
     return None, None
@@ -1058,7 +1126,7 @@ def build_repo_plan(
             if protected_reason(branch, initial_branch, local_base_branch):
                 continue
             number, pr_error = pr_merged_via_gh(
-                repo, gh_owner, gh_name, branch, info["object"], pr_base, remote,
+                repo, gh_owner, gh_name, branch, info["object"], pr_base, base_commit, remote,
             )
             if pr_error:
                 outcome.errors.append(pr_error)

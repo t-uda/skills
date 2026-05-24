@@ -92,8 +92,9 @@ A branch is considered merged when either condition holds:
 1. **Reachability**: the branch tip is reachable from `--base` (true merge or
    fast-forward). Action uses `git branch -d` and reports
    `reason: merged_branch`.
-2. **PR-verified**: a merged GitHub PR exists with `head = <branch>` and
-   `base = <base>`, and at least one of the following holds:
+2. **PR-verified**: a merged GitHub PR exists with `head = <branch>`, at
+   least one content sub-check holds, **and** the PR's content provably
+   reached `--base`:
    - **(a) exact match**: the local branch tip OID equals the PR's recorded
      `headRefOid`.
    - **(b) tree equality**: after fetching the PR head, the local branch tip
@@ -102,6 +103,15 @@ A branch is considered merged when either condition holds:
    - **(c) ancestry**: after fetching the PR head, the local tip is a strict
      ancestor. Covers cases where the remote branch was extended beyond the
      local branch before merging.
+
+   Reachability into `--base` is verified by one of:
+   - **direct merge**: the PR's `baseRefName` equals the cleanup base
+     branch (the classic case).
+   - **stacked / intermediate-base merge**: the PR was merged into an
+     intermediate integration branch, and the PR's `mergeCommit.oid` is an
+     ancestor of the resolved base commit. Supports stacked-PR workflows
+     where children merge into an integration branch that is later merged
+     into `--base`.
 
    `git branch -D` is permitted only for case 2; the recorded PR# is required
    as the audit trail. Action reports `reason: merged_branch_via_pr` with
