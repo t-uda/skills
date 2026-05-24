@@ -39,22 +39,27 @@ def install_fake_gh(
     search_responses: dict[tuple[str, str], list[dict[str, object]]] | None = None,
     fail: bool = False,
 ) -> Path:
+    # The production code no longer passes --base to `gh pr list`; reachability
+    # is now checked in-process via the baseRefName / mergeCommit fields in each
+    # PR record. The fake-gh index therefore keys only on head/search (the base
+    # component of the caller-supplied dict key is kept for readability but is
+    # not part of the lookup key used by the fake binary).
     bin_dir = root / "fake-bin"
     bin_dir.mkdir(parents=True, exist_ok=True)
     data_dir = root / "fake-gh-data"
     data_dir.mkdir(parents=True, exist_ok=True)
     index: dict[str, str] = {}
     if responses is not None:
-        for i, ((head, base), payload) in enumerate(responses.items()):
+        for i, ((head, _base), payload) in enumerate(responses.items()):
             data_path = data_dir / f"resp-{i}.json"
             data_path.write_text(json.dumps(payload), encoding="utf-8")
-            index[f"head\0{head}\0{base}"] = str(data_path)
+            index[f"head\0{head}"] = str(data_path)
     if search_responses is not None:
         offset = len(index)
-        for i, ((search, base), payload) in enumerate(search_responses.items(), start=offset):
+        for i, ((search, _base), payload) in enumerate(search_responses.items(), start=offset):
             data_path = data_dir / f"resp-{i}.json"
             data_path.write_text(json.dumps(payload), encoding="utf-8")
-            index[f"search\0{search}\0{base}"] = str(data_path)
+            index[f"search\0{search}"] = str(data_path)
     index_path = data_dir / "index.json"
     index_path.write_text(json.dumps(index), encoding="utf-8")
     script = bin_dir / "gh"
@@ -68,22 +73,20 @@ if args[:1] == ["--version"]:
 if {fail!r}:
     sys.stderr.write("fake gh: simulated failure\\n")
     sys.exit(1)
-head = base = search = ""
+head = search = ""
 i = 0
 while i < len(args):
     if args[i] == "--head" and i + 1 < len(args):
         head = args[i + 1]
     elif args[i] == "--search" and i + 1 < len(args):
         search = args[i + 1]
-    elif args[i] == "--base" and i + 1 < len(args):
-        base = args[i + 1]
     i += 1
 with open({str(index_path)!r}) as fh:
     index = json.load(fh)
 if head:
-    key = "head\\x00" + head + "\\x00" + base
+    key = "head\\x00" + head
 elif search:
-    key = "search\\x00" + search + "\\x00" + base
+    key = "search\\x00" + search
 else:
     key = ""
 path = index.get(key)
@@ -388,7 +391,7 @@ class PreservedSafetyModelTests(unittest.TestCase):
             root = Path(tmp)
             fixture, oid = self._setup_squash_fixture(root)
             bin_dir = install_fake_gh(
-                root, {("issue-99-foo", "main"): [{"number": 99, "headRefOid": oid}]},
+                root, {("issue-99-foo", "main"): [{"number": 99, "headRefOid": oid, "baseRefName": "main", "mergeCommit": None}]},
             )
             env = env_without_real_gh(bin_dir)
             result, data = run_script_v2(
@@ -509,7 +512,7 @@ class PreservedSafetyModelTests(unittest.TestCase):
             oid = branch_oid(fixture.repo, "issue-50-bar")
             git(fixture.repo, "remote", "set-url", "origin", "git@github.com:fake/repo.git")
             bin_dir = install_fake_gh(
-                root, {("issue-50-bar", "release/foo"): [{"number": 50, "headRefOid": oid}]},
+                root, {("issue-50-bar", "release/foo"): [{"number": 50, "headRefOid": oid, "baseRefName": "release/foo", "mergeCommit": None}]},
             )
             env = env_without_real_gh(bin_dir)
             result, data = run_script_v2(
@@ -535,6 +538,8 @@ class PreservedSafetyModelTests(unittest.TestCase):
                         "number": 18,
                         "headRefName": "issue-18-context-harness-guardrails-plan",
                         "headRefOid": oid,
+                        "baseRefName": "main",
+                        "mergeCommit": None,
                     }],
                 },
             )
@@ -740,7 +745,7 @@ class ClassBAndInteractiveTests(unittest.TestCase):
             root = Path(tmp)
             fixture, wt, oid = self._setup_class_b_fixture(root)
             bin_dir = install_fake_gh(
-                root, {("issue-99-foo", "main"): [{"number": 99, "headRefOid": oid}]},
+                root, {("issue-99-foo", "main"): [{"number": 99, "headRefOid": oid, "baseRefName": "main", "mergeCommit": None}]},
             )
             env = env_without_real_gh(bin_dir)
 
@@ -767,7 +772,7 @@ class ClassBAndInteractiveTests(unittest.TestCase):
             root = Path(tmp)
             fixture, wt, oid = self._setup_class_b_fixture(root)
             bin_dir = install_fake_gh(
-                root, {("issue-99-foo", "main"): [{"number": 99, "headRefOid": oid}]},
+                root, {("issue-99-foo", "main"): [{"number": 99, "headRefOid": oid, "baseRefName": "main", "mergeCommit": None}]},
             )
             env = env_without_real_gh(bin_dir)
 
@@ -784,7 +789,7 @@ class ClassBAndInteractiveTests(unittest.TestCase):
             root = Path(tmp)
             fixture, wt, oid = self._setup_class_b_fixture(root)
             bin_dir = install_fake_gh(
-                root, {("issue-99-foo", "main"): [{"number": 99, "headRefOid": oid}]},
+                root, {("issue-99-foo", "main"): [{"number": 99, "headRefOid": oid, "baseRefName": "main", "mergeCommit": None}]},
             )
             env = env_without_real_gh(bin_dir)
 

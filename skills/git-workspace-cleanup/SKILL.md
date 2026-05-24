@@ -112,6 +112,14 @@ A branch is considered merged when either condition holds:
      ancestor of the resolved base commit. Supports stacked-PR workflows
      where children merge into an integration branch that is later merged
      into `--base`.
+   - **recursive squash-of-integration**: when neither of the above holds,
+     the code recursively looks up a merged PR whose head is this PR's
+     `baseRefName` (the integration branch). If our `mergeCommit.oid` is
+     an ancestor of that next PR's `headRefOid` (meaning our merge was
+     included when the integration branch was itself merged), *and* that
+     next PR also reaches `--base` (by any of these three rules), the
+     original branch is considered reachable. The recursion is capped at
+     depth 8 and cycle-detected via a visited set of branch names.
 
    `git branch -D` is permitted only for case 2; the recorded PR# is required
    as the audit trail. Action reports `reason: merged_branch_via_pr` with

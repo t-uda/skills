@@ -573,7 +573,14 @@ def pr_merged_via_gh(
                 and issue_branch_prefix(str(item.get("headRefName", ""))) == prefix
             ]
 
-    target_base = base_branch_name(base)
+    # Accept either the raw base string (e.g. "release/foo" for a local
+    # branch with a slash) or the stripped form returned by base_branch_name
+    # (e.g. "foo" for "origin/foo" or "release/foo" treated as remote/branch).
+    # Using a frozenset avoids a double comparison in the hot path.
+    _stripped_base = base_branch_name(base)
+    target_base_names: frozenset[str] = frozenset(
+        {base, _stripped_base} if base != _stripped_base else {base}
+    )
 
     def _is_ancestor(child_oid: str, parent_oid: str) -> bool:
         ancestor = run_git(["merge-base", "--is-ancestor", child_oid, parent_oid], repo)
@@ -592,7 +599,7 @@ def pr_merged_via_gh(
         visited: set[str] | None = None,
         depth: int = 0,
     ) -> bool:
-        if item.get("baseRefName") == target_base:
+        if item.get("baseRefName") in target_base_names:
             return True
         if depth >= 8:
             return False
@@ -615,7 +622,10 @@ def pr_merged_via_gh(
         if base_ref in visited:
             return False
         visited = visited | {base_ref}
-        next_items, _next_err = gh_list_merged_prs(repo, owner, name, head=base_ref)
+        next_items, next_err = gh_list_merged_prs(repo, owner, name, head=base_ref)
+        if next_err is not None:
+            _reachability_errors.append(next_err)
+            return False
         if not next_items:
             return False
         for next_item in next_items:
@@ -630,6 +640,9 @@ def pr_merged_via_gh(
                 return True
         return False
 
+    # Errors surfaced during recursive reachability lookups are collected here
+    # so they can be returned to the caller after the candidate loop finishes.
+    _reachability_errors: list[dict[str, Any]] = []
     oid_mismatch_candidates: list[tuple[int, str, dict[str, Any]]] = []
     for item in items:
         if not isinstance(item, dict):
@@ -662,6 +675,8 @@ def pr_merged_via_gh(
         if ancestor_result.returncode == 0 and _reaches_base(item):
             return number, None
 
+    if _reachability_errors:
+        return None, _reachability_errors[0]
     return None, None
 
 
