@@ -137,6 +137,15 @@ def main(argv):
     if kind not in DISPATCHERS:
         usage(f"unknown kind: {kind!r} (allowed: {', '.join(all_kinds)})")
 
+    if kind == "augment":
+        owner = repo.split("/")[0]
+        if not check_augment_availability(owner):
+            print(
+                f"ERROR: reviewer_not_available: augment is not enabled for owner {owner}",
+                file=sys.stderr,
+            )
+            return 1
+
     if shutil.which("gh") is None:
         print("ERROR: gh not found on PATH", file=sys.stderr)
         return 127
