@@ -111,6 +111,7 @@ Each entry below has been reviewed and approved per the rules in this document.
 | License | Apache-2.0 |
 | Review date | 2026-05-25 |
 | Review status | approved |
+| Reviewer | t-uda |
 
 **Install command**
 
