@@ -95,6 +95,45 @@ This repository does not define a standard provenance filename yet. Until a form
 - unpinned remote installs by default;
 - provenance automation in this repository.
 
+## Approved external skills
+
+Each entry below has been reviewed and approved per the rules in this document.
+
+---
+
+### runpod/skills — runpodctl
+
+| Field | Value |
+|---|---|
+| Upstream repository | `runpod/skills` |
+| Upstream skill path | `runpodctl/` |
+| Pinned ref | `91417885a3a335baa670b2186b1766e1993cace6` |
+| License | Apache-2.0 |
+| Review date | 2026-05-25 |
+| Review status | approved |
+| Reviewer | t-uda |
+
+**Install command**
+
+```sh
+apm install runpod/skills/runpodctl#91417885a3a335baa670b2186b1766e1993cace6
+```
+
+**What it covers**
+
+`runpodctl` usage for Pods, Hub listings, Serverless endpoints, templates, network volumes, models, registry credentials, account information, SSH metadata, file transfer, and CLI utilities. Suitable for Runpod GPU workload management.
+
+**Agent safety cautions**
+
+- Read-only discovery commands (`runpodctl gpu list`, `runpodctl pod list`, `runpodctl serverless list`, `runpodctl user`) are acceptable when Runpod context is needed.
+- Creating, deleting, resetting, or materially updating Runpod resources requires explicit user intent for that specific operation — do not infer intent from surrounding context alone.
+- Before resource creation, list available GPUs or templates and state the intended resource shape to the user.
+- Before any destructive action (delete, reset, stop), confirm the exact target resource identifier from `runpodctl` output; never guess or interpolate an ID.
+- API keys, SSH keys, registry credentials, and environment variables must be treated as secrets — never paste them into issues, PRs, logs, or committed files.
+- `runpodctl doctor` is appropriate for setup verification.
+
+---
+
 ## Follow-up work
 
 - define a standard provenance file format and location for target workspaces;
