@@ -10,8 +10,28 @@ Default implementation of §7 review acquisition. Reviewer-neutral by design: wh
 |------|--------|--------|
 | `copilot` | Assigns the `copilot-pull-request-reviewer[bot]` reviewer to the PR. | `route: copilot (dispatched)` |
 | `codex`   | Posts an `@codex please review this PR` comment on the PR.            | `route: codex (dispatched)` |
+| `augment` | Posts an `auggie review` comment on the PR (Augment manual trigger). **Experimental. Explicit-only** — never added to the random pool. Requires `AUGMENT_REVIEW_ENABLED_OWNERS` guard (see below). | `route: augment (dispatched)` |
 
-Both routes are asynchronous: stdout reports only that a request was *dispatched*. Evidence accrues separately on the PR and is checked by the §8 merge gate, not by this script.
+All routes are asynchronous: stdout reports only that a request was *dispatched*. Evidence accrues separately on the PR and is checked by the §8 merge gate, not by this script. `route: augment (dispatched)` signals that the trigger comment was posted, not that a review has occurred.
+
+### Augment route — experimental, explicit-only
+
+`kind=augment` is experimental and must be requested explicitly. It is never added to the random reviewer pool (`{copilot, codex}`). Use it only when you know Augment Code Review is available for the target repository.
+
+**Availability guard:** the script reads `AUGMENT_REVIEW_ENABLED_OWNERS` (a comma-separated list of GitHub owner names, e.g. `t-uda`). If the env var is missing, empty, or the repo owner is not in the list, the script exits `1` with a message on stderr and does **not** call `gh`:
+
+```
+ERROR: reviewer_not_available: augment is not enabled for owner <OWNER>
+```
+
+To enable for a specific owner:
+
+```sh
+export AUGMENT_REVIEW_ENABLED_OWNERS="t-uda"
+scripts/acquire-review.py t-uda/myrepo 42 augment
+```
+
+**Dispatch vs. evidence:** posting `auggie review` is an asynchronous trigger. The §8 merge gate is responsible for determining whether actual review evidence has accrued on the PR.
 
 ### Contract
 
@@ -22,11 +42,11 @@ scripts/acquire-review.py <OWNER>/<REPO> <PR_NUMBER> [kind]
 | Exit | Meaning |
 |------|---------|
 | `0`  | The route succeeded. Stdout: `route: <kind> (dispatched)`. |
-| `1`  | Dispatch failed. Caller should record an authorized bypass per SKILL.md §7. |
+| `1`  | Dispatch failed or availability guard rejected. Caller should record an authorized bypass per SKILL.md §7. |
 | `64` | Usage error (missing arguments, too many arguments, or unknown kind). |
 | `127`| Precondition error (e.g., `gh` CLI not on `PATH`). |
 
-Pass an explicit `kind` only when the caller — or a project policy — requires a specific reviewer for this dispatch. Omit it for the reviewer-neutral default.
+Pass an explicit `kind` only when the caller — or a project policy — requires a specific reviewer for this dispatch. Omit it for the reviewer-neutral default (`{copilot, codex}`).
 
 ## Project override: `REVIEW_ACQUIRE_SCRIPT`
 
