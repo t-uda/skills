@@ -172,6 +172,42 @@ write_fake_gh 0 0
 out="$(PATH="${BIN}" REVIEW_ACQUIRE_SCRIPT="${ACQUIRE}" "$ACQUIRE" owner/repo 1 copilot 2>&1)"
 check '[[ "$out" == "route: copilot (dispatched)" ]]' "REVIEW_ACQUIRE_SCRIPT pointing at self ⇒ falls through to built-in"
 
+# --- kind=augment with enabled owner → posts trigger comment, exits 0 ---
+write_fake_gh 0 0
+set +e
+out="$(PATH="${BIN}" AUGMENT_REVIEW_ENABLED_OWNERS="t-uda" run_acquire t-uda/myrepo 42 augment)"
+rc=$?
+set -e
+check '[[ "$rc" == "0" ]]' "kind=augment with enabled owner ⇒ exit 0"
+check '[[ "$out" == "route: augment (dispatched)" ]]' "kind=augment with enabled owner ⇒ route: augment (dispatched)"
+check 'grep -q "argv:.*issues/42/comments" "${GH_LOG}"' "kind=augment with enabled owner ⇒ issues comments API hit"
+
+# --- kind=augment with disabled owner → exits 1, does NOT call gh ---
+: >"${GH_LOG}"
+set +e
+out="$(PATH="${BIN}" AUGMENT_REVIEW_ENABLED_OWNERS="other-owner" run_acquire t-uda/myrepo 42 augment 2>&1)"
+rc=$?
+set -e
+check '[[ "$rc" == "1" ]]' "kind=augment with disabled owner ⇒ exit 1"
+check '[[ "$out" == *"reviewer_not_available: augment is not enabled for owner t-uda"* ]]' "kind=augment with disabled owner ⇒ error message on stderr"
+check '! grep -q "argv:" "${GH_LOG}"' "kind=augment with disabled owner ⇒ gh not called"
+
+# --- kind omitted → augment is NOT selected (random pool is {copilot, codex} only) ---
+write_fake_gh 0 0
+seen_augment=0
+for _ in $(seq 1 50); do
+  out="$(AUGMENT_REVIEW_ENABLED_OWNERS="t-uda" run_acquire t-uda/myrepo 1)"
+  case "$out" in
+    "route: augment (dispatched)") seen_augment=1 ;;
+  esac
+done
+check '[[ "$seen_augment" -eq 0 ]]' "kind omitted ⇒ augment never selected in 50 runs (not in random pool)"
+
+# --- dispatch success → prints route: augment (dispatched) ---
+write_fake_gh 0 0
+out="$(PATH="${BIN}" AUGMENT_REVIEW_ENABLED_OWNERS="t-uda" run_acquire t-uda/myrepo 7 augment)"
+check '[[ "$out" == "route: augment (dispatched)" ]]' "augment dispatch success ⇒ prints route: augment (dispatched)"
+
 echo
 echo "Result: ${pass} passed, ${fail} failed"
 [[ "$fail" -eq 0 ]]
