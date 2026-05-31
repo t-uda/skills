@@ -53,6 +53,10 @@ Each skill must live at `skills/<skill-name>/SKILL.md`.
 
 - `headson`: preview large JSON, YAML, JSONL/NDJSON, text, source code, multi-file data, and Jupyter notebooks with structure-aware `hson` previews under explicit budgets
 
+### Computational reproducibility
+
+- `computational-reproducibility`: keep computational experiments reproducible through explicit preflight checks, manifest expectations, source/artifact separation, fallback policy, and failure semantics
+
 ### Repository guidance
 
 - `growing-agents-md`: seed, lint, or update a compact canonical `AGENTS.md` with deterministic guardrails

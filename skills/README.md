@@ -30,6 +30,7 @@ Current skills:
 - devcontainer-cli
 - github-driven-workflow
 - randomness
+- computational-reproducibility
 - headson
 - shell-script-engineering
 - claude-code-advanced-orchestration
