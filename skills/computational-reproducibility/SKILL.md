@@ -11,7 +11,7 @@ The goal is experimental discipline: fail early on invalid setup, keep source an
 
 ## Scientific stance
 
-Treat each computation as a scientific claim, not merely working code. Imagine writing the method up as equations: if a faithful write-up would have to carry a thicket of ad-hoc case splits, divide-by-zero guards, domain clipping, tuned regularization constants, or fallbacks, the result has drifted from **science** toward engineering expedience. Such devices may be sound engineering, but they belong in a scientific account only when they are part of the *declared* method — chosen deliberately, recorded, and visible in the write-up — never inserted silently to make a degenerate case disappear. When in doubt, hard-fail and surface the degeneracy rather than quietly patch past it.
+Treat each computation as a scientific claim, not merely working code. If reproducing the result faithfully would require equations laced with ad-hoc case splits, divide-by-zero guards, domain clipping, tuned regularization constants, or fallbacks, it has drifted from **science** toward engineering expedience: such devices belong in a scientific account only as part of the *declared* method — chosen deliberately, recorded, and visible — never inserted silently to make a degenerate case disappear. When in doubt, hard-fail and surface the degeneracy rather than patch past it.
 
 ## When to use
 
@@ -48,7 +48,7 @@ Fallbacks are allowed only when all of these are true:
 
 Do not silently substitute sample data, cached outputs, smaller models, different backends, local paths, or alternate datasets.
 
-The same rule governs fallbacks **inside** a computation, not only at its inputs. Silently replacing a degenerate intermediate or estimator with a default must hard-fail too, and is allowed only when the same four conditions hold (explicit opt-in + recorded + visible in outputs + distinguishable in review). Examples across domains:
+The same rule governs fallbacks **inside** a computation, not only at its inputs. Replacing a degenerate intermediate or estimator with a default hard-fails by default; take the fallback path only when the same four conditions hold (explicit opt-in + recorded + visible in outputs + distinguishable in review). Examples across domains:
 
 - zero or near-zero weight sum substituted with uniform (or any) weights
 - empty collection reduced to a default constant
@@ -184,7 +184,7 @@ Before submitting changes involving computational experiments or generated outpu
 - Artifact layout has stable source/output separation and run identity.
 - Failure states distinguish `not-run`, `skipped`, `failed`, `empty-result`, and `zero-result`.
 - Any fallback is explicit, opted in, and visible in outputs or manifest.
-- No silent substitution, divide-by-zero guard, domain clipping, or regularization for degenerate intermediates or estimators. Preflight and manifest checks do not surface runtime numerical guards, so read the code: grep for `or <const>`, `if x <= 0: x = <const>`, a small constant added to a denominator (`+ <eps>`, `+ 1e-`), `clip`/`clamp` into a valid domain, a default or initial value supplied to a reduce/fold/max/min, `nan_to_num` and equivalents, NaN-skipping reducers such as `nanmean`/`nanmax`/`nansum` (silent drop), and try/catch blocks returning a default.
+- No silent, undeclared substitution, divide-by-zero guard, domain clipping, or regularization patching a degenerate intermediate or estimator (declared methods recorded per the rule above are fine). Preflight and manifest checks do not surface runtime numerical guards, so read the code, grepping for patterns such as: a literal `or` followed by a constant, `if x <= 0: x = ...`, a small constant added to a denominator (`+ 1e-8`, `+ eps`), `clip`/`clamp` into a valid domain, a default or initial value supplied to a reduce/fold/max/min, `nan_to_num` and equivalents, NaN-skipping reducers such as `nanmean`/`nanmax`/`nansum` (silent drop), and try/catch blocks returning a default.
 - Each fallback is judged by impact if triggered, not only by whether it fires now; a high trigger rate is treated as a flag that the primary path may be misdefined.
 - Host-specific paths, credentials, and local cache assumptions are not required for reproducibility.
 
