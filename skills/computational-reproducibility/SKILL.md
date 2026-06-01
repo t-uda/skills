@@ -9,6 +9,10 @@ Use this skill to keep computational experiments reproducible before expensive e
 
 The goal is experimental discipline: fail early on invalid setup, keep source and generated artifacts separate, record enough identity to rerun work, and report scientific outcomes without ambiguous status labels.
 
+## Scientific stance
+
+Treat each computation as a scientific claim, not merely working code. Imagine writing the method up as equations: if a faithful write-up would have to carry a thicket of ad-hoc case splits, divide-by-zero guards, domain clipping, tuned regularization constants, or fallbacks, the result has drifted from **science** toward engineering expedience. Such devices may be sound engineering, but they belong in a scientific account only when they are part of the *declared* method — chosen deliberately, recorded, and visible in the write-up — never inserted silently to make a degenerate case disappear. When in doubt, hard-fail and surface the degeneracy rather than quietly patch past it.
+
 ## When to use
 
 Use this skill when:
@@ -49,8 +53,12 @@ The same rule governs fallbacks **inside** a computation, not only at its inputs
 - zero or near-zero weight sum substituted with uniform (or any) weights
 - empty collection reduced to a default constant
 - zero or near-zero denominator, norm, or scale substituted with a constant
+- divide-by-zero dodged by adding a small constant to a denominator (e.g. `x / (denom + 1e-8)`) instead of confronting the degeneracy
+- an out-of-domain intermediate clipped into the valid range to suppress an error (e.g. clamping before `log`/`sqrt`/`arccos`, or clipping probabilities into `(0, 1)`)
 - undefined primary estimator silently swapped for an alternate estimator or method
 - NaN or missing value filled with 0 (or any constant)
+
+This forbids silent divide-by-zero avoidance and domain clipping specifically: they may never be applied without the explicit opt-in above. Declared, recorded regularization or clipping that *is* the method (e.g. ridge regression, gradient clipping) is fine; the prohibition targets ad-hoc guards inserted to make a degenerate intermediate disappear.
 
 Judge such a fallback by **impact if triggered**, not only by whether it fires on current data. A guard that never fires now can still be scientifically catastrophic if it would — for example a substituted scale that silently yields an order-of-magnitude-wrong result without signalling an error. A fallback that fires on a non-trivial fraction of inputs is itself a signal that the **primary** path's definition may be wrong; investigate the spec before accepting the fallback.
 
@@ -176,7 +184,7 @@ Before submitting changes involving computational experiments or generated outpu
 - Artifact layout has stable source/output separation and run identity.
 - Failure states distinguish `not-run`, `skipped`, `failed`, `empty-result`, and `zero-result`.
 - Any fallback is explicit, opted in, and visible in outputs or manifest.
-- No silent substitution for degenerate intermediates or estimators. Preflight and manifest checks do not surface runtime numerical guards, so read the code: grep for `or <const>`, `if x <= 0: x = <const>`, a default or initial value supplied to a reduce/fold/max/min, `nan_to_num` and equivalents, NaN-skipping reducers such as `nanmean`/`nanmax`/`nansum` (silent drop), and try/except or try/catch blocks returning a default.
+- No silent substitution, divide-by-zero guard, domain clipping, or regularization for degenerate intermediates or estimators. Preflight and manifest checks do not surface runtime numerical guards, so read the code: grep for `or <const>`, `if x <= 0: x = <const>`, a small constant added to a denominator (`+ <eps>`, `+ 1e-`), `clip`/`clamp` into a valid domain, a default or initial value supplied to a reduce/fold/max/min, `nan_to_num` and equivalents, NaN-skipping reducers such as `nanmean`/`nanmax`/`nansum` (silent drop), and try/catch blocks returning a default.
 - Each fallback is judged by impact if triggered, not only by whether it fires now; a high trigger rate is treated as a flag that the primary path may be misdefined.
 - Host-specific paths, credentials, and local cache assumptions are not required for reproducibility.
 
