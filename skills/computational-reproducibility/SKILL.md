@@ -44,6 +44,16 @@ Fallbacks are allowed only when all of these are true:
 
 Do not silently substitute sample data, cached outputs, smaller models, different backends, local paths, or alternate datasets.
 
+The same rule governs fallbacks **inside** a computation, not only at its inputs. Silently replacing a degenerate intermediate or estimator with a default is forbidden under the identical conditions (hard-fail, or explicit opt-in + recorded + visible in outputs + distinguishable in review). Examples across domains:
+
+- zero or near-zero weight sum substituted with uniform (or any) weights
+- empty collection reduced to a default constant
+- zero or near-zero denominator, norm, or scale substituted with a constant
+- undefined primary estimator silently swapped for an alternate estimator or method
+- NaN or missing value filled with 0 (or any constant)
+
+Judge such a fallback by **impact if triggered**, not only by whether it fires on current data. A guard that never fires now can still be scientifically catastrophic if it would — for example a substituted scale that silently yields an order-of-magnitude-wrong result with no raise. A fallback that fires on a non-trivial fraction of inputs is itself a signal that the **primary** path's definition may be wrong; investigate the spec before accepting the fallback.
+
 ### Separate source and artifacts
 
 Keep source files and generated artifacts distinct.
@@ -152,7 +162,7 @@ When running an experiment:
 6. Record the final status using the failure semantics above.
 7. Keep generated artifacts out of source control unless explicitly authorized.
 
-When modifying an existing workflow, preserve stricter behaviour. Do not add silent fallback, implicit path discovery, or source/artifact conflation for convenience.
+When modifying an existing workflow, preserve stricter behaviour. Do not add silent fallback, implicit path discovery, runtime substitution for degenerate intermediates, or source/artifact conflation for convenience.
 
 ## Review checklist
 
@@ -166,6 +176,8 @@ Before submitting changes involving computational experiments or generated outpu
 - Artifact layout has stable source/output separation and run identity.
 - Failure states distinguish `not-run`, `skipped`, `failed`, `empty-result`, and `zero-result`.
 - Any fallback is explicit, opted in, and visible in outputs or manifest.
+- No silent substitution for degenerate intermediates or estimators. Preflight and manifest checks do not surface runtime numerical guards, so read the code: grep for `or <const>`, `if x <= 0: x = <const>`, `default=` in max/min/reduce, `nan_to_num`, and `nanmean`/`nanmax`/`nansum` (silent drop), and try/except blocks returning a default.
+- Each fallback is judged by impact if triggered, not only by whether it fires now; a high trigger rate is treated as a flag that the primary path may be misdefined.
 - Host-specific paths, credentials, and local cache assumptions are not required for reproducibility.
 
 ## Stop conditions
