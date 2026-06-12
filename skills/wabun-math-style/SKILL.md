@@ -1,6 +1,6 @@
 ---
 name: wabun-math-style
-description: Detect and correct Japanese-language anti-patterns in mathematical writing — epistemic hedges weakening proved claims, incorrect verb tense, passive/active confusion in proofs, ambiguous particles, unjustified 明らか, decorative connectives, redundant meta-discourse, double negation, stacked の, generic/general conflation, borrowed non-mathematical vocabulary (証人・機構・検出・層別・統計量 and the like), and full-width semicolons or untranslated English mixed into Japanese prose — without evaluating mathematical correctness or structural hierarchy.
+description: Detect and correct Japanese-language anti-patterns in mathematical writing — epistemic hedges weakening proved claims, incorrect verb tense, passive/active confusion in proofs, ambiguous particles, unjustified 明らか, decorative connectives, redundant meta-discourse, double negation, stacked の, generic/general conflation, borrowed non-mathematical vocabulary (証人・機構・検出・層別・統計量 and the like), vague category names for explicit formulas (閉形式), and full-width semicolons or untranslated English mixed into Japanese prose — without evaluating mathematical correctness or structural hierarchy.
 ---
 
 # Wabun Math Style
@@ -18,6 +18,7 @@ A language-review skill for Japanese mathematics writing. It targets the class o
 - A sentence has four or more stacked の, obscuring the main predicate
 - 「一般的な」or 「一般の」is used as a translation of the technical term "generic" (holds outside a proper closed subset or measure-zero set) — conflation with the non-technical "general"
 - Vocabulary borrowed from physics, engineering, statistics, or machine learning (証人, 模型, 機構, 装置, 異常, 感知, 検出, 統計量, 層別, 帳簿, 病理, 余裕 …) appears in mathematical prose
+- 「閉形式」(closed form) is used as a category name for a formula that the document states explicitly — instead of naming the formula by equation reference or calling it 明示式
 - Full-width semicolons 「；」appear in Japanese prose, or English words (balanced, unbalanced, genuine, strictness …) are mixed in where a defined Japanese term exists
 
 ## Do not use
@@ -48,7 +49,8 @@ A language-review skill for Japanese mathematics writing. It targets the class o
 11. Scan for 「一般的な」/「一般の」used in a technical-generic sense (JP-12).
 12. Scan for borrowed non-mathematical vocabulary and metaphors (JP-13).
 13. Scan for full-width semicolons and untranslated English terms with defined Japanese equivalents (JP-14).
-14. Produce a structured finding report.
+14. Scan every occurrence of 閉形式 (JP-15); classify as vague category name vs. exempt established term.
+15. Produce a structured finding report.
 
 ## Rules
 
@@ -115,6 +117,14 @@ Do NOT flag established mathematical terms whose surface form coincides with eve
 
 **JP-14 — 全角セミコロン・未翻訳英語の混在禁止．**
 和文の数学散文では全角セミコロン「；」を用いない．並列・対比は読点・句点または文の分割で表し，enumerate 項目末尾も句点で終える．また，本文で和訳語を定義した概念（例：平衡条件）を英語のまま（balanced / unbalanced）併用しない — this creates an undeclared alias (report it also as NC-3 to `math-notation-consistency`). English adjectives such as genuine, strictness must not qualify Japanese nouns bare; unpack the intended condition in Japanese（e.g., 「genuine な極」→「分子が同時に零にならない極」）. Terms with no established Japanese translation that the document itself introduces (magnitude, homometric, generic, isospectral …) are exempt. Severity: MINOR for semicolons; BLOCKING for an English alias of a defined Japanese term in a theorem statement or summary of results.
+
+**JP-15 — 範疇名「閉形式」の禁止（明示式・明示計算への置換）．**
+「閉形式」(closed form) は *どの* 形かを述べない範疇名であり，指示対象の式を文書自身が明示的に与えている場合には用いない．「閉形式」と書くたびに読者は「閉」の境界（初等関数か，有理式か，有限和か）を推測させられるが，式が紙面にあるならその推測は不要である — 式番号で指すか，「明示式」と呼べばよい．The test: does the document display the formula the word points to? If yes, the category name is strictly less informative than the reference. 置換指針:
+- 式そのものを指す名詞用法（「X の閉形式」）→「X の明示式」＋式番号参照（例「magnitude の明示式 \eqref{eq:mag}」），または式そのもの・式番号のみ
+- 「同一の閉形式 X をもつ」→ 何が一致するかを明示（「同一パラメータから定まる同一の X」「明示式 \eqref{…} により同一の X」）
+- 「閉形式で確認する／計算する／一致する」という様態用法 →「明示的に計算して確認する」「直接計算により」「明示式 \eqref{…} として一致する」
+- 定理・命題・補題のタイトル中（「[X の閉形式]」）→「[X の明示式]」．`\label{...}` の内部識別子は変更しない
+誤検出除外: (a) 微分幾何・de Rham 理論の「閉形式」(closed differential form, \(d\omega=0\)) は確立した術語であり対象外（完全形式・コホモロジーが近傍に現れるのが目印）．(b) 閉形式解の存在・非存在それ自体が主題で，文書が「閉形式」の意味を形式的に定義している場合（微分 Galois 理論，Liouville 流の初等関数論など）は対象外．(c) 引用文献のタイトル・定理名に含まれる場合は原文のまま残す．Severity: BLOCKING in theorem/proposition/lemma statements and titles, abstracts, and summaries of results; MINOR elsewhere.
 
 ## Examples
 
@@ -191,10 +201,31 @@ Before（JP-14）: R=1 は unbalanced 証人により実現する；他の場合
 After:          R=1 は平衡条件を満たさない組により実現する。他の場合は平衡条件が必要である。
 ```
 
+```
+Before（JP-15）: \begin{proposition}[magnitude の閉形式]\label{prop:closed}
+After:          \begin{proposition}[magnitude の明示式]\label{prop:closed}
+                （ラベルは変更しない）
+```
+
+```
+Before（JP-15）: 同一の閉形式 magnitude をもつ二配置が存在する。
+After:          同一パラメータから定まる同一の magnitude をもつ二配置が存在する。
+                （または：明示式 \eqref{eq:mag} により同一の magnitude をもつ二配置が存在する。）
+```
+
+```
+Before（JP-15）: この状況を閉形式で確認する。
+After:          この状況を明示的に計算して確認する。
+```
+
+```
+Exempt（JP-15）: ω は閉形式である（dω = 0）。 — closed differential form; do not flag.
+```
+
 ## Output
 
 Default: review-only. Produce a structured finding report listing:
-- Rule tag (JP-1 through JP-14, skipping JP-10 which is merged into JP-3)
+- Rule tag (JP-1 through JP-15, skipping JP-10 which is merged into JP-3)
 - Severity: BLOCKING (epistemic hedge on proved claim, logical-gap connective) / MINOR (verb tense, meta-discourse) / ADVISORY (JP-7 only)
 - Location: environment label (e.g., `\begin{theorem}[thm:main]`), proof section, or paragraph identifier
 - One-sentence description of the violation
@@ -211,6 +242,7 @@ Before finishing, verify:
 - JP-7 findings are all marked ADVISORY
 - JP-13 findings do not flag established mathematical terms that share surface form with everyday or physics words (核, 流, スペクトル, …) — the test is published-journal usage
 - JP-14 findings exempt terms the document itself introduces without an established Japanese translation
+- JP-15 findings do not flag 閉形式 in the differential-form sense (dω = 0), in documents where closed-form solvability is itself the formally defined subject, or inside cited titles
 - No finding belongs to `math-claim-integrity` territory (quantifier scope, theorem hierarchy, proof/computation distinction)
 
 ## Relationship to Other Skills
