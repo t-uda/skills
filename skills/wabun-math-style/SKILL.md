@@ -5,7 +5,7 @@ description: Detect and correct Japanese-language anti-patterns in mathematical 
 
 # Wabun Math Style
 
-A language-review skill for Japanese mathematics writing. It targets the class of errors that arise specifically in Japanese mathematical prose: epistemic hedges that misrepresent proved claims as uncertain, tense inconsistencies in theorem statements, voice confusion in proof steps, connectives that mark logical steps without logical warrant, bare 明らか/自明/容易に without justification, redundant meta-discourse openers, は/が particle ambiguity in theorem subjects, ならば/とき confusion in conditional hypotheses, double-negation hedging, and の-chains that obscure the main predicate. The skill operates strictly at the language layer and does not evaluate mathematical correctness, quantifier scope, theorem hierarchy, or proof/computation honesty.
+A language-review skill for Japanese mathematics writing. It targets the class of errors that arise specifically in Japanese mathematical prose: epistemic hedges that misrepresent proved claims as uncertain, tense inconsistencies in theorem statements, voice confusion in proof steps, connectives that mark logical steps without logical warrant, bare 明らか/自明/容易に without justification, redundant meta-discourse openers, は/が particle ambiguity in theorem subjects, ならば/とき confusion in conditional hypotheses, double-negation hedging, and の-chains that obscure the main predicate. The skill is field-agnostic: the rules apply to any area of mathematics. It operates strictly at the language layer and does not evaluate mathematical correctness, quantifier scope, theorem hierarchy, or proof/computation honesty.
 
 ## Use when
 
@@ -19,7 +19,7 @@ A language-review skill for Japanese mathematics writing. It targets the class o
 - 「一般的な」or 「一般の」is used as a translation of the technical term "generic" (holds outside a proper closed subset or measure-zero set) — conflation with the non-technical "general"
 - Vocabulary borrowed from physics, engineering, statistics, or machine learning (証人, 模型, 機構, 装置, 異常, 感知, 検出, 統計量, 層別, 帳簿, 病理, 余裕 …) appears in mathematical prose
 - 「閉形式」(closed form) is used as a category name for a formula that the document states explicitly — instead of naming the formula by equation reference or calling it 明示式
-- Full-width semicolons 「；」appear in Japanese prose, or English words (balanced, unbalanced, genuine, strictness …) are mixed in where a defined Japanese term exists
+- Full-width semicolons 「；」appear in Japanese prose, or English words (balanced, genuine, strictness …) are mixed in where a defined Japanese term exists
 
 ## Do not use
 
@@ -58,10 +58,10 @@ A language-review skill for Japanese mathematics writing. It targets the class o
 The phrases 〜と思われる, 〜と考えられる, 〜のように見える, 〜らしい, 〜と予想される, 〜はずである must not appear in theorem statements, propositions, lemma statements, or in prose that summarizes what has been proved. In proof environments, they are permitted only inside a \begin{remark}...\end{remark} block that explicitly labels an unproved conjecture. This is the highest-priority rule: an epistemic hedge on a proved claim is a category error that misrepresents the paper's results to the reader.
 
 **JP-2 — Present-tense invariance for mathematical facts.**
-Mathematical statements assert timeless truths and use present tense: 〜する, 〜である, 〜が成り立つ, 〜が存在する. Past tense (〜した, 〜であった, 〜が成り立った) is permitted only for: (a) historical attribution ("Kamiyama は…を示した"), (b) referencing a specific step completed earlier in the same proof ("前節で示したように"). Flag past-tense verbs in theorem and proposition statements.
+Mathematical statements assert timeless truths and use present tense: 〜する, 〜である, 〜が成り立つ, 〜が存在する. Past tense (〜した, 〜であった, 〜が成り立った) is permitted only for: (a) historical attribution (「Euler は〜を示した」), (b) referencing a specific step completed earlier in the same proof (「前節で示したように」). Flag past-tense verbs in theorem and proposition statements.
 
 **JP-3 — Proof-step voice discipline (active for construction; passive only for citation).**
-Within a proof, sentences that construct or advance the argument must use active constructions: 〜を示す, 〜とおく, 〜を用いると, 〜が従う, 〜が成り立つ. The passive 〜が示された / 〜が示されている, 〜が証明された / 〜が証明されている is appropriate only to cite a result proved outside this proof (e.g., in a prior lemma or external paper). The stative/resultative forms 〜が示されている and 〜が証明されている are the natural citation register in formal Japanese mathematical writing (e.g., 「[Kamiyama] により〜が示されている」) and are explicitly permitted alongside the perfective forms. Using passive voice for the conclusion of a proof step that was just carried out here (e.g., "ゆえに P が示された" at the end of a proof that proved P) is acceptable only if the result was actually established by citing an external source; otherwise prefer "ゆえに P が成り立つ" or "以上で P を示した." Note: this rule subsumes the passive-scope restriction; no separate rule for 受動態 is needed.
+Within a proof, sentences that construct or advance the argument must use active constructions: 〜を示す, 〜とおく, 〜を用いると, 〜が従う, 〜が成り立つ. The passive 〜が示された / 〜が示されている, 〜が証明された / 〜が証明されている is appropriate only to cite a result proved outside this proof (e.g., in a prior lemma or external paper). The stative/resultative forms 〜が示されている and 〜が証明されている are the natural citation register in formal Japanese mathematical writing (e.g., 「[12] により〜が示されている」) and are explicitly permitted alongside the perfective forms. Using passive voice for the conclusion of a proof step that was just carried out here (e.g., 「ゆえに P が示された」 at the end of a proof that proved P) is acceptable only if the result was actually established by citing an external source; otherwise prefer 「ゆえに P が成り立つ」 or 「以上で P を示した」. Note: this rule subsumes the passive-scope restriction; no separate rule for 受動態 is needed.
 
 **JP-4 — Connective discipline.**
 Each logical connective must signal exactly what it claims:
@@ -73,36 +73,36 @@ Each logical connective must signal exactly what it claims:
 Flag any sentence beginning with ゆえに/よって/したがって that does not actually follow from the immediately preceding text — this marks a logical gap, not merely a style issue.
 
 **JP-5 — Justify 明らか, 自明, 容易に.**
-These words must be followed (in the same sentence or the immediately following sentence) by a one-clause justification or a reference (e.g., "（補題 2.2 より）", "（定義から直接）"). Flag bare uses with no adjacent justification. The test: can a reader verify the claim without looking elsewhere? If the answer involves checking a sign inequality, boundary condition, or multi-step substitution, the claim is not 明らか.
+These words must be followed (in the same sentence or the immediately following sentence) by a one-clause justification or a reference (e.g., 「（補題 2.2 より）」, 「（定義から直接）」). Flag bare uses with no adjacent justification. The test: can a reader verify the claim without looking elsewhere? If the answer involves checking a sign inequality, boundary condition, or multi-step substitution, the claim is not 明らか.
 
 **JP-6 — Flag redundant meta-discourse openers.**
-Flag 本節では〜, 以下では〜, なお〜, ここでは〜 at paragraph openings ONLY when the content is already signposted by the section or subsection heading, or when deleting the opener loses no information ("本節では S_r の性質を述べる。" before a section titled "S_r の性質" is redundant). Do NOT enforce a density quota; one purposeful orientation sentence per section is acceptable. Replace redundant openers with a direct mathematical statement.
+Flag 本節では〜, 以下では〜, なお〜, ここでは〜 at paragraph openings ONLY when the content is already signposted by the section or subsection heading, or when deleting the opener loses no information (「本節では f の性質を述べる。」 before a section titled 「f の性質」 is redundant). Do NOT enforce a density quota; one purposeful orientation sentence per section is acceptable. Replace redundant openers with a direct mathematical statement.
 
 **JP-7 — Particle が/は in theorem subjects (advisory).**
-In theorem statements: は marks the subject as the established topic (contrasting with alternatives); が marks the subject as new information or the logical subject of an existential claim. Common error: using は when introducing a new object for the first time, or は in an existential claim ("X は存在する" reads as "as for X, it exists," implying X is already introduced; "X が存在する" correctly asserts existence of a new X). This is an advisory finding (severity: MINOR), not a blocking error, because は/が selection is context-dependent and may be deliberately chosen for emphasis.
+In theorem statements: は marks the subject as the established topic (contrasting with alternatives); が marks the subject as new information or the logical subject of an existential claim. Common error: using は when introducing a new object for the first time, or は in an existential claim (「X は存在する」 reads as "as for X, it exists," implying X is already introduced; 「X が存在する」 correctly asserts existence of a new X). This is an advisory finding (severity: MINOR), not a blocking error, because は/が selection is context-dependent and may be deliberately chosen for emphasis.
 
 **JP-8 — ならば for conditional lemma hypotheses.**
-In lemma and theorem statements, conditional hypotheses must use ならば (or the equivalent formal conditional structure P ⟹ Q), not とき or 場合, which can be read as temporal. "P のとき Q が成り立つ" is acceptable in informal notes but may be ambiguous; "P ならば Q が成り立つ" is unambiguous for a logical conditional. Exception: do NOT flag とき/場合 when it introduces a genuine case-split or parameter range (e.g., 「t > 0 のとき」, 「n が偶数の場合」). Flag JP-8 only when とき/場合 connects a logical hypothesis to a conclusion (P のとき Q が成り立つ, where P is a logical condition, not a range label or case header).
+In lemma and theorem statements, conditional hypotheses must use ならば (or the equivalent formal conditional structure P ⟹ Q), not とき or 場合, which can be read as temporal. 「P のとき Q が成り立つ」 is acceptable in informal notes but may be ambiguous; 「P ならば Q が成り立つ」 is unambiguous for a logical conditional. Exception: do NOT flag とき/場合 when it introduces a genuine case-split or parameter range (e.g., 「t > 0 のとき」, 「n が偶数の場合」). Flag JP-8 only when とき/場合 connects a logical hypothesis to a conclusion (P のとき Q が成り立つ, where P is a logical condition, not a range label or case header).
 
 **JP-9 — Double-negation ban.**
-Patterns 〜でないとは言えない, 〜でないわけではない, 〜ないこともない are logically equivalent to "possibly 〜" but read as hedged. In mathematical writing, replace with a direct affirmative ("〜である（場合がある）") or a precise partial statement with explicit quantification. Double negatives in theorem statements are almost always artifacts of draft hedging; eliminate them.
+Patterns 〜でないとは言えない, 〜でないわけではない, 〜ないこともない are logically equivalent to "possibly 〜" but read as hedged. In mathematical writing, replace with a direct affirmative (「〜である（場合がある）」) or a precise partial statement with explicit quantification. Double negatives in theorem statements are almost always artifacts of draft hedging; eliminate them.
 
 **JP-11 — の-chain limit.**
-A chain of four or more stacked の (possessive/genitive markers) obscures the main predicate and the logical relationships between constituents. Example: 「配置の非依存性の証明の骨子の説明」should be broken into shorter nominal phrases or rewritten with a predicate. Flag any の-chain of length ≥4 and suggest a restructured phrase.
+A chain of four or more stacked の (possessive/genitive markers) obscures the main predicate and the logical relationships between constituents. Example: 「解の一意性の証明の方針の説明を与える」 should be broken into shorter nominal phrases or rewritten with a predicate. Flag any の-chain of length ≥4 and suggest a restructured phrase.
 
-**JP-12 — generic と general の峻別．**
-The technical term "generic" (holds outside a proper closed algebraic subset, outside a measure-zero set, or — in the sense of O'Hara — with rationally independent distances or a non-degeneracy condition) must NOT be expressed as 「一般的な」or 「一般の」. Those Japanese words mean "general / typical / widely applicable" — a non-technical qualification — and do not carry the algebro-geometric or measure-theoretic precision of "generic." Conflation creates a logical error: "一般的な有限距離空間では P が成立する" reads as "P holds for a typical/arbitrary space" (i.e., universally), whereas the intended claim is "P holds for spaces outside a specific degenerate subfamily."
+**JP-12 — Distinguish technical "generic" from 一般的な／一般の.**
+The technical term "generic" (holds outside a proper closed subset, outside a measure-zero set, or under an explicit non-degeneracy condition) must NOT be expressed as 「一般的な」 or 「一般の」. Those Japanese words mean "general / typical / widely applicable" — a non-technical qualification — and do not carry the algebro-geometric or measure-theoretic precision of "generic." Conflation creates a logical error: 「一般的な X では P が成立する」 reads as "P holds for a typical/arbitrary X" (i.e., universally), whereas the intended claim is "P holds for X outside a specific degenerate subfamily."
 
 Correct substitutes:
 - **technical generic** → 「generic な」(recommended: preserves the term, unambiguous), or 「一般位置の」(for algebraic-geometry-style general-position conditions), or an explicit description of the non-degeneracy condition
 - **technical non-generic** → 「非 generic な」, 「退化した」(when degeneracy is the focus), or 「特殊な（対称性の高い）」(when special structure is the focus)
-- **non-technical general** → 「一般の」, 「一般的な」remain correct for "for a general [arbitrary representative of the class]"
+- **non-technical general** → 「一般の」, 「一般的な」 remain correct for "for a general [arbitrary representative of the class]"
 
-Severity: BLOCKING when the conflation appears in theorem statements, in the scope of a cited result (e.g., characterising O'Hara's theorem), or in the introduction when the distinction between the generic and degenerate case is the main point. MINOR in expository prose or narrative framing.
+Severity: BLOCKING when the conflation appears in theorem statements, in the scope of a cited result, or in the introduction when the distinction between the generic and degenerate case is the main point. MINOR in expository prose or narrative framing.
 
-**JP-13 — 分野外借用語・比喩の排除．**
-純粋数学の散文では，物理・工学・統計・機械学習に由来する借用語，および物語的・擬人的比喩を用いない．The test: would the word appear, with the same meaning and without a definition, in a published Japanese mathematics journal article? If not, replace it with the precise mathematical object or operation. Representative pairs (the rule targets the whole class, not only this list):
-- 証人（witness）→「明示例」「具体的な配置対」「〜を満たす例」
+**JP-13 — Ban vocabulary and metaphors borrowed from outside mathematics.**
+Pure-mathematics prose must not use loanwords from physics, engineering, statistics, or machine learning, nor narrative or anthropomorphic metaphors. The test: would the word appear, with the same meaning and without a definition, in a published Japanese mathematics journal article? If not, replace it with the precise mathematical object or operation. Representative pairs (the rule targets the whole class, not only this list):
+- 証人（witness）→「明示例」「具体例」「〜を満たす例」
 - 模型（model, physics sense）→「例」「構成」
 - 機構・装置・回路・エンジン・からくり・仕組み →「構成」「議論の構造」, or delete and state the mechanism directly
 - 異常・病理 →「退化した場合」「反例」
@@ -111,37 +111,38 @@ Severity: BLOCKING when the conflation appears in theorem statements, in the sco
 - 層別（する・される）→「分類」「階層」(only when the hierarchy is formally defined)
 - 帳簿・台帳（bookkeeping）→「計数」「対応」
 - 余裕（as a translation of "margin" in an estimate）→「差」, or state the inequality directly
-- 風景・地図・物語・旅・精神（"in the spirit of"）→ delete the metaphor; state the claim or the analogy precisely（e.g., 「〜と同じ精神に立つ」→「〜の有限距離空間における対応物である」）
+- 風景・地図・物語・旅・精神（"in the spirit of"）→ delete the metaphor; state the claim or the analogy precisely（e.g., 「〜と同じ精神に立つ」→「〜の対応物である」 with the correspondence made explicit）
 
 Do NOT flag established mathematical terms whose surface form coincides with everyday or physics words: 核 (kernel), 流 (flow), スペクトル, 作用素, エネルギー法 (when citing the named method), 安定性. Severity: BLOCKING in theorem statements, abstracts, and introductions; MINOR elsewhere.
 
-**JP-14 — 全角セミコロン・未翻訳英語の混在禁止．**
-和文の数学散文では全角セミコロン「；」を用いない．並列・対比は読点・句点または文の分割で表し，enumerate 項目末尾も句点で終える．また，本文で和訳語を定義した概念（例：平衡条件）を英語のまま（balanced / unbalanced）併用しない — this creates an undeclared alias (report it also as NC-3 to `math-notation-consistency`). English adjectives such as genuine, strictness must not qualify Japanese nouns bare; unpack the intended condition in Japanese（e.g., 「genuine な極」→「分子が同時に零にならない極」）. Terms with no established Japanese translation that the document itself introduces (magnitude, homometric, generic, isospectral …) are exempt. Severity: MINOR for semicolons; BLOCKING for an English alias of a defined Japanese term in a theorem statement or summary of results.
+**JP-14 — No full-width semicolons; no untranslated English for defined Japanese terms.**
+Japanese mathematical prose must not use the full-width semicolon 「；」. Express parallelism or contrast with 読点・句点 or by splitting the sentence, and end enumerate items with 句点. A concept the document defines with a Japanese term must not also be used in its English form (e.g., a defined 平衡条件 later written as balanced / unbalanced) — this creates an undeclared alias; report it also as NC-3 to `math-notation-consistency`. English adjectives such as genuine or strict must not qualify Japanese nouns bare; unpack the intended condition in Japanese（e.g., 「genuine な極」→「分子が同時に零にならない極」）. Terms the document itself introduces because no established Japanese translation exists (e.g., generic, well-posed) are exempt. Severity: MINOR for semicolons; BLOCKING for an English alias of a defined Japanese term in a theorem statement or summary of results.
 
-**JP-15 — 範疇名「閉形式」の禁止（明示式・明示計算への置換）．**
-「閉形式」(closed form) は *どの* 形かを述べない範疇名であり，指示対象の式を文書自身が明示的に与えている場合には用いない．「閉形式」と書くたびに読者は「閉」の境界（初等関数か，有理式か，有限和か）を推測させられるが，式が紙面にあるならその推測は不要である — 式番号で指すか，「明示式」と呼べばよい．The test: does the document display the formula the word points to? If yes, the category name is strictly less informative than the reference. 置換指針:
-- 式そのものを指す名詞用法（「X の閉形式」）→「X の明示式」＋式番号参照（例「magnitude の明示式 \eqref{eq:mag}」），または式そのもの・式番号のみ
-- 「同一の閉形式 X をもつ」→ 何が一致するかを明示（「同一パラメータから定まる同一の X」「明示式 \eqref{…} により同一の X」）
-- 「閉形式で確認する／計算する／一致する」という様態用法 →「明示的に計算して確認する」「直接計算により」「明示式 \eqref{…} として一致する」
-- 定理・命題・補題のタイトル中（「[X の閉形式]」）→「[X の明示式]」．`\label{...}` の内部識別子は変更しない
-誤検出除外: (a) 微分幾何・de Rham 理論の「閉形式」(closed differential form, \(d\omega=0\)) は確立した術語であり対象外（完全形式・コホモロジーが近傍に現れるのが目印）．(b) 閉形式解の存在・非存在それ自体が主題で，文書が「閉形式」の意味を形式的に定義している場合（微分 Galois 理論，Liouville 流の初等関数論など）は対象外．(c) 引用文献のタイトル・定理名に含まれる場合は原文のまま残す．Severity: BLOCKING in theorem/proposition/lemma statements and titles, abstracts, and summaries of results; MINOR elsewhere.
+**JP-15 — Ban the vague category name 閉形式 for formulas the document states explicitly.**
+「閉形式」(closed form) is a category name that does not say *which* form: each use forces the reader to guess where the boundary of "closed" lies (elementary functions? rational expressions? finite sums?). When the document displays the formula the word points to, that guess is unnecessary — point to the equation number or call it 明示式. The test: does the document display the formula the word refers to? If yes, the category name is strictly less informative than the reference. Replacement guide:
+- Noun use naming the formula（「X の閉形式」）→「X の明示式」 plus an equation reference（「X の明示式 \eqref{eq:...}」）, or the equation itself / equation number alone
+- 「同一の閉形式 X をもつ」→ state what coincides（「同一パラメータから定まる同一の X」,「明示式 \eqref{…} により同一の X」）
+- Adverbial use（「閉形式で確認する／計算する／一致する」）→「明示的に計算して確認する」「直接計算により」「明示式 \eqref{…} として一致する」
+- In theorem/proposition/lemma titles（「[X の閉形式]」）→「[X の明示式]」; do not change `\label{...}` identifiers
+
+Exemptions: (a) closed differential forms（\(d\omega=0\)）in differential geometry and de Rham theory — an established term; nearby mentions of exact forms or cohomology are the cue; (b) documents where closed-form solvability is itself the subject and 「閉形式」 is formally defined (differential Galois theory, Liouville-style elementary-function theory); (c) cited titles and theorem names — leave verbatim. Severity: BLOCKING in theorem/proposition/lemma statements and titles, abstracts, and summaries of results; MINOR elsewhere.
 
 ## Examples
 
 ```
-Before（JP-1）: したがって ν₋ は配置を区別すると考えられる。
-After:          したがって ν₋ は配置を区別する（系 2.3）。
+Before（JP-1）: したがって I は X と Y を区別すると考えられる。
+After:          したがって I は X と Y を区別する（系 2.3）。
 ```
 
 ```
-Before（JP-2）: Z_X(t) は正則行列であった。
-After:          Z_X(t) は正則行列である。
+Before（JP-2）: A(t) は正則行列であった。
+After:          A(t) は正則行列である。
 ```
 
 ```
 Before（JP-3）: ゆえに補題 2.1 の条件が満たされたことが示された。
 After:          ゆえに補題 2.1 の条件が満たされる。
-                （または，外部補題を引用した場合：「補題 2.1 により条件が満たされていることが示されている。」）
+                （または，外部結果を引用した場合：「[12] により条件が満たされていることが示されている。」）
 ```
 
 ```
@@ -150,13 +151,13 @@ After:          （削除；節の遷移は見出しで十分）
 ```
 
 ```
-Before（JP-5）: 三角不等式が成立することは明らかである。
-After:          三角不等式は max(α,β) ≤ 2 min(γ,δ) および |γ−δ| ≤ min(α,β) から従う（補題 2.2）。
+Before（JP-5）: 不等式 (4) が成立することは明らかである。
+After:          不等式 (4) は両辺を比較して直ちに従う（補題 2.2）。
 ```
 
 ```
-Before（JP-6）: 本節では S_r の性質を述べる。S_r を次で定義する。[section heading: "S_r の性質"]
-After:          （「本節では…」の行を削除）S_r を次で定義する。
+Before（JP-6）: 本節では f の性質を述べる。f を次で定義する。[section heading: "f の性質"]
+After:          （「本節では…」の行を削除）f を次で定義する。
 ```
 
 ```
@@ -165,52 +166,41 @@ After:          P ならば Q が成り立つ。
 ```
 
 ```
-Before（JP-9）: この場合，S_r が配置に依存しないとは言えない。
-After:          この場合，S_r は配置に依存する可能性がある。
-                （または確定している場合：「この場合，S_r は配置に依存する。」）
+Before（JP-9）: この場合，f が u に依存しないとは言えない。
+After:          この場合，f は u に依存する可能性がある。
+                （または確定している場合：「この場合，f は u に依存する。」）
 ```
 
 ```
-Before（JP-11）: 配置の非依存性の証明の骨子の説明を与える。
-After:           配置非依存性の証明の概略を述べる。
+Before（JP-11）: 解の一意性の証明の方針の説明を与える。
+After:           解の一意性の証明方針を述べる。
 ```
 
 ```
-Before（JP-12）: 一般的な有限距離空間では one-point property が成立する。
-                 （O'Hara の有理独立条件を満たす generic な空間に対する結果として書いた場合）
-After:           generic な有限距離空間では one-point property が成立する。
+Before（JP-12）: 一般的な行列では固有値はすべて単純である。
+                 （判別式の零点集合の外で成り立つ generic な主張として書いた場合）
+After:           generic な行列では固有値はすべて単純である。
 ```
 
 ```
-Before（JP-12）: O'Hara の意味で非一般的な（対称性の高い）族
-After:           O'Hara の意味で非 generic な（対称性の高い）族
+Before（JP-13）: この例の組が定理の証人である。
+After:          この例の組が定理の主張を満たす明示例である。
 ```
 
 ```
-Before（JP-13）: この配置対が定理の証人である。
-After:          この配置対が定理の主張を満たす明示例である。
+Before（JP-13）: 不変量 I の検出力は完全に層別される。
+After:          不変量 I が区別する対象対の全体は，定理 6.5 の条件により特徴づけられる。
 ```
 
 ```
-Before（JP-13）: ν₋ の検出力は完全に層別される。
-After:          ν₋ が区別する配置対の全体は，閾値超過多重集合により特徴づけられる（定理 6.5）。
+Before（JP-14）: 等号は unbalanced な場合に実現する；他の場合は balance が成り立つ。
+After:          等号は平衡条件を満たさない場合に実現する。他の場合は平衡条件が成り立つ。
 ```
 
 ```
-Before（JP-14）: R=1 は unbalanced 証人により実現する；他の場合は balance を強制する。
-After:          R=1 は平衡条件を満たさない組により実現する。他の場合は平衡条件が必要である。
-```
-
-```
-Before（JP-15）: \begin{proposition}[magnitude の閉形式]\label{prop:closed}
-After:          \begin{proposition}[magnitude の明示式]\label{prop:closed}
+Before（JP-15）: \begin{proposition}[母関数の閉形式]\label{prop:closed}
+After:          \begin{proposition}[母関数の明示式]\label{prop:closed}
                 （ラベルは変更しない）
-```
-
-```
-Before（JP-15）: 同一の閉形式 magnitude をもつ二配置が存在する。
-After:          同一パラメータから定まる同一の magnitude をもつ二配置が存在する。
-                （または：明示式 \eqref{eq:mag} により同一の magnitude をもつ二配置が存在する。）
 ```
 
 ```
