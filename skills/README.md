@@ -36,3 +36,6 @@ Current skills:
 - claude-code-advanced-orchestration
 - textlint-cli
 - github-project-board-maintenance
+- math-claim-integrity
+- math-notation-consistency
+- wabun-math-style
