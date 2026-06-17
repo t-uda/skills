@@ -39,3 +39,4 @@ Current skills:
 - math-claim-integrity
 - math-notation-consistency
 - wabun-math-style
+- lean-formalization-discipline
