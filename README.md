@@ -57,6 +57,10 @@ Each skill must live at `skills/<skill-name>/SKILL.md`.
 
 - `computational-reproducibility`: keep computational experiments reproducible through explicit preflight checks, manifest expectations, source/artifact separation, fallback policy, and failure semantics
 
+### Lean / formalization
+
+- `lean-formalization-discipline`: keep Lean / Mathlib proofs sound and axiom-clean while refactoring — no `sorry` on false statements, honest `sorry` over hidden axioms, self-contained in the repo, and `lake build` + `#print axioms` re-verified every commit
+
 ### Repository guidance
 
 - `growing-agents-md`: seed, lint, or update a compact canonical `AGENTS.md` with deterministic guardrails
