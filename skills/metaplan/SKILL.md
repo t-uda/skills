@@ -42,6 +42,7 @@ Use `Not ready` if any blocker exists. A blocker is any issue that can cause:
 - an unauthorized product, policy, architecture, migration, security, or UX decision
 - reliance on missing or conflicting source-of-truth authority
 - unverifiable completion
+- validation gates that can pass broken work or fail healthy work through stale, flaky, or proxy evidence
 - a foreseeable stop for clarification
 - major rework from hidden dependencies, sequencing, or cross-system impact
 
@@ -79,6 +80,7 @@ Apply these checks once. Do not repeat the same finding under multiple headings.
 
 - Are required files, modules, interfaces, environments, commands, credential requirements, fixtures, and data named when needed?
 - Are secret values kept out of planning artifacts?
+- Are existing branches, PRs, drafts, issue comments, or generated artifacts checked when they can change the task shape?
 - Are prerequisites ordered before dependent tasks?
 - Are fallback behaviors specified for expected edge cases?
 
@@ -86,7 +88,9 @@ Apply these checks once. Do not repeat the same finding under multiple headings.
 
 - Which artifact governs implementation if spec, issue, plan, tasks, `AGENTS.md`, README, or inline comments disagree?
 - Does the plan summarize prior research conclusions instead of merely linking to background material?
+- Does prior research, preflight, PR diff/head, or status evidence have a freshness or recheck policy?
 - Does it distinguish settled facts from open questions?
+- Do duplicated operational commands, config snippets, or recovery procedures name the governing copy?
 - If trust or conflict in a source artifact is material, should `sot-integrity` run first?
 
 ### Decisions and Ambiguity
@@ -105,6 +109,8 @@ Apply these checks once. Do not repeat the same finding under multiple headings.
 
 - Can each acceptance criterion be verified objectively?
 - Are required tests, validation commands, review gates, rollout checks, or manual checks named?
+- Are validation gates based on fresh, deterministic evidence rather than stale, flaky, or proxy outputs?
+- Does the plan say where validation evidence is recorded when later agents should rely on it?
 - Is there a clear stop condition for failed validation?
 
 ### Efficiency
@@ -116,6 +122,7 @@ Apply these checks once. Do not repeat the same finding under multiple headings.
 ### Complexity and Risk
 
 - Are cross-cutting changes, migrations, data compatibility, recovery, and regression risks visible?
+- Are rollback or recovery strategy, compatibility constraints, and must-not-regress conditions explicit when relevant?
 - Is uncertainty named where it changes implementation order or validation scope?
 - Does the plan avoid presenting risky work as a trivial edit?
 
