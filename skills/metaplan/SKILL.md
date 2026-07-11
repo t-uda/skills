@@ -5,174 +5,144 @@ description: Review and tighten specs, plans, and task breakdowns before impleme
 
 # Metaplan
 
-Review planning artifacts from the perspective of an autonomous coding agent that must execute reliably with minimal interruption.
+Review planning artifacts as the coding agent that must execute them. Do not restate the plan. Find what would cause wrong assumptions, interruption, rework, redundant research, or implementation drift, then propose concrete edits.
 
-Your job is not to restate the plan. Your job is to detect anything that would cause hesitation, wrong assumptions, wasted tokens, redundant work, or implementation drift, and then propose concrete edits that make the work package execution-ready.
-
-## When to use
+## Use when
 
 Use this skill when the user wants to:
 
-- review a spec, plan, task list, or implementation brief before coding starts
-- harden documents for use by a coding agent
-- reduce ambiguity, rework, unnecessary confirmations, or repeated research
-- check that sources of truth, boundaries, and completion criteria are explicit
-- make a plan legible to an agent that has no prior project context
-- improve plan quality through repeated review-and-rewrite cycles
+- review or harden a spec, plan, task list, or implementation brief before coding starts
+- reduce ambiguity, rework, avoidable confirmations, or repeated research
+- make source-of-truth order, boundaries, and completion criteria explicit
+- improve plan quality through review-and-rewrite cycles
 
-Do not use this skill for code review after implementation unless the user explicitly wants the planning artifacts reviewed as well.
+Do not use this skill for post-implementation code review unless the planning artifacts are also under review.
 
-## Core objective
+## Responsibility boundary
 
-Transform planning documents into an execution-ready package that lets a competent coding agent begin implementation immediately, with:
+`metaplan` judges whether the work package is execution-ready.
 
-- no material ambiguity
-- no missing operational context that should already be documented
-- no duplicated or conflicting instructions
-- no avoidable requests for user confirmation
-- no unnecessary re-investigation of already-decided matters
-- clear boundaries, dependencies, and stop conditions
-- clear verification and completion criteria
+- If a plan depends on an external or contested source-of-truth artifact, require the plan to name that artifact, its authority, and its precedence.
+- If the trustworthiness of that artifact itself must be audited, invoke `sot-integrity`; do not duplicate its full trust model here.
+- If repository-wide behavior is already governed by `AGENTS.md` or equivalent, feature plans should reference it instead of repeating it unless a local exception is required.
 
-## Primary review question
+## Primary question
 
-Always evaluate the artifacts against this question:
+```text
+Could a capable coding agent, with no prior knowledge beyond the repository and the provided artifacts, execute this task correctly and efficiently without stopping for clarification?
+```
 
-> Could a capable coding agent, with no prior knowledge beyond the repository and the provided documents, execute this task correctly and efficiently without needing to stop for clarification?
+## Readiness Model
 
-If the answer is not clearly yes, find out why and repair it.
+### 1. `Not ready`
 
-## Review lens
+Use `Not ready` if any blocker exists. A blocker is any issue that can cause:
 
-Assess the documents using these lenses.
+- materially different implementations
+- an unauthorized product, policy, architecture, migration, security, or UX decision
+- reliance on missing or conflicting source-of-truth authority
+- unverifiable completion
+- a foreseeable stop for clarification
+- major rework from hidden dependencies, sequencing, or cross-system impact
 
-### 1. Executability
+### 2. `Ready with minor fixes`
 
-Check whether the agent can act immediately.
+Use `Ready with minor fixes` only when no blocker exists, but bounded local edits should be made before or during handoff. Minor fixes include:
 
-Look for:
+- missing paths, commands, or names that are inferable from the artifacts or repository
+- local wording that creates avoidable branching but has an obvious correction
+- duplicated generic instructions that can be deleted or replaced by a reference
+- incomplete but non-blocking validation details
+- small task-order or checklist repairs that do not change scope
 
-- vague goals without operational steps
-- missing prerequisites
-- hidden assumptions
-- omitted file paths, module names, interfaces, commands, or environments when those are necessary
-- instructions that describe intent but not the concrete action to take
-- statements that require subjective judgement without decision rules
+### 3. `Ready`
 
-### 2. Interruption risk
+Use `Ready` only when:
 
-Find anything likely to make the agent pause and ask the user.
+- no blocker or local edit is needed before implementation
+- source-of-truth order, scope, open decisions, verification, and stop conditions are explicit
+- task complexity is visible enough for a competent agent to start immediately
 
-Look for:
+Do not downgrade or upgrade for tone. Judge only execution readiness.
 
-- unresolved choices
-- phrases such as “as appropriate”, “if needed”, “consider”, “possibly”, “decide whether”
-- policy or product decisions deferred to implementation time
-- unspecified fallback behaviour
-- missing authority on tie-breaks or edge cases
+## Audit Checks
 
-### 3. Re-research risk
+Apply these checks once. Do not repeat the same finding under multiple headings.
 
-Find anything that may trigger redundant investigation.
+### Goal and Scope
 
-Look for:
+- Is the goal operational rather than aspirational?
+- Are in-scope work, non-goals, ownership boundaries, and "must not change" areas explicit?
+- Are performance, security, UX, migration, or compatibility constraints stated when relevant?
 
-- references to prior research without summarising the conclusion that matters
-- “investigate X” even though the relevant decision was supposedly made already
-- external resources mentioned without saying whether they are authoritative
-- missing explicit statement of what is settled vs what remains open
+### Inputs and Prerequisites
 
-### 4. Source-of-truth integrity
+- Are required files, modules, interfaces, environments, commands, credentials, fixtures, and data named when needed?
+- Are prerequisites ordered before dependent tasks?
+- Are fallback behaviors specified for expected edge cases?
 
-Check whether the documents clearly identify what governs implementation.
+### Source of Truth and Settled Facts
 
-Look for:
+- Which artifact governs implementation if spec, issue, plan, tasks, `AGENTS.md`, README, or inline comments disagree?
+- Does the plan summarize prior research conclusions instead of merely linking to background material?
+- Does it distinguish settled facts from open questions?
+- If trust or conflict in a source artifact is material, should `sot-integrity` run first?
 
-- multiple documents that can disagree
-- no precedence order between spec, plan, tasks, AGENTS.md, README, issue text, or inline comments
-- plan text repeating repository-wide guidance that should live only in AGENTS.md or equivalent
-- important constraints mentioned only informally
+### Decisions and Ambiguity
 
-### 5. Boundary clarity
+- Are unresolved choices converted into decision rules or explicitly marked as blocking?
+- Do phrases such as "as appropriate", "if needed", "consider", "possibly", and "decide whether" hide required decisions?
+- Are tie-breaks and edge-case policies authorized?
 
-Check whether scope is well defined.
+### Tasks and Dependencies
 
-Look for:
+- Are tasks ordered by dependency and traceable to requirements?
+- Are task units small enough to execute and measure?
+- Do tasks hide design choices that should be settled before implementation?
 
-- unclear in-scope vs out-of-scope items
-- missing non-goals
-- unclear ownership boundaries across modules or systems
-- no statement of what must not be changed
-- performance, security, UX, migration, or compatibility constraints left implicit
+### Completion and Verification
 
-### 6. Completion clarity
+- Can each acceptance criterion be verified objectively?
+- Are required tests, validation commands, review gates, rollout checks, or manual checks named?
+- Is there a clear stop condition for failed validation?
 
-Check whether “done” is operationally testable.
+### Efficiency
 
-Look for:
+- Remove repeated instructions across spec, plan, and tasks.
+- Replace global policy copies with references to the governing artifact.
+- Delete motivational prose, broad background, and examples that do not affect execution.
 
-- tasks that can be marked complete without objective evidence
-- acceptance criteria that are subjective or incomplete
-- no required tests, validation steps, or review gates
-- no mapping from requirements to verifiable outcomes
+### Complexity and Risk
 
-### 7. Efficiency and token discipline
+- Are cross-cutting changes, migrations, data compatibility, recovery, and regression risks visible?
+- Is uncertainty named where it changes implementation order or validation scope?
+- Does the plan avoid presenting risky work as a trivial edit?
 
-Remove anything that wastes agent attention.
+## Output Contract
 
-Look for:
-
-- repeated instructions across spec, plan, and tasks
-- generic prose that adds no execution value
-- repository commands copied from AGENTS.md unnecessarily
-- long motivational or explanatory passages where short directives suffice
-- duplicated context that should be referenced once
-
-### 8. Complexity visibility
-
-Check whether the documents expose the true difficulty of the task.
-
-Look for:
-
-- risky migrations or cross-cutting changes described as if trivial
-- no dependency ordering
-- hidden multi-file or multi-system impacts
-- no estimate of uncertainty or risk areas
-- absence of rollout, recovery, or compatibility considerations when needed
-
-## What to produce
-
-Produce a practical review, not a lecture.
-
-Your output should contain these sections in this order.
+Produce these sections in order.
 
 ### A. Verdict
 
-State one of:
+State exactly one:
 
-- **Ready**
-- **Ready with minor fixes**
-- **Not ready**
+- `Ready`
+- `Ready with minor fixes`
+- `Not ready`
 
-Use **Ready** only if the artifacts are genuinely execution-ready for an autonomous coding agent.
+### B. Blockers
 
-### B. Critical blockers
+List only issues that justify `Not ready`. For each blocker include:
 
-List only issues that would likely cause incorrect implementation, interruption, or major rework.
-
-For each blocker, provide:
-
-- a short title
+- title
 - why it blocks autonomous execution
-- the smallest concrete fix
+- smallest concrete fix
 
-If there are no blockers, say so.
+If there are no blockers, write `None`.
 
-### C. Improvement findings
+### C. Non-blocking fixes
 
-List non-blocking issues that still reduce reliability or efficiency.
-
-Group them under:
+List only issues that support `Ready with minor fixes` or useful cleanup under these headings when present:
 
 - Ambiguity
 - Missing context
@@ -180,28 +150,26 @@ Group them under:
 - Boundary problems
 - Completion criteria gaps
 - Token inefficiency
-- Complexity underestimation
+- Complexity visibility
 
-Only include groups that actually have findings.
+Omit empty headings.
 
 ### D. Proposed edits
 
-Whenever possible, rewrite the problematic text directly.
+Prefer direct patches the user can apply. Use one of:
 
-Prefer one of these forms:
+- `Replace with`
+- `Add`
+- `Delete`
+- `Move to AGENTS.md`
+- `Move to tasks.md`
+- `Reference instead of repeating`
 
-- **Replace with**
-- **Add**
-- **Delete**
-- **Move to AGENTS.md**
-- **Move to tasks.md**
-- **Reference instead of repeating**
+Do not write "clarify this"; write the clarification.
 
-Write edits so the user can paste them into the documents with minimal work.
+### E. Readiness checklist
 
-### E. Execution readiness checklist
-
-Conclude with a short checklist using pass/fail status for:
+Use pass/fail status for:
 
 - Goal is unambiguous
 - Inputs and prerequisites are explicit
@@ -214,123 +182,38 @@ Conclude with a short checklist using pass/fail status for:
 
 ### F. Next action
 
-End with exactly one recommended next action, chosen from:
+End with exactly one:
 
-- revise the spec
-- revise the plan
-- revise the task breakdown
-- update AGENTS.md or equivalent repository guidance
-- proceed to implementation
+- `revise the spec`
+- `revise the plan`
+- `revise the task breakdown`
+- `update AGENTS.md or equivalent repository guidance`
+- `proceed to implementation`
 
-## Editing rules
+## Editing Rules
 
-When proposing changes, follow these rules.
+- Preserve intent; do not invent product or technical requirements.
+- Prefer the smallest edit that removes the execution risk.
+- Treat a question as blocking only when no safe local fix can be inferred.
+- Convert optionality into decision rules and make precedence explicit when artifacts can disagree.
+- Keep settled facts, open decisions, assumptions, and validation evidence distinct.
+- Move durable repository policy to `AGENTS.md` or equivalent; keep feature plans feature-specific.
+- Do not inflate minor issues into blockers.
 
-### Be concrete
+## Boundary Cases
 
-Do not say “clarify this”.
-Say exactly how to clarify it.
+- `Ready`: the plan names source precedence, scope, ordered tasks, validation, and stop conditions; no edits are needed.
+- `Ready with minor fixes`: the plan is executable, but it repeats global test commands and omits an inferable file path in one task.
+- `Not ready`: the plan asks the agent to "choose the API design" without authorized criteria; implementation could diverge materially.
+- Overlap case: if a source-of-truth gap also makes implementation branch, classify it as `Not ready`; otherwise list it as a non-blocking source-of-truth fix.
+- Insufficient information: if the artifact set is incomplete and the missing artifact controls scope or acceptance, classify as `Not ready`.
 
-### Preserve intent
+## Quality Check
 
-Do not change product or technical intent unless the documents are internally inconsistent.
-If intent is unclear, mark it as unresolved rather than inventing requirements.
+Before finishing, verify:
 
-### Prefer minimal edits
-
-Do not rewrite entire documents when a local patch solves the problem.
-Rewrite larger sections only when the structure itself is the problem.
-
-### Remove duplication aggressively
-
-If repository-wide guidance already belongs in AGENTS.md, constitution files, or equivalent agent instructions, do not duplicate it in feature plans unless local deviation is required.
-
-### Make precedence explicit
-
-If multiple artifacts exist, recommend a precedence order when it is missing.
-A typical pattern is:
-
-1. explicit user instruction in the current task
-2. repository-wide agent guidance
-3. feature spec
-4. implementation plan
-5. task breakdown
-
-Do not assume this order blindly; adapt it to the project if the documents already define one.
-
-### Distinguish settled facts from open questions
-
-If research has already been done, require the plan to state the conclusion and the authoritative source, not merely link to background material.
-
-### Optimise for autonomous execution
-
-Prefer wording that reduces branching during implementation.
-Replace optionality with decision rules whenever possible.
-
-For example:
-
-- bad: “Use the simpler approach if appropriate.”
-- better: “Use approach A unless criterion X is present; if X is present, use approach B.”
-
-## Special checks
-
-Apply these checks whenever relevant.
-
-### If the plan references prior research
-
-Verify that it answers:
-
-- what was decided
-- why it was decided
-- whether the agent should trust that conclusion without re-checking
-- where the authoritative reference lives
-
-### If the plan references AGENTS.md or equivalent
-
-Verify that it does not restate global instructions unnecessarily.
-Feature artifacts should contain only feature-specific deltas or constraints.
-
-### If tasks are included
-
-Verify that tasks are:
-
-- ordered by dependency
-- small enough to execute
-- traceable to requirements
-- measurable as complete
-- not hiding unresolved design choices
-
-### If the work is risky or cross-cutting
-
-Verify that the documents explicitly cover:
-
-- impacted areas
-- migration or rollback strategy
-- compatibility constraints
-- validation strategy
-- what must not regress
-
-## Failure conditions
-
-Mark the artifacts **Not ready** if any of the following is true:
-
-- a key requirement can be interpreted in more than one materially different way
-- implementation would require making product or architecture decisions not already authorised
-- the source of truth is missing or conflicting
-- completion cannot be verified objectively
-- the agent would likely need to pause for confirmation on foreseeable cases
-- the documents conceal major complexity or dependencies
-- instructions are duplicated in ways that can drift or conflict
-
-## Working style
-
-Be rigorous, concise, and unsentimental.
-
-Do not praise weak plans.
-Do not inflate minor issues into blockers.
-Do not ask unnecessary questions if the correct fix can be inferred from the documents.
-When a question is truly unavoidable, phrase it as a sharply scoped unresolved decision and explain why implementation should not proceed without it.
-
-## Success condition
-
-This skill succeeds when the planning artifacts become suitable for immediate use by an autonomous coding agent, with minimal ambiguity, minimal interruption risk, and minimal wasted context.
+- the verdict follows the readiness model
+- every blocker names a concrete failure mode and smallest fix
+- non-blocking findings are not duplicated as blockers, and proposed edits are directly actionable
+- output headings and final next-action value match the contract exactly
+- source-of-truth trust questions are delegated to `sot-integrity` when appropriate
