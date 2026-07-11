@@ -50,7 +50,7 @@ The single authoritative selection algorithm: evaluate the steps in order, stop 
 
 Match if any of the following hold:
 
-- a sound decomposition cannot be defined because a design or scope decision (in `known_decisions`) is unresolved and would change subtask boundaries
+- a sound decomposition cannot be defined because a design or scope decision that would change subtask boundaries is still unresolved (absent from `known_decisions`)
 - the task is too large or entangled to state even provisional local contracts for its subtasks
 - the correct next step is rewriting or narrowing the task, not orchestrating it
 
