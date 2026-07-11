@@ -211,20 +211,20 @@ Output a single final line of the form `Next action: <value>`, where `<value>` i
 ## Examples
 
 ```
-Cross-domain, research-trivial — Candidate imports persistent homology into a
-scheduling problem because the user works in TDA.
+Cross-domain, research-trivial — Candidate advertises
+c(t) = #π₀(K_t) as a new topological summary; user notes β₀(K_t) is already computed
+in the filtration.
 
 Local significance map:
-- Incumbent baseline: standard scheduling formulation (user-supplied notes).
-- Bottleneck: optimality gap under resource constraints — not linked to topology.
-- Minimum gain: theorem or algorithm improving the schedule beyond the incumbent.
-- Disqualifier: profile-driven domain import with no stated mechanism.
+- Incumbent baseline: β₀(K_t) from persistent homology (user-supplied notes).
+- Bottleneck: none stated beyond relabelling an existing count.
+- Minimum gain: invariant or theorem not recoverable from β₀(K_t).
+- Disqualifier: c(t) = β₀(K_t) by definition once components are identified.
 
-Verdict: research-poor
-Contribution test: fails — no construction, invariant, or complexity gain stated.
-Evidence: model-knowledge only for any topology link; no source establishes gain.
-Next action: reject — restate the scheduling problem unless a precise mechanism
-is supplied.
+Verdict: known/reformulation
+Contribution test: fails — no gain beyond renaming β₀(K_t).
+Evidence: user-supplied baseline confirms equivalence; no literature search needed.
+Next action: reject
 ```
 
 ```
@@ -239,8 +239,7 @@ Local significance map:
 
 Verdict: exploratory analogy only
 Evidence: coherence of the analogy is conjectural; no source supplies the link.
-Next action: keep exploratory — supply a precise correspondence lemma or narrow to
-the PDE question alone.
+Next action: keep exploratory
 ```
 
 ```
@@ -258,8 +257,7 @@ Verdict: plausible but unverified
 Per-field baseline: combinatorics — gap documented in Paper A; whether I coincides
 with a standard invariant needs search.
 Contribution: concrete bound target stated; novelty of I unresolved.
-Next action: pursue — literature search on I vs known invariants; computational
-check on supplied graph families.
+Next action: pursue
 ```
 
 ## Quality check
