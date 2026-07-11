@@ -76,7 +76,7 @@ Work through the five lenses below. For each lens, record pass, fail, or unresol
    - **disqualifiers** — reformulation, profile drift, missing mechanism, or simpler route unnamed
 3. For each relevant field, list what is already standard and whether the candidate adds anything beyond reformulation.
 4. Apply the contribution test: does the direction yield a concrete gain (new theorem, weaker assumptions, stronger conclusions, new proof mechanism, computable method, new invariant, transfer to an uncovered case, or gap-filling synthesis)?
-5. Classify evidence: supported by supplied sources, model knowledge only, or conjectural.
+5. Classify evidence: source-supported, user-confirmed, derived in this analysis, model-knowledge only, or conjectural.
 6. Check locality: does the direction stay centred on `question`, or did profile knowledge cause semantic drift?
 7. Apply the source-sufficiency gate and deterministic verdict order below.
 
@@ -127,9 +127,11 @@ Does the direction plausibly provide at least one concrete gain:
 
 Model recollection alone must not establish field-standard status, novelty, equivalence to known work, or a `promising` verdict.
 
-- `promising` requires at least one source-supported baseline claim or user-supplied calculation confirming a non-trivial gain.
-- `known/reformulation` requires a source-supported or user-confirmed identification of the simpler or known route.
-- When a material baseline claim rests on model knowledge only, cap the verdict at `plausible but unverified` or lower and name the deciding search.
+- `promising` requires a source-supported baseline claim or user-confirmed calculation showing a non-trivial gain against the stated baseline.
+- `known/reformulation` requires a source-supported or user-confirmed standard or simpler route, plus source-supported, user-confirmed, or explicitly derived equivalence to that route.
+- `derived in this analysis` may establish a mathematical identity, implication, counterexample, or equivalence when the derivation is shown.
+- `derived in this analysis` must not establish literature absence, novelty, historical priority, or field-standard status.
+- When a material baseline claim rests on model-knowledge only, cap the verdict at `plausible but unverified` or lower and name the deciding search.
 
 ### Decision order
 
@@ -137,18 +139,18 @@ The verdicts are categories, not a severity scale. Apply in order; assign the fi
 
 1. **`incoherent`** — precise formulation fails.
 2. **`exploratory analogy only`** — no mechanism beyond metaphor or shared vocabulary (even if a loose statement exists).
-3. **`research-poor`** — contribution test fails: no concrete gain over simpler or unnamed incumbent approaches.
-4. **`known/reformulation`** — source-supported or user-confirmed equivalence to standard or simpler work.
+3. **`known/reformulation`** — source-supported or user-confirmed standard or simpler work, with source-supported, user-confirmed, or explicitly derived equivalence to it.
+4. **`research-poor`** — contribution test fails, and no established equivalence to standard or simpler work is available.
 5. **`plausible but unverified`** — mathematically coherent and contribution plausible, but novelty, literature status, or baseline claims remain unresolved or source-insufficient.
-6. **`promising`** — precise statement, contribution test passes, and source-supported evidence confirms a non-trivial gain.
+6. **`promising`** — precise statement, contribution test passes, and a source-supported baseline claim or user-confirmed calculation shows a non-trivial gain.
 
 | Verdict | Definition | Agent guidance |
 |---|---|---|
 | `promising` | Precise direction with an identifiable non-trivial gain | May be promoted as a research direction; state the gain and what remains to prove or verify |
 | `plausible but unverified` | Mathematically coherent, but novelty or literature status unresolved | Keep; label uncertainty; name the deciding search or calculation |
 | `exploratory analogy only` | Useful intuition, not yet a research claim | Do not present as a contribution; keep labelled exploratory |
-| `known/reformulation` | Correct but apparently standard or equivalent to known work | Downgrade; cite the simpler or known route |
-| `research-poor` | No concrete gain over simpler or established approaches | Reject as a research direction; name the simpler path |
+| `known/reformulation` | Correct but established as equivalent to source-supported or user-confirmed standard work | Downgrade; cite the comparator and cite, confirm, or derive the equivalence |
+| `research-poor` | No concrete gain over simpler or incumbent approaches, without established equivalence | Reject as a research direction; name the missing gain or simpler path |
 | `incoherent` | Does not survive precise formulation | Reject; explain the formulation failure |
 
 Do not soften a verdict to avoid friction. Negative and downgraded outcomes are valid results.
@@ -182,7 +184,7 @@ State whether the direction passes the contribution test and name the concrete g
 
 ### F. Evidence status
 
-Classify each material claim as: source-supported, model-knowledge only, or conjectural. Name what would close open gaps.
+Classify each material claim as: source-supported, user-confirmed, derived in this analysis, model-knowledge only, or conjectural. Name what would close open gaps.
 
 ### G. Drift check
 
@@ -200,6 +202,7 @@ Output a single final line of the form `Next action: <value>`, where `<value>` i
 ## Working rules
 
 - Do not let model-memory baseline claims drive a `promising` or `known/reformulation` verdict.
+- Do not use a derivation in the current analysis to assert novelty, literature absence, priority, or field-standard status.
 - Do not infer scholarly significance from mathematical correctness alone.
 - Do not infer novelty from unfamiliar terminology or cross-domain presentation.
 - Do not present a result as non-trivial without checking every relevant field.
@@ -223,7 +226,8 @@ Local significance map:
 
 Verdict: known/reformulation
 Contribution test: fails — no gain beyond renaming β₀(K_t).
-Evidence: user-supplied baseline confirms equivalence; no literature search needed.
+Evidence: user-confirmed and derived in this analysis — c(t)=#π₀(K_t)=β₀(K_t)
+once components are identified; no literature search is needed for the identity.
 Next action: reject
 ```
 
@@ -260,6 +264,23 @@ Contribution: concrete bound target stated; novelty of I unresolved.
 Next action: pursue
 ```
 
+```
+No gain, no established equivalence — Candidate defines a weighted variant W(G)
+of an existing invariant but gives no theorem, sharper bound, or computable method;
+available sources do not identify W(G) with a standard object.
+
+Local significance map:
+- Incumbent baseline: existing invariant and bounds from supplied notes.
+- Bottleneck: no bottleneck named beyond changing weights.
+- Minimum gain: new bound, obstruction, or algorithm not recovered from the baseline.
+- Disqualifier: contribution test fails; equivalence to known work is unresolved.
+
+Verdict: research-poor
+Contribution test: fails — no concrete gain is identified.
+Evidence: source-supported baseline; equivalence status remains conjectural.
+Next action: reject
+```
+
 ## Quality check
 
 Before finishing, verify:
@@ -267,6 +288,8 @@ Before finishing, verify:
 - a local significance map is recorded before verdict assignment
 - source-sufficiency gate applied; no model-memory-only `promising` verdict
 - verdict assigned via deterministic decision order, not subjective severity
+- `known/reformulation` remains reachable before generic no-contribution rejection
+- evidence provenance supports the verdict and does not use derivation for scholarly-status claims
 - correctness, novelty, and significance are distinguished in the report
 - every field in `relevant_fields` received baseline comparison
 - the contribution test explicitly addresses reformulation and triviality
