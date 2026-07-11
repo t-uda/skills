@@ -127,8 +127,8 @@ Does the direction plausibly provide at least one concrete gain:
 
 Model recollection alone must not establish field-standard status, novelty, equivalence to known work, or a `promising` verdict.
 
-- `promising` requires at least one source-supported baseline claim or user-supplied calculation confirming a non-trivial gain.
-- `known/reformulation` requires a source-supported, user-confirmed, or explicitly derived identification of the simpler or known route.
+- `promising` requires at least one source-supported or user-confirmed baseline claim or calculation confirming a non-trivial gain.
+- `known/reformulation` requires a source-supported or user-confirmed standard or simpler route, plus source-supported, user-confirmed, or explicitly derived equivalence to that route.
 - `derived in this analysis` may establish a mathematical identity, implication, counterexample, or equivalence when the derivation is shown.
 - `derived in this analysis` must not establish literature absence, novelty, historical priority, or field-standard status.
 - When a material baseline claim rests on model-knowledge only, cap the verdict at `plausible but unverified` or lower and name the deciding search.
@@ -139,17 +139,17 @@ The verdicts are categories, not a severity scale. Apply in order; assign the fi
 
 1. **`incoherent`** — precise formulation fails.
 2. **`exploratory analogy only`** — no mechanism beyond metaphor or shared vocabulary (even if a loose statement exists).
-3. **`known/reformulation`** — source-supported, user-confirmed, or explicitly derived equivalence to standard or simpler work.
+3. **`known/reformulation`** — source-supported or user-confirmed standard or simpler work, with source-supported, user-confirmed, or explicitly derived equivalence to it.
 4. **`research-poor`** — contribution test fails, and no established equivalence to standard or simpler work is available.
 5. **`plausible but unverified`** — mathematically coherent and contribution plausible, but novelty, literature status, or baseline claims remain unresolved or source-insufficient.
-6. **`promising`** — precise statement, contribution test passes, and source-supported or user-supplied evidence confirms a non-trivial gain.
+6. **`promising`** — precise statement, contribution test passes, and source-supported or user-confirmed evidence confirms a non-trivial gain.
 
 | Verdict | Definition | Agent guidance |
 |---|---|---|
 | `promising` | Precise direction with an identifiable non-trivial gain | May be promoted as a research direction; state the gain and what remains to prove or verify |
 | `plausible but unverified` | Mathematically coherent, but novelty or literature status unresolved | Keep; label uncertainty; name the deciding search or calculation |
 | `exploratory analogy only` | Useful intuition, not yet a research claim | Do not present as a contribution; keep labelled exploratory |
-| `known/reformulation` | Correct but established as standard or equivalent to known work | Downgrade; cite or derive the simpler or known route |
+| `known/reformulation` | Correct but established as equivalent to source-supported or user-confirmed standard work | Downgrade; cite the comparator and cite, confirm, or derive the equivalence |
 | `research-poor` | No concrete gain over simpler or incumbent approaches, without established equivalence | Reject as a research direction; name the missing gain or simpler path |
 | `incoherent` | Does not survive precise formulation | Reject; explain the formulation failure |
 
