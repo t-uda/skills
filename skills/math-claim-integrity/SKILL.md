@@ -7,6 +7,20 @@ description: Audit the structural and logical integrity of a mathematics paper �
 
 Audit a mathematics paper for structural and logical integrity defects: quantifier scope errors, missing domain-of-definition guards, conflation of analytic proofs with numerical evidence, theorem-hierarchy misclassification, stale open-problem claims, notation mislabeling at introduction, define-before-use violations, and standing-assumption drift. The skill is language-agnostic and field-agnostic: the rules apply to any area of mathematics and to papers written in any language. It does not touch prose style, inflation, or hype (use `deslop-prose`), and does not track symbol drift across sections (use `math-notation-consistency`).
 
+## Design intent
+
+This skill prevents logically weak or structurally inflated papers by
+preserving claim/evidence boundaries and a legible hierarchy between genuine
+main contributions and proof infrastructure. It targets a recurring failure
+mode where a language model promotes every intermediate result it produced —
+lemmas, routine corollaries, worked examples, known-result reformulations — to
+theorem status or an independent contribution-list entry, because each
+consumed substantial reasoning budget, leaving the reader unable to identify
+the paper's actual scholarly contribution. Maintainer note: see
+[`../../docs/skill-rationales/math-writing.md`](../../docs/skill-rationales/math-writing.md)
+for the full design rationale (maintenance-only; not required runtime
+context).
+
 ## Use when
 
 Use this skill when:
