@@ -50,6 +50,7 @@ Progression ladder:
 analogy
   -> candidate mechanism
   -> precise mathematical statement
+  -> local significance map
   -> comparison with known results in each relevant field
   -> significance assessment
   -> retain, downgrade, or reject
@@ -68,12 +69,16 @@ analogy
 Work through the five lenses below. For each lens, record pass, fail, or unresolved.
 
 1. State or attempt a precise mathematical formulation (theorem, construction, invariant, algorithm, counterexample, or proof obligation).
-2. For each relevant field, list what is already standard and whether the candidate adds anything beyond reformulation.
-3. Apply the contribution test: does the direction yield a concrete gain (new theorem, weaker assumptions, stronger conclusions, new proof mechanism, computable method, new invariant, transfer to an uncovered case, or gap-filling synthesis)?
-4. Classify evidence: supported by supplied sources, model knowledge only, or conjectural.
-5. Check locality: does the direction stay centred on `question`, or did profile knowledge cause semantic drift?
-
-Assign exactly one verdict from the table below.
+2. Build the **local significance map** (required before any verdict):
+   - **incumbent baseline** — what already solves or bounds the problem locally (cite `sources` or mark unverified)
+   - **concrete bottleneck or gap** — the specific obstacle the candidate addresses
+   - **minimum non-trivial improvement** — the smallest gain that would count as progress
+   - **disqualifiers** — reformulation, profile drift, missing mechanism, or simpler route unnamed
+3. For each relevant field, list what is already standard and whether the candidate adds anything beyond reformulation.
+4. Apply the contribution test: does the direction yield a concrete gain (new theorem, weaker assumptions, stronger conclusions, new proof mechanism, computable method, new invariant, transfer to an uncovered case, or gap-filling synthesis)?
+5. Classify evidence: supported by supplied sources, model knowledge only, or conjectural.
+6. Check locality: does the direction stay centred on `question`, or did profile knowledge cause semantic drift?
+7. Apply the source-sufficiency gate and deterministic verdict order below.
 
 ## Evaluation lenses
 
@@ -118,7 +123,24 @@ Does the direction plausibly provide at least one concrete gain:
 
 ## Verdict
 
-Choose exactly one verdict. Use the strictest that fits.
+### Source-sufficiency gate
+
+Model recollection alone must not establish field-standard status, novelty, equivalence to known work, or a `promising` verdict.
+
+- `promising` requires at least one source-supported baseline claim or user-supplied calculation confirming a non-trivial gain.
+- `known/reformulation` requires a source-supported or user-confirmed identification of the simpler or known route.
+- When a material baseline claim rests on model knowledge only, cap the verdict at `plausible but unverified` or lower and name the deciding search.
+
+### Decision order
+
+The verdicts are categories, not a severity scale. Apply in order; assign the first match.
+
+1. **`incoherent`** — precise formulation fails.
+2. **`exploratory analogy only`** — no mechanism beyond metaphor or shared vocabulary (even if a loose statement exists).
+3. **`research-poor`** — contribution test fails: no concrete gain over simpler or unnamed incumbent approaches.
+4. **`known/reformulation`** — source-supported or user-confirmed equivalence to standard or simpler work.
+5. **`plausible but unverified`** — mathematically coherent and contribution plausible, but novelty, literature status, or baseline claims remain unresolved or source-insufficient.
+6. **`promising`** — precise statement, contribution test passes, and source-supported evidence confirms a non-trivial gain.
 
 | Verdict | Definition | Agent guidance |
 |---|---|---|
@@ -139,30 +161,34 @@ Produce these sections in this order.
 
 State exactly one verdict from the table.
 
-### B. Precise statement
+### B. Local significance map
+
+State incumbent baseline, bottleneck or gap, minimum non-trivial improvement, and disqualifiers.
+
+### C. Precise statement
 
 Give the candidate as a precise mathematical statement, construction, or explicit failure note if formulation failed.
 
-### C. Per-field baseline
+### D. Per-field baseline
 
 For each field in `relevant_fields`:
 
 - what is already standard
 - whether the candidate is trivial, known, reformulation, or genuinely new from that field's perspective
 
-### D. Contribution test
+### E. Contribution test
 
 State whether the direction passes the contribution test and name the concrete gain, or explain why it fails.
 
-### E. Evidence status
+### F. Evidence status
 
 Classify each material claim as: source-supported, model-knowledge only, or conjectural. Name what would close open gaps.
 
-### F. Drift check
+### G. Drift check
 
 State whether the direction stayed local to `question` or drifted; note any profile-driven connection.
 
-### G. Next action
+### H. Next action
 
 Output a single final line of the form `Next action: <value>`, where `<value>` is exactly one of:
 
@@ -173,6 +199,7 @@ Output a single final line of the form `Next action: <value>`, where `<value>` i
 
 ## Working rules
 
+- Do not let model-memory baseline claims drive a `promising` or `known/reformulation` verdict.
 - Do not infer scholarly significance from mathematical correctness alone.
 - Do not infer novelty from unfamiliar terminology or cross-domain presentation.
 - Do not present a result as non-trivial without checking every relevant field.
@@ -184,43 +211,64 @@ Output a single final line of the form `Next action: <value>`, where `<value>` i
 ## Examples
 
 ```
-Cross-domain, research-trivial — User works in TDA; candidate links a new statistic
-to persistent homology.
+Cross-domain, research-trivial — Candidate imports persistent homology into a
+scheduling problem because the user works in TDA.
+
+Local significance map:
+- Incumbent baseline: standard scheduling formulation (user-supplied notes).
+- Bottleneck: optimality gap under resource constraints — not linked to topology.
+- Minimum gain: theorem or algorithm improving the schedule beyond the incumbent.
+- Disqualifier: profile-driven domain import with no stated mechanism.
 
 Verdict: research-poor
-Baseline: the statistic is monotone in filtration length; persistence already records
-filtration data. No new invariant or complexity gain.
-Next action: reject — state the result directly in the statistic's native setting.
+Contribution test: fails — no construction, invariant, or complexity gain stated.
+Evidence: model-knowledge only for any topology link; no source establishes gain.
+Next action: reject — restate the scheduling problem unless a precise mechanism
+is supplied.
 ```
 
 ```
 Exploratory analogy — Candidate maps a PDE stability question to a Morse-theoretic
 landscape without a quantitative link.
 
+Local significance map:
+- Incumbent baseline: energy method for the PDE (user notes).
+- Bottleneck: uniform stability bound — mechanism not stated.
+- Minimum gain: Lipschitz or spectral lemma connecting operator to Morse data.
+- Disqualifier: analogy only; no correspondence lemma.
+
 Verdict: exploratory analogy only
-Baseline: no Lipschitz or spectral mechanism connecting the PDE operator to the
-proposed Morse function is stated.
-Next action: keep exploratory — either supply a precise correspondence lemma or
-narrow to the PDE question alone.
+Evidence: coherence of the analogy is conjectural; no source supplies the link.
+Next action: keep exploratory — supply a precise correspondence lemma or narrow to
+the PDE question alone.
 ```
 
 ```
-Survives baseline — Candidate conjectures a new lower bound on a combinatorial
-parameter, with a proposed invariant not reducible to known graph invariants.
+Survives baseline (source-supported) — Candidate conjectures a lower bound on
+parameter τ(G) via invariant I(G). User supplies Paper A (upper bound U) and
+Paper B (related invariant with a weaker bound).
+
+Local significance map:
+- Incumbent baseline: Paper A gives upper bound U; Paper B bounds a related quantity.
+- Bottleneck: documented gap between known upper and lower bounds on τ.
+- Minimum gain: bound strictly below U not immediate from Paper B.
+- Disqualifier: I(G) a routine transform of Paper B's invariant (unresolved).
 
 Verdict: plausible but unverified
-Baseline: from extremal combinatorics the bound is not immediate; from algebraic
-topology the invariant is not a standard cohomological truncation.
-Contribution: new invariant targeting a gap between known upper and lower bounds.
-Next action: pursue — targeted literature search on the invariant class and a small
-computational check on minimal counterexamples.
+Per-field baseline: combinatorics — gap documented in Paper A; whether I coincides
+with a standard invariant needs search.
+Contribution: concrete bound target stated; novelty of I unresolved.
+Next action: pursue — literature search on I vs known invariants; computational
+check on supplied graph families.
 ```
 
 ## Quality check
 
 Before finishing, verify:
 
-- exploration and evaluation are explicitly separated in the procedure used
+- a local significance map is recorded before verdict assignment
+- source-sufficiency gate applied; no model-memory-only `promising` verdict
+- verdict assigned via deterministic decision order, not subjective severity
 - correctness, novelty, and significance are distinguished in the report
 - every field in `relevant_fields` received baseline comparison
 - the contribution test explicitly addresses reformulation and triviality
