@@ -188,4 +188,4 @@ Before finishing, verify:
 - JP-13 findings respect the narrow established-term exceptions and the 統計量 genuine-statistic exception, and are never based on English naturalness alone
 - JP-15 findings exempt the differential-form sense, closed-form-as-subject documents, and cited titles
 - Severities follow the classification mapping (§ Rule classification and severity), with deterministic precedence when multiple tags match one span
-- No finding belongs to `math-claim-integrity` or `math-notation-consistency` territory (quantifier scope, theorem hierarchy, proof/computation distinction, symbol aliasing)
+- No finding belongs to `math-claim-integrity` territory (quantifier scope, theorem hierarchy, proof/computation distinction). JP-14's English-alias case stays a finding of this skill (with its additional NC-3 cross-report to `math-notation-consistency`) — do not suppress it as out-of-territory
