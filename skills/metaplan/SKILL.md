@@ -40,7 +40,7 @@ Use `Not ready` if any blocker exists. A blocker is any issue that can cause:
 
 - materially different implementations
 - an unauthorized product, policy, architecture, migration, security, or UX decision
-- reliance on missing or conflicting source-of-truth authority
+- reliance on missing or conflicting source-of-truth authority that can change what gets implemented, validated, or authorized
 - unverifiable completion
 - validation gates that can pass broken work or fail healthy work through stale, flaky, or proxy evidence
 - a foreseeable stop for clarification
@@ -88,7 +88,7 @@ Apply these checks once. Do not repeat the same finding under multiple headings.
 
 - Which artifact governs implementation if spec, issue, plan, tasks, `AGENTS.md`, README, or inline comments disagree?
 - Does the plan summarize prior research conclusions instead of merely linking to background material?
-- Does prior research, preflight, PR diff/head, or status evidence have a freshness or recheck policy?
+- When prior research, preflight, PR diff/head, or status evidence can go stale in a way that changes execution, does the plan say when it must be rechecked? (Stable prior research or an immutable authoritative source needs no freshness policy.)
 - Does it distinguish settled facts from open questions?
 - Do duplicated operational commands, config snippets, or recovery procedures name the governing copy?
 - If trust or conflict in a source artifact is material, should `sot-integrity` run first?
@@ -173,6 +173,8 @@ Prefer direct patches the user can apply. Use one of:
 - `Move to task breakdown`
 - `Reference instead of repeating`
 
+If no proposed edits are needed, write `None`.
+
 Do not write "clarify this"; write the clarification.
 
 ### E. Readiness checklist
@@ -196,6 +198,7 @@ End with exactly one:
 - `revise the plan`
 - `revise the task breakdown`
 - `update AGENTS.md or equivalent repository guidance`
+- `retire the plan artifact — the work is already complete or superseded; verify against live repository state`
 - `proceed to implementation`
 
 ## Editing Rules
@@ -207,14 +210,20 @@ End with exactly one:
 - Keep settled facts, open decisions, assumptions, and validation evidence distinct.
 - Move durable repository policy to `AGENTS.md` or equivalent; keep feature plans feature-specific.
 - Do not inflate minor issues into blockers.
+- Do not praise weak plans.
+
+Default precedence when artifacts disagree and none is already defined (adapt to the project otherwise): explicit user instruction in the current task > repository-wide agent guidance > feature spec > implementation plan > task breakdown.
+
+Decision-rule example — bad: "Use the simpler approach if appropriate." better: "Use approach A unless criterion X is present; if X is present, use approach B."
 
 ## Boundary Cases
 
 - `Ready`: the plan names source precedence, scope, ordered tasks, validation, and stop conditions; no edits are needed.
 - `Ready with minor fixes`: the plan is executable, but it repeats global test commands and omits an inferable file path in one task.
 - `Not ready`: the plan asks the agent to "choose the API design" without authorized criteria; implementation could diverge materially.
-- Overlap case: if a source-of-truth gap also makes implementation branch, classify it as `Not ready`; otherwise list it as a non-blocking source-of-truth fix.
+- Overlap case: if a source-of-truth gap can change what gets implemented, validated, or authorized, classify it as `Not ready` under the source-of-truth blocker; if it is a bounded metadata or reference gap that cannot change execution, list it as a non-blocking source-of-truth fix instead.
 - Insufficient information: if the artifact set is incomplete and the missing artifact controls scope or acceptance, classify as `Not ready`.
+- Retire case: if the audit finds the plan's work is already merged, closed, or superseded by live repository state (existing branch, PR, or commit), keep the verdict based on artifact quality but set `F. Next action` to `retire the plan artifact — the work is already complete or superseded; verify against live repository state`.
 
 ## Quality Check
 
