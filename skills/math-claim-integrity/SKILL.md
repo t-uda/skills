@@ -1,11 +1,11 @@
 ---
 name: math-claim-integrity
-description: Audit the structural and logical integrity of a mathematics paper — quantifier scope, domain-of-definition guards, proof/computation honesty, theorem hierarchy, contribution-list discipline (mapping every claimed contribution to its formal result, prior baseline, concrete gain, and independent significance), stale claims, notation accuracy at introduction, standing assumptions, and undefined relation symbols or coined terms in summary prose — without touching prose style or inflation patterns.
+description: Audit the structural and logical integrity of a mathematics paper — quantifier scope, domain-of-definition guards, proof/computation honesty, theorem hierarchy, contribution-list discipline (mapping every claimed contribution to its formal result, prior baseline, concrete gain, and independent significance), stale claims, notation accuracy at introduction, standing assumptions, and undefined relation symbols or coined terms in summary prose — without touching prose style or rhetorical prose inflation (structural inflation of contribution lists and result hierarchy is in scope).
 ---
 
 # Math Claim Integrity
 
-Audit a mathematics paper for structural and logical integrity defects: quantifier scope errors, missing domain-of-definition guards, conflation of analytic proofs with numerical evidence, theorem-hierarchy misclassification, stale open-problem claims, notation mislabeling at introduction, define-before-use violations, and standing-assumption drift. The skill is language-agnostic and field-agnostic: the rules apply to any area of mathematics and to papers written in any language. It does not touch prose style, inflation, or hype (use `deslop-prose`), and does not track symbol drift across sections (use `math-notation-consistency`).
+Audit a mathematics paper for structural and logical integrity defects: quantifier scope errors, missing domain-of-definition guards, conflation of analytic proofs with numerical evidence, theorem-hierarchy misclassification, stale open-problem claims, notation mislabeling at introduction, define-before-use violations, and standing-assumption drift. The skill is language-agnostic and field-agnostic: the rules apply to any area of mathematics and to papers written in any language. It does not touch prose style or rhetorical inflation and hype at the sentence level (use `deslop-prose`) — structural inflation of the contribution list or result hierarchy is in scope here (R-F, R-M) — and does not track symbol drift across sections (use `math-notation-consistency`).
 
 ## Design intent
 
@@ -37,7 +37,7 @@ Use this skill when:
 ## Do not use
 
 Do not use this skill for:
-- Prose inflation, hype, or AI-generated decoration → use `deslop-prose`
+- Sentence-level prose inflation, hype, or AI-generated decoration → use `deslop-prose` (but structural contribution/hierarchy inflation belongs here: R-F, R-M)
 - Symbol-table drift across sections → use `math-notation-consistency`
 - Japanese-specific language anti-patterns → use `wabun-math-style`
 - Discussion-history artifacts in planning docs → use `deslop-history`
@@ -203,7 +203,7 @@ When the user explicitly asks to apply fixes: edit the LaTeX source in-place and
 
 Before finishing, verify:
 - Every finding has a rule tag, classification, severity, and location
-- No finding overlaps with deslop-prose territory (prose inflation/hype)
+- No finding overlaps with deslop-prose territory (sentence-level prose inflation/hype); structural contribution/hierarchy inflation findings are correctly tagged R-F/R-M here
 - No finding reports a symbol-table issue that belongs to math-notation-consistency
 - R-H findings default to ADVISORY and only escalate to MINOR under its stated condition (circularity, use-before-definition, or a concrete readability failure) — never to BLOCKING
 - R-F and R-M findings identify the actual scholarly gain and hierarchy the paper misrepresents, not merely the environment label used
