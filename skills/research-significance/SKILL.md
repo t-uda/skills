@@ -127,7 +127,7 @@ Does the direction plausibly provide at least one concrete gain:
 
 Model recollection alone must not establish field-standard status, novelty, equivalence to known work, or a `promising` verdict.
 
-- `promising` requires at least one source-supported or user-confirmed baseline claim or calculation confirming a non-trivial gain.
+- `promising` requires a source-supported baseline claim or user-confirmed calculation showing a non-trivial gain against the stated baseline.
 - `known/reformulation` requires a source-supported or user-confirmed standard or simpler route, plus source-supported, user-confirmed, or explicitly derived equivalence to that route.
 - `derived in this analysis` may establish a mathematical identity, implication, counterexample, or equivalence when the derivation is shown.
 - `derived in this analysis` must not establish literature absence, novelty, historical priority, or field-standard status.
@@ -142,7 +142,7 @@ The verdicts are categories, not a severity scale. Apply in order; assign the fi
 3. **`known/reformulation`** — source-supported or user-confirmed standard or simpler work, with source-supported, user-confirmed, or explicitly derived equivalence to it.
 4. **`research-poor`** — contribution test fails, and no established equivalence to standard or simpler work is available.
 5. **`plausible but unverified`** — mathematically coherent and contribution plausible, but novelty, literature status, or baseline claims remain unresolved or source-insufficient.
-6. **`promising`** — precise statement, contribution test passes, and source-supported or user-confirmed evidence confirms a non-trivial gain.
+6. **`promising`** — precise statement, contribution test passes, and a source-supported baseline claim or user-confirmed calculation shows a non-trivial gain.
 
 | Verdict | Definition | Agent guidance |
 |---|---|---|
