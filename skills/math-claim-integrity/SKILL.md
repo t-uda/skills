@@ -17,9 +17,9 @@ lemmas, routine corollaries, worked examples, known-result reformulations — to
 theorem status or an independent contribution-list entry, because each
 consumed substantial reasoning budget, leaving the reader unable to identify
 the paper's actual scholarly contribution. Maintainer note: see
-[`../../docs/skill-rationales/math-writing.md`](../../docs/skill-rationales/math-writing.md)
-for the full design rationale (maintenance-only; not required runtime
-context).
+[`docs/skill-rationales/math-writing.md`](https://github.com/t-uda/skills/blob/main/docs/skill-rationales/math-writing.md)
+in the source repository for the full design rationale (maintenance-only; not
+required runtime context and not shipped with installed copies).
 
 ## Use when
 

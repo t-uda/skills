@@ -16,9 +16,9 @@ words such as `ならば`/`とき`/`場合`, and separately import unnatural lit
 translations or decorative metaphors (e.g. `証人`, `機構`, `検出する`) that
 obscure the actual mathematical object, relation, or proof step. Maintainer
 note: see
-[`../../docs/skill-rationales/math-writing.md`](../../docs/skill-rationales/math-writing.md)
-for the full design rationale (maintenance-only; not required runtime
-context).
+[`docs/skill-rationales/math-writing.md`](https://github.com/t-uda/skills/blob/main/docs/skill-rationales/math-writing.md)
+in the source repository for the full design rationale (maintenance-only; not
+required runtime context and not shipped with installed copies).
 
 ## Use when
 

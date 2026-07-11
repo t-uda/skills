@@ -16,9 +16,9 @@ ambiguously reused notation accumulate across revisions. The "one definition
 site" wording targets locating a canonical meaning and catching incompatible
 redefinition — not counting every textual occurrence of a definition phrase.
 Maintainer note: see
-[`../../docs/skill-rationales/math-writing.md`](../../docs/skill-rationales/math-writing.md)
-for the full design rationale (maintenance-only; not required runtime
-context).
+[`docs/skill-rationales/math-writing.md`](https://github.com/t-uda/skills/blob/main/docs/skill-rationales/math-writing.md)
+in the source repository for the full design rationale (maintenance-only; not
+required runtime context and not shipped with installed copies).
 
 ## Use when
 
