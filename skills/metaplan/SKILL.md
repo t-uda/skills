@@ -77,7 +77,8 @@ Apply these checks once. Do not repeat the same finding under multiple headings.
 
 ### Inputs and Prerequisites
 
-- Are required files, modules, interfaces, environments, commands, credentials, fixtures, and data named when needed?
+- Are required files, modules, interfaces, environments, commands, credential requirements, fixtures, and data named when needed?
+- Are secret values kept out of planning artifacts?
 - Are prerequisites ordered before dependent tasks?
 - Are fallback behaviors specified for expected edge cases?
 
@@ -152,7 +153,7 @@ List only issues that support `Ready with minor fixes` or useful cleanup under t
 - Token inefficiency
 - Complexity visibility
 
-Omit empty headings.
+Omit empty headings. If there are no non-blocking fixes, write `None`.
 
 ### D. Proposed edits
 
@@ -162,14 +163,14 @@ Prefer direct patches the user can apply. Use one of:
 - `Add`
 - `Delete`
 - `Move to AGENTS.md`
-- `Move to tasks.md`
+- `Move to task breakdown`
 - `Reference instead of repeating`
 
 Do not write "clarify this"; write the clarification.
 
 ### E. Readiness checklist
 
-Use pass/fail status for:
+Use exact `pass` / `fail` status for:
 
 - Goal is unambiguous
 - Inputs and prerequisites are explicit
