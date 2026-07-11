@@ -5,127 +5,69 @@ description: Generate a compact handoff prompt for the next agent or stage. Outp
 
 # Handoff Prompt
 
-Generate a **minimal sufficient prompt** for the next agent.
+Generate a **minimal sufficient prompt** for the next agent — one that lets it start the correct work immediately, with no needless background, duplicated documentation, user-side clarification, or avoidable rework.
 
-This skill is for **handoff and stage transition**. It is not a summarisation skill.
-
-Its goal is to produce a prompt that lets the next agent start the correct work immediately, without needless background, duplicated documentation, user-side clarification, or avoidable rework.
+This is a **handoff / stage-transition** skill, not a summarisation skill.
 
 ## Use this skill when
 
-Use this skill when the user wants a prompt to pass work to another agent, another role, or another stage.
+The user wants to pass work to another agent, role, or stage: continuing in a fresh coding-agent context, handing a completed plan/spec to an orchestrator, passing research results to an implementer, passing implementation state to a reviewer or debugger, or splitting work across agents.
 
-Typical cases:
+## Invariants
 
-- continuing work in a fresh coding-agent context
-- passing a completed plan or spec to an orchestrator
-- passing research results to an implementation agent
-- passing implementation state to a reviewer or debugger
-- splitting work across multiple agents
+Every handoff prompt must satisfy all five. The rest of this skill exists to *apply* them — no other section restates them:
+
+1. **Minimal** — transfer only what the next agent needs to act correctly and efficiently; omit everything else.
+2. **No duplication** — never restate content already in `AGENTS.md`, specs, plans, architecture docs, or workflow instructions; point to the source instead.
+3. **No history** — no narrative, abandoned detours, motivation, or general background that would not change the next action.
+4. **Compact** — target under ~1000 characters. Growth is a signal to compress harder, not to add structure.
+5. **Autonomously executable** — the next agent must act without asking the user for avoidable clarification, stalling on ambiguity, reopening settled decisions, or causing avoidable rework.
 
 ## Core rule
 
-Do **not** transfer everything.
+Prioritise, in this order: (1) the immediate task, (2) correct starting references, (3) decisions already fixed, (4) non-obvious constraints or context, (5) unresolved points that materially affect the next step, (6) the required output.
 
-Transfer only what the next agent needs in order to act correctly and efficiently.
+For (4), include only context the next agent is unlikely to recover reliably on its own: decisions already made, options explicitly rejected, hidden constraints, priority ordering not evident from the files, known traps or misleading artefacts.
 
-The output must prioritise:
+## Required output structure
 
-1. the immediate task
-2. the correct starting references
-3. decisions already fixed
-4. non-obvious constraints or context
-5. unresolved points that materially affect the next step
-6. the required output
+Output **only** the prompt — no preface, explanation, or follow-up text. Every prompt must contain:
 
-## Mandatory requirements
+1. **Skill anchor** — at least one `/skill-name` reference (e.g. `/github-driven-workflow`, `/lite-spec`) **when an applicable installed skill governs the next agent's execution**. If no installed skill applies to the handoff, do not invent or force one — omit the anchor rather than reference an irrelevant skill.
+2. **Concrete anchor** — at least one of: issue/PR number (`#N`), commit SHA, file path, session log path.
+3. **Bounded length** — see Invariant 4.
 
-### 1. Output only the prompt
+Once these are present, decision boundaries are deferred to whatever the anchors point to (the governing skill, or, absent one, the referenced document/issue). Verbal acceptance phrasing — `merge after CI is green`, `proceed when ready`, `完了したら次へ` — is not prohibited: it reads naturally, and the anchors keep the next agent from being trapped in an unresolvable gate.
 
-Return the transfer prompt and nothing else.
+### Hard-fail anti-patterns (exhaustive)
 
-Do not add any preface, explanation, note, or follow-up text.
+Reject only these well-defined structural violations:
 
-### 2. Required positive structure
+- **Self-authorization preamble** — e.g. `explicit authorization granted`, `you are authorized to ...`. Permission grants belong in environment configuration, not the prompt body.
+- **Permission-downgrade directive** — instructing the next agent to pass `--dangerously-skip-permissions` or an equivalent flag.
 
-Every handoff prompt MUST contain:
+Do not enumerate verbal acceptance phrases (`complete when`, `after review`, `once green`) as forbidden — the expression space is unbounded, any such list is trivially bypassed by rephrasing, and it causes false positives on legitimate usage (e.g. `implement #42 following /github-driven-workflow until complete` is fine; the anchored skill defines the actual gates).
 
-1. **Skill anchor** — at least one `/skill-name` reference identifying which skill the next agent should invoke (e.g. `/github-driven-workflow`, `/lite-spec`).
-2. **Concrete anchor** — at least one of: GitHub issue/PR number (`#N`), commit SHA, file path, session log path.
-3. **Bounded length** — keep the prompt under ~1000 characters. Excessive length is a sign that acceptance criteria are leaking into the prompt body.
+## Role-specific emphasis
 
-Once these positive elements are present, **decision boundaries are structurally deferred to the skill the next agent invokes**. Verbal acceptance phrasings such as `merge after CI is green`, `proceed when ready`, or `完了したら次へ` are **not prohibited** — they read naturally, and the skill anchor ensures they do not trap the next agent in an unresolvable gate.
+Pick the row matching the next agent; use only elements the immediate task doesn't already make obvious.
 
-### 3. Hard-fail anti-patterns (minimal set)
+| Target role | Emphasise |
+|---|---|
+| Coding agent | the concrete implementation task; files/docs to read first; fixed design decisions; constraints; expected code/test/doc outputs |
+| Orchestrator | the task to coordinate and its complexity; required sub-agent decomposition; the model tier suited to each sub-agent's complexity; decisions already fixed; the final deliverable/coordination objective |
+| Reviewer / debugger | the review or debug target; intended behaviour; likely failure points; areas needing scrutiny; required review output |
+| Research agent | the concrete research question; scope boundaries; fixed assumptions; the form findings must take; what's explicitly out of scope |
 
-Reject only well-defined, unambiguous structural violations:
+## Boundaries
 
-- **Self-authorization preamble** — phrases that grant the next agent permissions inline, such as `explicit authorization granted` or `you are authorized to ...`. Permission grants belong in environment configuration, not in the prompt body.
-- **Permission-downgrade directives** — instructions to pass `--dangerously-skip-permissions` or equivalent flags to the next agent's CLI invocation.
+This skill only renders the final transfer prompt. It does not decide *what* to do next:
 
-Do not enumerate verbal acceptance phrases (e.g. `complete when`, `after review`, `once green`) as forbidden. The expression space is unbounded; enumeration is trivially bypassed and causes false positives on legitimate phrasings.
+- Need to review whether a plan is ready for autonomous implementation? Use `/metaplan` first.
+- Need a full execution brief for a bounded implementation task? Use `/lite-spec` first.
+- Deciding whether to split work across multiple agents at all? Use `/light-orchestration` first.
 
-### 4. Why verbal criteria are not enumerated
-
-Phrases like `merge after sufficient review`, `proceed when ready`, and `完了したら` are **not** added to a forbidden list because:
-
-- The expression space is unbounded; any list is trivially bypassed by rephrasing.
-- Most natural usages are legitimate (e.g. `implement #42 following /github-driven-workflow until complete` is structurally fine — the skill defines the gates).
-- Broad bans cause false positives and push agents toward different bad expressions rather than better prompts.
-
-Structural guarantees (the skill anchor) defuse these expressions at the next-agent level: the next agent reads the skill, which provides the authoritative gate definitions.
-
-### 5. Keep it compact
-
-Use the shortest prompt that still enables correct action.
-
-If the prompt becomes long, compress harder. Excessive length is a warning sign that too much low-value context has been preserved.
-
-### 6. Do not duplicate existing documentation
-
-Do not restate content already documented in places such as:
-
-- `AGENTS.md`
-- specification documents
-- implementation plans
-- architecture documents
-- repository workflow instructions
-
-Refer to those sources briefly instead of copying them.
-
-### 7. Preserve only non-obvious context
-
-Include only context that the next agent is unlikely to recover reliably from the repository or existing documents.
-
-Examples of valid carry-over:
-
-- decisions already made
-- options explicitly rejected
-- hidden constraints
-- important user preferences that affect execution
-- known traps, weak spots, or misleading artefacts
-- priority ordering that is not obvious from the files alone
-
-### 8. Remove history that does not change action
-
-Do not include:
-
-- narrative history
-- abandoned detours that no longer matter
-- motivational explanation
-- general background that does not affect the next action
-- obvious operational instructions already documented elsewhere
-
-### 9. Optimise for autonomous execution
-
-The generated prompt must help the next agent proceed **without**:
-
-- asking the user for avoidable clarification
-- stalling because of ambiguous wording
-- re-opening settled decisions
-- causing avoidable rework
-
-Write the prompt so that the next agent can determine what to do, what not to do, what to read first, and what to produce.
+Invoke this skill last, to produce the transfer text once those upstream decisions are already fixed.
 
 ## Examples
 
@@ -144,98 +86,40 @@ Implement t-uda/example#42 following /github-driven-workflow until complete.
 Report to channel ABC.
 ```
 
-## Role-specific requirements
+### Validation cases
 
-### Coding agent
+```
+# A — an applicable governing skill exists: anchor it
+Implement t-uda/example#42 following /github-driven-workflow.
+Do not reopen the API shape — fixed: REST, not GraphQL.
+Report when merged.
 
-Emphasise:
+# B — no applicable skill exists: no anchor is forced
+Fix the flaky test at tests/test_retry.py::test_backoff (t-uda/example#57).
+Root cause is suspected in the jitter calculation, not the retry count.
+Report the fix and root cause.
 
-- the concrete implementation task
-- the files or documents to inspect first
-- design decisions already fixed
-- implementation constraints
-- expected code, test, and document outputs
+# C — the referenced document already has all acceptance criteria: reference, don't restate
+Implement the design in docs/plans/auth-redesign.md (t-uda/example#88) following /lite-spec.
+Acceptance criteria are fully specified there.
 
-### Orchestrator
-
-Emphasise:
-
-- the current task to be coordinated
-- the complexity of the task
-- the required decomposition into sub-agents if needed
-- the need to choose appropriate models for the sub-agents based on task complexity
-- decisions already fixed and not to be reopened
-- the required final deliverable and coordination objective
-
-An orchestrator handoff must explicitly guide the orchestrator to judge task complexity and assign suitable sub-agents and model levels accordingly.
-
-### Reviewer or debugger
-
-Emphasise:
-
-- the review or debugging target
-- intended behaviour
-- likely failure points
-- specific areas requiring scrutiny
-- the required review output
-
-### Research agent
-
-Emphasise:
-
-- the concrete research question
-- scope boundaries
-- assumptions already fixed
-- the form of findings needed
-- what lines of investigation are out of scope
-
-## Preferred content structure
-
-Include only the elements that are necessary for the specific handoff, chosen from:
-
-1. target role
-2. immediate task
-3. read first
-4. fixed decisions
-5. non-obvious context
-6. open issues that affect the next step
-7. constraints and prohibitions
-8. required output
-
-Do not force a full template when fewer elements are sufficient.
-
-## Writing rules
-
-The generated prompt must be:
-
-- specific
-- operational
-- compact
-- unambiguous
-- easy to copy
-
-Avoid wording that is broad, vague, interpretive, or compatible with too many possible meanings.
-
-Prefer direct instructions over abstract guidance.
+# D — a non-obvious constraint must carry over
+Continue the migration in t-uda/example#101 following /github-driven-workflow.
+State: services/billing migrated, services/orders pending.
+Constraint: do not touch services/legacy-invoicing — frozen pending a separate deprecation decision.
+```
 
 ## Quality test
 
-Before finalising the transfer prompt, verify:
+Before finalising, verify the prompt meets every Invariant and every Required output structure item:
 
-- [ ] At least one `/skill-name` anchor is present.
-- [ ] At least one concrete anchor (`#N`, SHA, file path) is present.
-- [ ] Total length is under ~1000 characters.
-- [ ] No self-authorization preamble is present.
-- [ ] No `--dangerously-skip-permissions` directive is present.
-- [ ] The next agent will know exactly what to do next.
-- [ ] The next agent will know what to read first.
-- [ ] The next agent will not needlessly re-read duplicated material.
-- [ ] The next agent will not ask the user for clarification unless a truly missing input remains.
-- [ ] The next agent will not reopen settled choices.
-- [ ] The prompt contains no filler outside the operational handoff.
+- [ ] Skill anchor present if and only if an applicable installed skill governs execution.
+- [ ] Concrete anchor present (`#N`, SHA, file path, or log path).
+- [ ] Under ~1000 characters.
+- [ ] No self-authorization preamble or permission-downgrade directive.
+- [ ] No duplicated documentation, no history, no filler outside the operational handoff.
+- [ ] The next agent will know exactly what to do, what to read first, and what not to reopen.
 
 ## Final instruction
 
-When invoked, output the transfer prompt immediately.
-
-Return the prompt only.
+Output the prompt only.
