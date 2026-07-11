@@ -7,6 +7,19 @@ description: Audit a LaTeX mathematics document for notation drift — symbols u
 
 Audit a LaTeX mathematics document for internal notation consistency. The skill is field-agnostic and applies to documents in any language; it checks bookkeeping (definition sites, aliases, scopes, cross-references), not mathematical correctness or stylistic convention.
 
+## Design intent
+
+This skill prevents revision-driven notation drift: language models revising a
+document repeatedly lose track of whether a document-specific symbol still has
+a single locatable canonical definition, letting undefined, conflicting, or
+ambiguously reused notation accumulate across revisions. The "one definition
+site" wording targets locating a canonical meaning and catching incompatible
+redefinition — not counting every textual occurrence of a definition phrase.
+Maintainer note: see
+[`docs/skill-rationales/math-writing.md`](https://github.com/t-uda/skills/blob/main/docs/skill-rationales/math-writing.md)
+in the source repository for the full design rationale (maintenance-only; not
+required runtime context and not shipped with installed copies).
+
 ## Use when
 
 - A LaTeX math paper has been through multiple revisions and may have notation drift (same object referred to by two names in different sections)

@@ -7,6 +7,19 @@ description: Detect and correct Japanese-language anti-patterns in mathematical 
 
 A language-review skill for Japanese mathematics writing. It targets the class of errors that arise specifically in Japanese mathematical prose: epistemic hedges that misrepresent proved claims as uncertain, tense inconsistencies in theorem statements, voice confusion in proof steps, connectives that mark logical steps without logical warrant, bare 明らか/自明/容易に without justification, redundant meta-discourse openers, は/が particle ambiguity in theorem subjects, ならば/とき confusion in conditional hypotheses, double-negation hedging, and の-chains that obscure the main predicate. The skill is field-agnostic: the rules apply to any area of mathematics. It operates strictly at the language layer and does not evaluate mathematical correctness, quantifier scope, theorem hierarchy, or proof/computation honesty.
 
+## Design intent
+
+This skill preserves explicit logical roles (implication, standing assumption,
+case selection) in Japanese mathematical prose against a recurring failure
+mode: language models flatten these roles into near-interchangeable connective
+words such as `ならば`/`とき`/`場合`, and separately import unnatural literal
+translations or decorative metaphors (e.g. `証人`, `機構`, `検出する`) that
+obscure the actual mathematical object, relation, or proof step. Maintainer
+note: see
+[`docs/skill-rationales/math-writing.md`](https://github.com/t-uda/skills/blob/main/docs/skill-rationales/math-writing.md)
+in the source repository for the full design rationale (maintenance-only; not
+required runtime context and not shipped with installed copies).
+
 ## Use when
 
 - A Japanese mathematics paper or preprint (LaTeX with ltjsarticle, jarticle, or similar) needs language review
