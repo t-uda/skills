@@ -62,6 +62,8 @@ Use these categories.
 - `historical-meta-residue` — discussion provenance, superseded alternatives, prior drafts, process notes, defensive explanations, agent-facing framing, and negative definitions that mainly answer an earlier misunderstanding instead of stating the current role directly
 - `nonessential-context` — background that may be interesting but does not change the reader's action
 
+When content could fit more than one category, classify by this precedence and assign the first match: `current-state-essential` > `operational-rationale` > `historical-meta-residue` > `nonessential-context`. A sentence that both states a current decision and narrates how it was reached is `current-state-essential`: keep the decision, drop the narration.
+
 Keep `current-state-essential`.
 Keep `operational-rationale`, but compress it and write it in present-state terms.
 Remove `historical-meta-residue` and `nonessential-context` unless the artifact type requires them.
@@ -69,30 +71,9 @@ Do not output the classification unless the user explicitly asks for a review tr
 
 ## Removal Heuristics
 
-Candidates for deletion or rewriting include:
+Recognize `historical-meta-residue` by phrasing that narrates the discussion instead of stating the current role, such as: "This was discussed in ...", "After issue discussion ...", "This supersedes ...", "We considered ...", "In review ...", "This note exists because ...", "For now" used as discussion timing rather than a real boundary, migration or backward-compatibility framing with no current operational effect, "This is not X" that mainly reacts to earlier discussion rather than preventing a likely current misuse, or internal protocol detail that exists only to coordinate drafting or review. Treat close variants ("the earlier direction", "the first pass", "the initial draft") the same way.
 
-- "This was discussed in ..."
-- "After issue discussion ..."
-- "This supersedes ..."
-- "The earlier direction ..."
-- "The first pass ..."
-- "The initial draft ..."
-- "This note exists because ..."
-- "We considered ..."
-- "In review ..."
-- "For now" when it reflects discussion timing rather than a real boundary
-- migration or backward-compatibility framing with no current operational effect
-- "This is not X" when it mainly reacts to earlier discussion rather than preventing a likely current misuse
-- internal protocol detail that exists only to coordinate drafting or review
-
-Candidates for retention include:
-
-- active constraints that still shape implementation or use
-- current interfaces, contracts, and responsibility boundaries
-- compatibility requirements that affect actual behaviour
-- open issue links that define unresolved operational boundaries
-- rationale that prevents a likely wrong implementation
-- dates, versions, or commit references when freshness or compatibility matters
+Retain phrasing that matches one of these patterns lexically but is `current-state-essential` or `operational-rationale` under the classification precedence above — most often: active constraints, current interfaces and contracts, compatibility requirements affecting actual behaviour, open issue links defining unresolved boundaries, rationale that prevents a likely wrong implementation, and dates/versions/commit references where freshness or compatibility matters.
 
 ## Rewrite Rules
 
@@ -100,11 +81,10 @@ Candidates for retention include:
 - Replace provenance with direct current-state wording.
 - Replace "This supersedes X" with "Use Y" unless readers must actively avoid X.
 - Remove defensive framing about why the artifact exists.
-- Remove agent-facing process commentary from user-facing outputs.
 - Keep caveats that affect execution, but make them operational.
 - Rewrite negative definitions into positive current-state statements when possible.
 - Keep negative framing only when it prevents a likely misuse by the intended reader.
-- Separate process from structure: describe the actual responsibility boundary, interface, or user model, not the planning discussion that produced it.
+- Separate process from structure: remove agent-facing process commentary and describe the actual responsibility boundary, interface, or user model, not the planning discussion that produced it.
 - Replace internal coordination protocols with reader-facing abstractions unless the reader must execute the protocol.
 - Preserve links only when they define current authority, unresolved boundaries, or required follow-up.
 - Do not introduce new decisions, broaden scope, or erase active constraints.
@@ -131,6 +111,16 @@ Before: The 12-tier scoring protocol and 9 failure-mode taxonomy are used to syn
 After: The review uses a structured evaluation framework to identify common failure modes.
 ```
 
+```text
+Given (do not remove): This design supersedes the June proposal per ADR-014; migrate before v3.2 using the compatibility shim described in ADR-014 §4.
+Unchanged — this is a governance/decision record; the superseded-alternative reference and the compatibility requirement are both required content, not residue.
+```
+
+```text
+Given: The plan proposes either a queue-based or a polling-based retry mechanism; the team has not yet chosen between them.
+Not owned by this skill — the design question is still open. Use `metaplan` or the project's decision process first; `deslop-history` applies only after the choice converges.
+```
+
 ## Output
 
 If the user asks to edit a file, apply the cleaned artifact directly. If the user asks for review or cleanup text only, return the cleaned artifact without an audit log.
@@ -152,12 +142,10 @@ When editing repository files:
 Before finishing, verify:
 
 - the target reader can see the current decision, contract, or instruction set without reading issue history
-- remaining historical text changes present action or is required by the artifact type
-- discussion provenance, superseded alternatives, and prior-draft commentary are absent unless required by the artifact type
+- no discussion provenance, superseded alternatives, prior-draft commentary, or internal coordination-protocol detail remains unless the artifact type requires it, and any retained historical text still changes the reader's action
 - deleting removed text cannot cause likely misimplementation
-- the artifact reads as if written directly in final form
 - open issue references remain only when operationally useful
-- internal review or coordination protocol details are either removed or rewritten for the intended reader
+- classification precedence was applied consistently: no `current-state-essential` or `operational-rationale` content was misclassified and removed as residue
 
 ## Relationship to Other Skills
 
