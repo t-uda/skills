@@ -40,3 +40,4 @@ Current skills:
 - math-notation-consistency
 - wabun-math-style
 - lean-formalization-discipline
+- research-significance
