@@ -26,6 +26,9 @@ Do not use this skill for:
 - source-of-truth auditing, factual verification, or citation checking
 - legal or policy text where rhetorical softening could change meaning
 - drafts that still need architectural or substantive decisions
+- quantifier scope, theorem/lemma/proposition hierarchy, or claim-level mathematical relations — this is logical content, not rhetorical inflation; use `math-claim-integrity`
+- Japanese-language phrasing anti-patterns — use `wabun-math-style`
+- judging whether a research direction or connection is worth pursuing — use `research-significance`
 
 Use `deslop-history` when the artifact leaks process history, superseded alternatives, or agent-facing framing.
 
@@ -75,6 +78,7 @@ Ask only when rewriting could blur a technical term, scope boundary, or required
 - Rewrite long ad hoc hyphenated compounds as ordinary noun phrases unless the compound is standard.
 - Keep negative framing only when it prevents a likely misuse.
 - Do not turn precise prose into smooth but lower-density prose.
+- Do not change quantifier scope, hypothesis strength, or theorem/lemma/proposition naming and hierarchy while tightening a sentence — that is a logical-content edit, not a style edit.
 
 Minimal examples:
 
@@ -86,6 +90,16 @@ After: This framework identifies the practical conditions under which the method
 ```text
 Before: We systematically and rigorously analyse the method across efficiency, scalability, robustness, interpretability, and applicability.
 After: We evaluate runtime and robustness on the reported benchmarks.
+```
+
+```text
+Must not flag: The estimator is asymptotically efficient and consistent under standard regularity conditions.
+Unchanged — "asymptotically efficient," "consistent," and "regularity conditions" are established statistical terms, not inflation, despite the sentence's density.
+```
+
+```text
+Owned by a neighbouring skill, not this one: We prove three new theorems, but one is used only to establish the other two.
+This is a theorem-hierarchy defect (independent results conflated with proof infrastructure), not prose inflation — use `math-claim-integrity` (rule R-F), not `deslop-prose`.
 ```
 
 ## Output
@@ -113,9 +127,13 @@ Before finishing, verify:
 - technical meaning, qualifications, and terminology remain intact
 - the prose sounds more direct, not more impressive
 - `deslop-history` would not be the more appropriate skill
+- no quantifier, hypothesis, or theorem-hierarchy content changed in the course of tightening a sentence
 
 ## Relationship to Other Skills
 
 - Use `deslop-history` when the main problem is discussion provenance, prior-draft residue, or process framing.
 - Use `sot-integrity` when authority, factual grounding, or trust scope must be audited.
 - Use `textlint-cli` for deterministic lint checks, not context-sensitive prose judgment.
+- Use `math-claim-integrity` for quantifier scope, theorem/proposition hierarchy, proof/computation honesty, or other logical-structural defects; this skill never edits claim-level mathematical content.
+- Use `wabun-math-style` for Japanese-language anti-patterns (particle misuse, unnatural literal translation, epistemic hedges); this skill is language-agnostic and does not target Japanese-specific phrasing.
+- Use `research-significance` to assess whether a research direction or connection has scholarly value; this skill only cleans prose after that judgment is made.
