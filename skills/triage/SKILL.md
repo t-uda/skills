@@ -41,7 +41,7 @@ Evaluate in order; the first match wins.
 
 ### Tie resolution
 
-A bounded task can also trip a `METAPLAN` trigger; the ordering resolves this: `METAPLAN` wins, because material ambiguity, invariant impact, costly-to-undo mistakes, and likely stalls outrank scope-boundedness. Below that bar — no trigger fires, signal mixed — prefer the lighter route (`DO_IT_NOW` over `LITE_SPEC`).
+A bounded task can also trip a `METAPLAN` trigger; the ordering resolves this: `METAPLAN` wins, because material ambiguity, invariant impact, costly-to-undo mistakes, and likely stalls outrank scope-boundedness. Below that bar, `LITE_SPEC` remains the default for mixed signals; route `DO_IT_NOW` instead only on a genuine borderline tie (unclear whether most axes sit at their safe end) where a brief would merely restate an already concrete task — if a brief would capture any constraint, risk, or edge case worth writing down, `LITE_SPEC` stands.
 
 ### Insufficient information
 
@@ -83,7 +83,7 @@ Next action:
 - `LITE_SPEC`/`METAPLAN` boundary: a multi-file refactor with clear scope, no material ambiguity, low interruption risk, moderately costly worst case → `LITE_SPEC` (no trigger fires); the same refactor with one API decision left open and a hard-to-undo migration → `METAPLAN` (Interruption risk high and Reversibility low both trigger).
 - Multi-condition: Blast radius and Review value at risk ends, Ambiguity low, Reversibility high → `METAPLAN`; Blast radius alone triggers it (step 1 matches first).
 - Insufficient information: "improve the auth flow" with no target behavior stated → the missing target could shift the route between `LITE_SPEC` and `METAPLAN`; ask one question naming it before routing.
-- Lightest-route bias: a mechanical, reversible rename touching six files, no interface change → `DO_IT_NOW`, not `LITE_SPEC`; file count alone does not put Blast radius at its risk end.
+- Lightest-route bias: a mechanical, reversible rename touching six files, no interface change → `DO_IT_NOW`, not `LITE_SPEC`; file count alone does not put Blast radius at its risk end, and a brief would only restate the task.
 
 ## Important constraints
 
