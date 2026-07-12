@@ -5,14 +5,7 @@ description: Decide whether a development task should be done now, handled with 
 
 # Triage
 
-Classify an incoming development task into one of three routes:
-
-- `DO_IT_NOW`
-- `LITE_SPEC`
-- `METAPLAN`
-
-The purpose of this skill is to keep planning overhead proportional to task difficulty.
-Use the lightest route that still protects execution quality.
+Classify an incoming development task into one route — `DO_IT_NOW`, `LITE_SPEC`, or `METAPLAN` — so planning overhead stays proportional to task difficulty. Always prefer the lightest route that still protects execution quality.
 
 ## When to use
 
@@ -26,83 +19,33 @@ Use this skill when:
 
 Do not use this skill when the user has already chosen a specific planning mode and that choice is clearly appropriate.
 
-## Evaluation criteria
+## Decision model
 
-Assess the task on these axes.
+Assess the task on five axes. Each row names the axis's risk end and what it means; the safe end is the converse (concrete / local / easy to undo / unlikely to pause / planning overhead exceeds likely rework cost).
 
-### 1. Ambiguity
+| Axis (risk end) | Risk end means |
+|---|---|
+| Ambiguity (high) | requirements, scope, constraints, or completion criteria read in more than one materially different way |
+| Blast radius (high) | crosses architecture, interfaces, invariants, or migration paths |
+| Reversibility (low) | a wrong implementation is hard or costly to undo |
+| Interruption risk (high) | a coding agent would likely stall, guess, or re-research |
+| Review value (high) | upfront planning would materially cut rework, drift, or hallucinated decisions |
 
-How unclear are the requirements, scope, constraints, or completion conditions?
+### Routing procedure
 
-### 2. Blast radius
+Evaluate in order; the first match wins.
 
-How many files, modules, interfaces, workflows, or behaviours are likely to change?
+1. **`METAPLAN`** — Ambiguity high, Blast radius high, Reversibility low, or Interruption risk high (any one), or execution depends on a hardened spec/plan/task breakdown that does not yet exist. Review value at its risk end alone, with the other four axes safe, does not trigger `METAPLAN`.
+2. **`DO_IT_NOW`** — otherwise, if most axes are at their safe end.
+3. **`LITE_SPEC`** — otherwise (default): bounded but not trivial; a short brief would reduce drift.
 
-### 3. Reversibility
+### Tie resolution
 
-How easy would it be to undo a bad implementation choice?
+A bounded task can also trip a `METAPLAN` trigger; the ordering resolves this: `METAPLAN` wins, because material ambiguity, invariant impact, costly-to-undo mistakes, and likely stalls outrank scope-boundedness. Below that bar, `LITE_SPEC` remains the default for mixed signals; route `DO_IT_NOW` instead only on a genuine borderline tie (unclear whether most axes sit at their safe end) where a brief would merely restate an already concrete task — if a brief would capture any constraint, risk, or edge case worth writing down, `LITE_SPEC` stands.
 
-### 4. Interruption risk
+### Insufficient information
 
-How likely is a coding agent to pause for clarification during execution?
-
-### 5. Review value
-
-How much would upfront planning reduce rework, drift, or hallucinated decisions?
-
-## Routing rules
-
-### Route: DO_IT_NOW
-
-Choose this when most of the following hold:
-
-- requirements are already concrete
-- impact is local
-- the change is easily reversible
-- acceptance criteria are obvious
-- planning overhead would exceed likely rework cost
-
-Typical examples:
-
-- wording edits
-- renaming
-- tiny bug fixes
-- narrow mechanical changes
-- local refactors with obvious boundaries
-
-### Route: LITE_SPEC
-
-Choose this when:
-
-- the task is not trivial, but still bounded
-- a short execution brief would reduce drift
-- a few constraints, risks, or edge cases should be written down
-- full review of heavy planning artifacts would be disproportionate
-
-Typical examples:
-
-- medium feature additions
-- non-trivial refactors within one subsystem
-- changes spanning several files with limited design uncertainty
-- work that needs one compact implementation brief before coding
-
-### Route: METAPLAN
-
-Choose this when one or more of the following hold:
-
-- requirements are materially ambiguous
-- the change affects architecture, interfaces, invariants, or migration
-- multiple design choices must be resolved or tightened before coding
-- the cost of a wrong implementation is high
-- a coding agent would likely stall, guess, or re-research
-- execution depends on hardened specs, plans, or task breakdowns
-
-Typical examples:
-
-- cross-cutting refactors
-- architecture changes
-- risky migrations
-- tasks intended for autonomous coding agents where interruption must be minimised
+Treat an unassessable axis as ambiguity. Ask one targeted question naming what is missing only if the answer could change the route; otherwise assume the heavier plausible reading and proceed.
 
 ## Output format
 
@@ -110,7 +53,7 @@ Return:
 
 1. the selected route
 2. a short justification
-3. the main factors that drove the decision
+3. the main factors that drove the decision (axis levels from the Decision model, not restated criteria)
 4. the immediate next action
 
 Use this structure:
@@ -132,9 +75,18 @@ Next action:
 - ...
 ```
 
+## Boundary cases
+
+- `DO_IT_NOW`: a wording fix or narrow bug fix with obvious acceptance criteria.
+- `LITE_SPEC`: a feature spanning several files in one subsystem, bounded but not trivial.
+- `METAPLAN`: a migration touching a public interface with several unresolved design choices.
+- `LITE_SPEC`/`METAPLAN` boundary: a multi-file refactor with clear scope, no material ambiguity, low interruption risk, moderately costly worst case → `LITE_SPEC` (no trigger fires); the same refactor with one API decision left open and a hard-to-undo migration → `METAPLAN` (Interruption risk high and Reversibility low both trigger).
+- Multi-condition: Blast radius and Review value at risk ends, Ambiguity low, Reversibility high → `METAPLAN`; Blast radius alone triggers it (step 1 matches first).
+- Insufficient information: "improve the auth flow" with no target behavior stated → the missing target could shift the route between `LITE_SPEC` and `METAPLAN`; ask one question naming it before routing.
+- Lightest-route bias: a mechanical, reversible rename touching six files, no interface change → `DO_IT_NOW`, not `LITE_SPEC`; file count alone does not put Blast radius at its risk end, and a brief would only restate the task.
+
 ## Important constraints
 
-- Prefer the lightest adequate route.
-- Do not escalate merely because the task is technical.
+- Prefer the lightest adequate route; never escalate merely because the task is technical.
 - Do not under-plan when ambiguity would predictably cause clarification loops or rework.
-- Optimise for total execution efficiency rather than procedural formality.
+- Optimise for total execution efficiency, not procedural formality.
