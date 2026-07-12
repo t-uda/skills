@@ -11,8 +11,8 @@ Covers three skills:
 - `skills/math-claim-integrity/SKILL.md`
 
 Original implementation: PR [#118](https://github.com/t-uda/skills/pull/118).
-Active revision issue: [#149](https://github.com/t-uda/skills/issues/149) — any
-semantic rewrite of the rules below belongs there, not here. This document
+Latest semantic revision: [#149](https://github.com/t-uda/skills/issues/149).
+Future semantic rewrites need their own issue. This document
 preserves *design intent*; it must not silently weaken any target behaviour or
 drop any "Protected behaviour" clause when edited.
 
@@ -163,8 +163,9 @@ enough to justify a literal Japanese translation.
 When a document or repository supplies a glossary, it controls canonical
 Japanese wording and permitted aliases in its scope. The reviewer must not
 introduce a local alternative. A glossary does not override a conflicting
-definition, however: report the conflict and resolve the terminology at its
-source rather than mechanically replacing the prose.
+definition, however, whether the definition is in the Japanese artifact or a
+supplied source: report the conflict and resolve the terminology at its source
+rather than mechanically replacing the prose.
 
 ### Preserve distinctions and established usage
 
