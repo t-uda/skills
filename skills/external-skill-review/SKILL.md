@@ -43,12 +43,12 @@ Evaluate in order. First match wins; do not evaluate further predicates once one
 
 2. **`needs manual review`** — no confirmed hard blocker, but required evidence or judgement is unresolved:
    - `repo` or `skill_path` missing or too vague to identify a unique upstream source
-   - `pinned_ref` is a branch or tag without a documented reason yet (ask for one)
+   - `pinned_ref` is a branch or tag — with or without a documented reason. Approval requires an identified commit SHA (`docs/external-skills.md` approval rules), so this skill never returns `approved` for a floating ref; ask for a documented reason if none exists, record the exception, and leave the proceed/hold decision with the user
    - license present but not yet checked for compatibility
    - higher-risk-but-reviewable content present (workspace-modifying scripts, command-executing helpers, remote references that can drift from the pinned ref) and unconfirmed by the user
    - any other approval-rule condition unresolved from the information available
 
-3. **`approved`** — every `docs/external-skills.md` approval-rule condition holds for the exact pinned artifact, and no higher-risk content remains unconfirmed. A documented branch/tag exception is not a blocker here.
+3. **`approved`** — every `docs/external-skills.md` approval-rule condition holds for the exact pinned commit SHA, and no higher-risk content remains unconfirmed.
 
 ## Required output
 
@@ -90,7 +90,7 @@ python3 scripts/catalog.py add '<json-entry>'
 ## Validation cases
 
 - **Every outcome**: approval-rule conditions all hold for a pinned SHA → `approved`. No `pinned_ref` at all → `not approved`. `skill_path` too vague to identify a unique source → `needs manual review`.
-- **`not approved` / `needs manual review` boundary**: no ref at all is a confirmed blocker (`not approved`); a branch/tag ref with no documented reason yet is unresolved judgement (`needs manual review`, ask for the reason).
+- **`not approved` / `needs manual review` boundary**: no ref at all is a confirmed blocker (`not approved`); a branch/tag ref — even with a documented reason — is `needs manual review`, never `approved`: approval requires a commit SHA, and the documented exception is the user's decision to carry.
 - **`needs manual review` / `approved` boundary**: a workspace-modifying script flagged but not yet confirmed reviewed by the user → `needs manual review`; same script after confirmation, all else holding → `approved`.
 - **Multi-condition**: license missing (hard blocker) *and* `skill_path` vague (unresolved judgement) at once → `not approved` wins by precedence; never downgrade to `needs manual review`.
 - **Insufficient information**: `repo` given, `skill_path` absent → `needs manual review`, ask for `skill_path`.
