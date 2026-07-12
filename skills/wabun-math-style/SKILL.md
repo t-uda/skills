@@ -1,11 +1,11 @@
 ---
 name: wabun-math-style
-description: Detect and correct Japanese-language anti-patterns in mathematical writing — epistemic hedges weakening proved claims, incorrect verb tense, passive/active confusion in proofs, ambiguous particles, unjustified 明らか, decorative connectives, redundant meta-discourse, double negation, stacked の, generic/general conflation, borrowed non-mathematical vocabulary (証人・機構・検出・層別・統計量 and the like), vague category names for explicit formulas (閉形式), and full-width semicolons or untranslated English mixed into Japanese prose — without evaluating mathematical correctness or structural hierarchy.
+description: Detect and correct Japanese-language anti-patterns in mathematical writing — epistemic hedges weakening proved claims, incorrect verb tense, passive/active confusion in proofs, ambiguous particles, unjustified 明らか, decorative connectives, redundant meta-discourse, double negation, stacked の, generic/general conflation, borrowed non-mathematical vocabulary, vague category names for explicit formulas, full-width semicolons or untranslated English, canonical-terminology drift, and translation-level concept conflation — without evaluating mathematical correctness or structural hierarchy.
 ---
 
 # Wabun Math Style
 
-A language-review skill for Japanese mathematics writing, field-agnostic in scope. It operates strictly at the language layer — epistemic certainty, tense and voice discipline, connective and particle logic, borrowed vocabulary and metaphor, and vague category names — and does not evaluate mathematical correctness, quantifier scope, theorem hierarchy, or proof/computation honesty.
+A language-review skill for Japanese mathematics writing, field-agnostic in scope. It operates strictly at the language layer — epistemic certainty, tense and voice discipline, connective and particle logic, borrowed vocabulary and metaphor, vague category names, and concept-preserving terminology — and does not evaluate mathematical correctness, quantifier scope, theorem hierarchy, or proof/computation honesty. It consults definitions and a supplied source only to identify the concept a translation names; it does not validate the underlying mathematics.
 
 ## Design intent
 
@@ -22,22 +22,24 @@ required runtime context and not shipped with installed copies).
 
 ## Use when
 
-A Japanese mathematics paper, preprint, or lecture note (LaTeX with ltjsarticle, jarticle, or similar) needs language review against any of the patterns named in the frontmatter description and detailed under Rules below — epistemic hedges, tense/voice discipline, connective and particle logic, ならば/とき/場合 confusion, borrowed vocabulary and metaphor, or 閉形式 misuse.
+A Japanese mathematics paper, preprint, or lecture note (LaTeX with ltjsarticle, jarticle, or similar) needs language review against any of the patterns named in the frontmatter description and detailed under Rules below — epistemic hedges, tense/voice discipline, connective and particle logic, ならば/とき/場合 confusion, borrowed vocabulary and metaphor, 閉形式 misuse, terminology SoT drift, or translation-level concept conflation.
 
 ## Do not use / Boundaries
 
 - Structural issues (theorem hierarchy, quantifier scope, proof/computation conflation, contribution-list inflation) — use `math-claim-integrity`.
-- Symbol-table consistency, aliases, and definition locality — use `math-notation-consistency`. (JP-14's alias case cross-reports as NC-3.)
+- Symbol-table consistency, aliases, and definition locality — use `math-notation-consistency`. (JP-14's alias case cross-reports as NC-3.) JP-16 owns a conflict with a supplied terminology SoT; do not duplicate that conflict as NC-3.
 - Language-agnostic prose inflation (hype, unsupported claims, decorative structure) — use `deslop-prose`; it composes with this skill rather than overlapping it.
 - Removing process history from planning/notes documents — use `deslop-history`.
 
-A wording pattern here may reveal a deeper claim defect; state which layer is actually broken rather than duplicating a finding across skills.
+A wording pattern here may reveal a deeper claim defect; state which layer is actually broken rather than duplicating a finding across skills. Cross-report a distinct document-wide alias or definition-locality defect to `math-notation-consistency`, and a distinct claim-scope or truth-value defect to `math-claim-integrity`; JP-16/JP-17 own the terminology or translation event itself.
 
 ## Inputs
 
 - `artifact` — the Japanese LaTeX source file or section range
 - `register` — 論文 (formal paper), ノート (preprint/note), or 講義録 (lecture notes); conventions differ slightly
 - `proof_sections` — proof environments where active-voice standards are strictest (optional; defaults to all \begin{proof}...\end{proof} blocks)
+- `terminology_sot` — a supplied document or repository glossary that gives canonical terms and permitted aliases (optional)
+- `source_artifact` — the English source text or corresponding source passages for a translation (optional)
 
 ## Rule classification and severity
 
@@ -52,10 +54,12 @@ Precedence when a span matches more than one rule tag: report every matching tag
 
 ## Procedure
 
-1. Scan the artifact for each rule tag JP-1 through JP-15 (JP-10 is merged into JP-3), in the order listed under Rules.
-2. For each match, determine class and severity per the mapping above, check stated exceptions before flagging, and record location, violation, and rewrite.
-3. Produce the structured finding report (see Output).
-4. If asked to apply fixes, edit in place per Output's fix-mode instructions.
+1. If `terminology_sot` is supplied, identify its canonical terms, scopes, and permitted aliases. If `source_artifact` is supplied, identify each source term from its definition, formula, and use before assessing its Japanese rendering.
+2. Scan the artifact for each rule tag JP-1 through JP-17 (JP-10 is merged into JP-3), in the order listed under Rules.
+3. For each match, determine class and severity per the mapping above, check stated exceptions before flagging, and record location, violation, and rewrite.
+4. When JP-16 or JP-17 applies, record the relevant SoT, source, or definition evidence. Do not create a duplicate finding in another skill for the same terminology event.
+5. Produce the structured finding report (see Output).
+6. If asked to apply fixes, edit in place per Output's fix-mode instructions.
 
 ## Rules
 
@@ -119,6 +123,12 @@ No「；」in Japanese prose (use 読点・句点, or split the sentence). A ter
 **JP-15 (convention) — Ban the vague category name 閉形式 for formulas the document states explicitly.**
 Test: does the document display the formula 閉形式 refers to? If yes, name the equation reference or call it 明示式 instead — 閉形式 forces the reader to guess where "closed" stops (elementary functions? rational expressions? finite sums?). Exemptions: closed differential forms (dω = 0) in differential geometry/de Rham theory; documents where closed-form solvability is itself the formally defined subject; cited titles (leave verbatim, do not change `\label{...}`). BLOCKING in theorem/proposition/lemma statements and titles, abstracts, and results summaries; MINOR elsewhere.
 
+**JP-16 (convention) — Supplied terminology SoT has priority.**
+When `terminology_sot` is supplied, use its canonical Japanese term and permitted aliases within its stated scope. Flag a local translation or alternate name that conflicts with that SoT. BLOCKING in theorem/proposition/lemma statements, abstracts, and results or contribution summaries; MINOR elsewhere. Do not flag an alias explicitly permitted by the SoT, a locally defined term that does not conflict with it, or compatibility-only Lean identifiers, LaTeX macros, labels, and citation keys. If the SoT conflicts with a definition, formula, or `source_artifact`, do not choose a replacement from the SoT: report one JP-17 semantic conflict instead, not both JP-16 and JP-17.
+
+**JP-17 (invariant) — Preserve concept identity under translation.**
+Identify a source term from its definition, formula, and use before translating it. Flag any rendering that collapses distinct mathematical concepts or operations into one Japanese term, assigns a name inconsistent with the defined concept, or invents a technical Japanese term for a source expression that identifies only an ordinary organisational role. This includes a source term whose own label contradicts its definition: report that source-side naming inconsistency rather than mechanically translating the label. Every JP-17 finding is BLOCKING. Do not flag established Japanese technical terms used with their established meaning, English or katakana retained because no natural Japanese term is established, or an explicitly defined local technical term that preserves the identified concept and does not conflict with the supplied SoT. JP-17 owns the translation or source-naming event; cross-report only a separate document-wide alias/definition-locality defect to `math-notation-consistency` or a separate claim-scope/truth-value defect to `math-claim-integrity`.
+
 ## Examples
 
 Decisive, non-obvious branches only — see Rules above for the full statement of each rule.
@@ -168,10 +178,46 @@ JP-15, exempt differential form — do not flag:
 ω は閉形式である（dω = 0）。
 ```
 
+```
+JP-17, source label inconsistent with its definition — flag:
+Source: a simplex's threshold of entry into a filtration is called "birth value".
+Before: 単体の誕生値を a とする。
+Report: the defined concept is a filtration value, not a homology-class birth;
+        correct the source name before choosing a Japanese rendering.
+```
+
+```
+JP-17, distinct operations collapsed — flag:
+Before: simplicial collapse と filtration-preserving reduction をともに「簡約」と呼ぶ。
+After:  source-distinct operations retain distinct names; define each term where needed.
+```
+
+```
+JP-16, supplied SoT conflict — flag:
+terminology_sot: simplex threshold = 「フィルトレーション値」
+Before: 主定理では単体の生成値を用いる。
+After:  主定理では単体のフィルトレーション値を用いる。
+```
+
+```
+JP-17, invented technical literal translation — flag:
+Source: "theorem layer" means only a grouping of theorem statements.
+Before: 定理層を以下で示す。
+After:  以下の定理の区分を示す。
+```
+
+```
+JP-16/JP-17, legitimate terminology — do not flag:
+層論の層、線形写像の核、凸解析の台は established technical terms.
+generic は無理に日本語化せず generic な条件として用いてよい。
+SoT と矛盾しない明示定義済みの局所技術語は用いてよい。
+Lean identifiers、LaTeX macros、labels、citation keys は互換性のため歴史的名称を保持してよい。
+```
+
 ## Output
 
 Default: review-only. Produce a structured finding report listing:
-- Rule tag (JP-1 through JP-15, skipping JP-10 which is merged into JP-3) and class
+- Rule tag (JP-1 through JP-17, skipping JP-10 which is merged into JP-3) and class
 - Severity: BLOCKING / MINOR / ADVISORY, per the classification mapping above
 - Location: environment label (e.g. `\begin{theorem}[thm:main]`), proof section, or paragraph identifier
 - One-sentence description of the violation
@@ -187,5 +233,7 @@ Before finishing, verify:
 - JP-8 findings distinguish theorem/proof/exposition and pass the deciding test (case-label vs. silent antecedent) before flagging; genuine case/regime/comparison uses are never flagged in any context
 - JP-13 findings respect the narrow established-term exceptions and the 統計量 genuine-statistic exception, and are never based on English naturalness alone
 - JP-15 findings exempt the differential-form sense, closed-form-as-subject documents, and cited titles
+- JP-16 findings compare only against a supplied SoT, honor its permitted aliases and scope, and defer a SoT-to-definition conflict to one JP-17 finding
+- JP-17 findings identify the concept from a definition, formula, or source use before assessing its name; they preserve established technical terms and never duplicate the same event in `math-notation-consistency` or `math-claim-integrity`
 - Severities follow the classification mapping (§ Rule classification and severity), with deterministic precedence when multiple tags match one span
 - No finding belongs to `math-claim-integrity` territory (quantifier scope, theorem hierarchy, proof/computation distinction). JP-14's English-alias case stays a finding of this skill (with its additional NC-3 cross-report to `math-notation-consistency`) — do not suppress it as out-of-territory
