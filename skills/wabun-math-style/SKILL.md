@@ -189,7 +189,7 @@ Report: the defined concept is a filtration value, not a homology-class birth;
 ```
 JP-17, distinct operations collapsed — flag:
 Before: simplicial collapse と filtration-preserving reduction をともに「簡約」と呼ぶ。
-After:  source-distinct operations retain distinct names; define each term where needed.
+After:  simplicial collapse は「単体崩壊」，filtration-preserving reduction は「フィルトレーションを保つ簡約」と呼び分ける。
 ```
 
 ```
@@ -203,15 +203,19 @@ After:  主定理では単体のフィルトレーション値を用いる。
 JP-17, invented technical literal translation — flag:
 Source: "theorem layer" means only a grouping of theorem statements.
 Before: 定理層を以下で示す。
-After:  以下の定理の区分を示す。
+After:  以下では，定理を確立済みの結果と条件付きの結果に区分する。
 ```
 
 ```
 JP-16/JP-17, legitimate terminology — do not flag:
-層論の層、線形写像の核、凸解析の台は established technical terms.
-generic は無理に日本語化せず generic な条件として用いてよい。
-SoT と矛盾しない明示定義済みの局所技術語は用いてよい。
-Lean identifiers、LaTeX macros、labels、citation keys は互換性のため歴史的名称を保持してよい。
+Do not flag established Japanese technical terms such as 「層」 in sheaf theory,
+「核」 of a linear map, or 「台」 of a function or measure.
+Do not flag `generic` when retaining English is more natural than an invented
+Japanese rendering.
+Do not flag an explicitly defined local technical term that does not conflict
+with the SoT.
+Do not flag Lean identifiers, LaTeX macros, labels, or citation keys retained
+for compatibility.
 ```
 
 ## Output
