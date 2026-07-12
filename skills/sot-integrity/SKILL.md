@@ -153,6 +153,8 @@ Output a single final line of the form `Next action: <value>`, where `<value>` i
 - `downgrade artifact from SoT to background context, then re-plan`
 - `stop` — escalate to user; SoT is broken and no safe partial use exists
 
+Choose the value consistent with the verdict: `TRUSTED` → `proceed`; `TRUSTED_WITH_GAPS` → `proceed with caveats`; `CONFLICTED` → `repair SoT before implementation`, or the downgrade action when repair is not worthwhile; `BROKEN` → `stop`, or the downgrade action when downgrading restores a safe planning basis.
+
 ## Boundary Cases
 
 - `TRUSTED`: every claim is sourced or a recorded local decision; no gaps, no conflicts.
@@ -164,7 +166,7 @@ Output a single final line of the form `Next action: <value>`, where `<value>` i
 - `CONFLICTED` / `BROKEN` boundary: `CONFLICTED` holds while at least one section outside the conflict's blast radius stays independently reliable; once the conflict undermines the artifact's core authority claim or spans all in-scope sections, it is `BROKEN`.
 - Mixed gaps+conflicts: a document with both a material conflict and unrelated gaps is `CONFLICTED` — apply Decision order top-down; never pick the softer verdict because gaps also exist.
 - Insufficient information: if `scope` or `companion_sources` needed to judge materiality are missing, request them; if a provisional read is unavoidable, cap the verdict at `TRUSTED_WITH_GAPS` and name the missing input itself as a gap.
-- Enum formatting: the final line reads exactly `Next action: proceed with caveats` — no leading bullet, numbering, or trailing commentary.
+- Enum formatting: the final line copies the verdict-consistent value from `G` character-for-character — for example, a `TRUSTED_WITH_GAPS` audit ends `Next action: proceed with caveats` — with no leading bullet, numbering, or trailing commentary.
 
 ## Working rules
 
