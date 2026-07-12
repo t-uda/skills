@@ -5,13 +5,11 @@ description: Audit a source-of-truth artifact for authority, evidentiary groundi
 
 # SoT Integrity
 
-Review a candidate source-of-truth (SoT) artifact from the perspective of an autonomous coding agent or orchestrator that will rely on it without re-investigating its claims.
+Review a candidate source-of-truth (SoT) artifact as the autonomous agent or orchestrator that must rely on it without re-investigating its claims.
 
-Treat SoT as a governed authority layer. A document does not become trustworthy because it is labelled "source of truth". Verify, do not assume.
+A document is not trustworthy because it is labelled "source of truth". Verify, do not assume.
 
-## When to use
-
-Use this skill when:
+## Use when
 
 - a spec, plan, policy doc, AGENTS.md, or research summary is being treated as authoritative
 - implementation is about to start and depends on SoT correctness
@@ -20,70 +18,61 @@ Use this skill when:
 - an orchestrator must know what child agents may trust without re-investigating
 - a project is explicitly SoT-centric and factual drift would be costly
 
-Do not use this skill for:
+Do not use this skill for generic prose/style review, broad research unrelated to a specific candidate SoT, planning-readiness review (`metaplan`), or compact repository guidance maintenance (`growing-agents-md`).
 
-- generic prose or style review
-- broad factual research unrelated to a specific candidate SoT
-- planning-readiness review (use `metaplan`)
-- compact repository guidance maintenance (use `growing-agents-md`)
+## Responsibility boundary
+
+`sot-integrity` audits whether the artifact itself is trustworthy — grounded, unconflicted, and honest about its own gaps, within its stated scope.
+
+- `metaplan` checks whether a *plan* names its governing SoT artifact, that artifact's authority, and precedence against other artifacts — it does not re-derive the trust model here.
+- When `metaplan` finds that trust or conflict in a named SoT is material to execution readiness, `sot-integrity` runs on that artifact and returns one of the verdicts below.
+- `sot-integrity` does not judge execution readiness, task decomposition, or research worthiness (`metaplan`, `research-significance`).
 
 ## Inputs
 
-Gather before proceeding. Ask the user for any that are missing.
+Gather before proceeding; ask the user for any that are missing.
 
 - `artifact` — path or content of the candidate SoT
 - `scope` — the decision area the artifact is claimed to govern
 - `consumers` — who or what will rely on it (agent, orchestrator, human reviewer)
-- `companion_sources` — code paths, configs, upstream docs, or other artifacts that the SoT should agree with
+- `companion_sources` — code paths, configs, upstream docs, or other artifacts the SoT should agree with
 - `prior_status` — any previous verdict or known concerns
+
+If `scope` or `companion_sources` needed to judge materiality are missing, do not guess a verdict — request them, or cap the read at `TRUSTED_WITH_GAPS` per the Boundary Cases below.
 
 ## Primary question
 
-Always evaluate the artifact against this question:
-
-> Could a downstream agent rely on this SoT, within its stated scope, without re-investigating its claims and without producing implementation that diverges from repository reality or upstream truth?
+```text
+Could a downstream agent rely on this SoT, within its stated scope, without re-investigating its claims and without producing implementation that diverges from repository reality or upstream truth?
+```
 
 If the answer is not clearly yes, locate the cause and produce concrete repair edits.
 
-## Review lens
+## Audit dimensions
 
-Assess the artifact through these five lenses.
+Evaluate each dimension once. Output sections reference these findings instead of restating them.
 
-### 1. Authority quality
+### Authority & precedence
 
-- Is this artifact actually the governing document for the stated scope?
-- Is its authoritativeness explicit or only implied?
-- Is precedence against other artifacts (spec, plan, AGENTS.md, README, issue text, code comments) stated?
-- Does the artifact say what overrides it and what it overrides?
+- Is this artifact actually the governing document for `scope`, and is that explicit rather than implied?
+- Is precedence against other artifacts (spec, plan, AGENTS.md, README, issue text, code comments) stated — what overrides it, what it overrides?
 
-### 2. Source quality
+### Source grounding
 
-- Are factual claims grounded in primary or official sources?
-- Are summaries faithful to those sources?
-- Are assumptions or guesses presented as facts?
-- Are links present but conclusions still inadequately extracted?
-- Are version, date, or commit references attached where freshness matters?
+- Are factual claims backed by primary or official sources, faithfully summarized?
+- Are assumptions or guesses presented as settled fact?
+- Are version, date, or commit references attached where freshness is material?
 
-### 3. Scope of trust
+### Trust scope
 
-- Which sections are safe to trust without re-checking?
-- Which sections are provisional, underspecified, stale, or unresolved?
-- Is the trust boundary explicit enough for an autonomous agent to honour?
-- Does the artifact mark gaps rather than hide them?
+- Which sections are safe to rely on without re-checking, and which are provisional, stale, underspecified, or unresolved?
+- Does the artifact mark its own gaps, or hide them?
 
-### 4. Conflict detection
+### Conflict detection
 
-- Does the SoT disagree with code, tests, config, repository behaviour, upstream sources, or other docs?
-- Is each conflict acknowledged in the artifact itself?
-- Does the artifact say what to do when document and reality diverge?
-- If code matches reality but contradicts a broken SoT, name this as a source-governance failure, not a code bug.
-
-### 5. Actionability under failure
-
-- If the SoT is broken, should implementation stop?
-- Should the artifact be downgraded from SoT to background context?
-- Should agents follow repository reality temporarily while a repair task is opened?
-- Is the next safe action explicit?
+- Does the SoT disagree with `companion_sources` (code, tests, config, upstream sources, other docs)?
+- Is each conflict acknowledged in the artifact, with a stated resolution path?
+- If code matches reality but contradicts a broken SoT, record this as a source-governance failure, not a code bug.
 
 ## Claim classification
 
@@ -99,16 +88,23 @@ If the artifact cannot be read this way, recommend edits that make each claim cl
 
 ## Verdict
 
-Choose one verdict.
+A conflict or gap is **material** when it can change what a downstream agent implements, validates, or authorizes within `scope`. Cosmetic wording, resolved cross-references, and out-of-scope trivia are not material and do not affect the verdict.
 
-| Verdict | Definition | Agent guidance |
-|---|---|---|
-| `TRUSTED` | All claims are well-sourced, internally consistent, and aligned with repository reality. No conflicts detected. | Agents may rely on the SoT without re-investigation within its stated scope. |
-| `TRUSTED_WITH_GAPS` | Core claims are sound but some areas are underspecified, provisional, or not yet verified. No active conflicts. | Agents may rely on trusted sections. Gaps must be flagged; agents must not invent answers for gap areas. |
-| `CONFLICTED` | The SoT contradicts repository reality, code, other docs, or upstream sources in at least one material way, but the conflict is bounded. | Agents must not proceed in conflicted areas without explicit resolution. Non-conflicted sections may still be trusted. |
-| `BROKEN` | The SoT contains major factual errors, multiple conflicts, or is so stale that relying on it would produce incorrect implementation. | Agents must stop. The SoT must be repaired or downgraded to background context before implementation continues. |
+### Decision order
 
-Use the strictest verdict that fits. Do not soften a verdict to avoid friction.
+The verdicts are categories, not a severity scale. Apply in order; assign the first match. Evaluate `BROKEN` and `CONFLICTED` before ever considering `TRUSTED_WITH_GAPS` — a document with both a material conflict and unrelated gaps is `CONFLICTED`, never `TRUSTED_WITH_GAPS`.
+
+1. **`BROKEN`** — no safe bounded reliance remains: material conflicts, errors, or staleness are pervasive, or a single conflict undermines the artifact's core authority claim, so no section can be trusted without independent re-verification.
+2. **`CONFLICTED`** — at least one material, bounded conflict exists against `companion_sources`, but sections outside its blast radius remain independently usable.
+3. **`TRUSTED_WITH_GAPS`** — no active material conflict; bounded areas remain provisional, unresolved, or unverified.
+4. **`TRUSTED`** — every material claim in scope is adequately grounded, internally consistent, and aligned with repository reality; no material conflict and no material gap remain.
+
+| Verdict | Agent guidance |
+|---|---|
+| `TRUSTED` | Rely on the SoT without re-investigation within its stated scope. |
+| `TRUSTED_WITH_GAPS` | Rely on trusted sections; flag gaps; do not invent answers for gap areas. |
+| `CONFLICTED` | Do not proceed in conflicted areas without explicit resolution; non-conflicted sections may still be trusted. |
+| `BROKEN` | Stop. Repair the SoT or downgrade it to background context before implementation continues. |
 
 ## Required output
 
@@ -120,35 +116,19 @@ State exactly one of: `TRUSTED`, `TRUSTED_WITH_GAPS`, `CONFLICTED`, `BROKEN`.
 
 ### B. Trust scope
 
-State what is and is not covered by the artifact:
-
-- decision areas the SoT governs
-- decision areas it does not govern
-- precedence against other artifacts when relevant
+From Authority & precedence and Trust scope findings: decision areas the SoT governs, decision areas it does not, and precedence against other artifacts when relevant.
 
 ### C. Critical evidence gaps
 
-List claims that lack adequate sourcing or verification. For each:
-
-- the claim
-- what evidence is missing
-- what would close the gap
-
-If none, say so.
+From Source grounding and Trust scope findings, list each material gap: the claim, what evidence is missing, what would close it. Write `None` if there are none.
 
 ### D. Conflicts found
 
-List concrete divergences between the SoT and code, tests, config, other docs, or upstream sources. For each:
-
-- where the SoT says one thing (quote or location)
-- where reality says another (file path, commit, link)
-- material impact on implementation
-
-If none, say so.
+From Conflict detection findings, list each material conflict: where the SoT says one thing (quote or location), where reality says another (file path, commit, link), and the material impact on implementation. Write `None` if there are none.
 
 ### E. Minimal repair edits
 
-Propose the smallest concrete edits that move the artifact toward `TRUSTED`. Prefer:
+Propose the smallest concrete edits that move the artifact toward `TRUSTED`. Prefer one of:
 
 - **Replace with**
 - **Add**
@@ -157,20 +137,15 @@ Propose the smallest concrete edits that move the artifact toward `TRUSTED`. Pre
 - **Mark as open question**
 - **Downgrade to background context**
 
-Write edits so the user can paste them in directly.
+Write edits so the user can paste them in directly. If no repair edits are needed, write `None`.
 
 ### F. Execution guidance
 
-Tell downstream agents how to behave with this artifact in its current state:
-
-- which sections may be trusted as-is
-- which sections require re-checking against named sources
-- what to do if reality and SoT disagree during implementation
-- whether new factual claims require re-running this review
+Tell downstream agents how to behave with this artifact in its current state: which sections may be trusted as-is, which require re-checking against named sources, what to do if reality and SoT disagree during implementation, and whether new factual claims require re-running this review.
 
 ### G. Next action
 
-Output a single final line of the form `Next action: <value>`, where `<value>` is exactly one of the strings in backticks below (no leading bullet, numbering, or commentary):
+Output a single final line of the form `Next action: <value>`, where `<value>` is exactly one of:
 
 - `proceed` — implementation may rely on the SoT within stated scope
 - `proceed with caveats` — implementation may proceed only in trusted sections; flag gaps to user
@@ -178,21 +153,38 @@ Output a single final line of the form `Next action: <value>`, where `<value>` i
 - `downgrade artifact from SoT to background context, then re-plan`
 - `stop` — escalate to user; SoT is broken and no safe partial use exists
 
+Choose the value consistent with the verdict: `TRUSTED` → `proceed`; `TRUSTED_WITH_GAPS` → `proceed with caveats`; `CONFLICTED` → `repair SoT before implementation`, or the downgrade action when repair is not worthwhile; `BROKEN` → `stop`, or the downgrade action when downgrading restores a safe planning basis.
+
+## Boundary Cases
+
+- `TRUSTED`: every claim is sourced or a recorded local decision; no gaps, no conflicts.
+- `TRUSTED_WITH_GAPS`: one section is marked provisional pending an upstream release; no conflict exists.
+- `CONFLICTED`: the SoT names a deprecated command as current; every other section remains accurate and usable.
+- `BROKEN`: most factual claims conflict with current repository state, or the one claim the rest of the document depends on is wrong.
+- `TRUSTED` / `TRUSTED_WITH_GAPS` boundary: any material claim not yet grounded — however small — forces `TRUSTED_WITH_GAPS`; there is no rounding up.
+- `TRUSTED_WITH_GAPS` / `CONFLICTED` boundary: an unresolved gap stays `TRUSTED_WITH_GAPS` until it is confirmed to disagree with a companion source, at which point it becomes a conflict.
+- `CONFLICTED` / `BROKEN` boundary: `CONFLICTED` holds while at least one section outside the conflict's blast radius stays independently reliable; once the conflict undermines the artifact's core authority claim or spans all in-scope sections, it is `BROKEN`.
+- Mixed gaps+conflicts: a document with both a material conflict and unrelated gaps is `CONFLICTED` — apply Decision order top-down; never pick the softer verdict because gaps also exist.
+- Insufficient information: if `scope` or `companion_sources` needed to judge materiality are missing, request them; if a provisional read is unavoidable, cap the verdict at `TRUSTED_WITH_GAPS` and name the missing input itself as a gap.
+- Enum formatting: the final line copies the verdict-consistent value from `G` character-for-character — for example, a `TRUSTED_WITH_GAPS` audit ends `Next action: proceed with caveats` — with no leading bullet, numbering, or trailing commentary.
+
 ## Working rules
 
-- Be rigorous and unsentimental. Do not soften verdicts to avoid friction.
-- Verify against companion sources where they were provided. Do not approve on text alone.
-- When the artifact and code disagree and code matches reality, name this as a source-governance failure, not a code bug.
-- Prefer concrete edits over advice.
-- Do not invent missing facts. If a claim cannot be verified from available sources, mark it as a gap or open question rather than asserting it.
-- Do not restate repository-wide guidance that already lives elsewhere. Reference it.
-- Do not produce vague prose-only feedback. Always emit the verdict structure.
+- Be rigorous and unsentimental; do not soften a verdict to avoid friction or average conflicting signals into a gentler one.
+- Verify against `companion_sources` where provided. Do not approve on text alone.
+- Do not invent missing facts. Mark unverifiable claims as a gap or open question.
+- Do not restate repository-wide guidance that already lives elsewhere; reference it.
+- Always emit the full verdict structure — never vague prose-only feedback.
+
+## Quality check
+
+Before finishing, verify: the verdict came from Decision order top-down (not overall impression); `BROKEN`/`CONFLICTED` were ruled out before `TRUSTED_WITH_GAPS`/`TRUSTED`; a mixed gaps+conflict input resolved to `CONFLICTED` or `BROKEN`, never `TRUSTED_WITH_GAPS`; C/D say `None` explicitly when empty; `G` matches the verdict row above.
 
 ## Relationship to other skills
 
 This skill complements but does not replace:
 
-- `metaplan` — execution-readiness review of specs and plans
+- `metaplan` — execution-readiness review of specs and plans; see Responsibility boundary above
 - `growing-agents-md` — compact repository guidance maintenance
 - `handoff-prompt` — minimal transfer prompt generation
 
