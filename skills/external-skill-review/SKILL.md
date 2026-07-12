@@ -5,145 +5,68 @@ description: Review a candidate external skill against the repo policy, record a
 
 # External Skill Review
 
-Use this skill when the user wants to adopt an external skill, reuse a prior approval, or check whether a candidate is already cataloged.
+Use when the user wants to adopt an external skill, reuse a prior approval, or check whether a candidate is already cataloged. Do not use it to review skills already in this repository. It never installs anything — final installation and trust decisions remain the user's.
 
-Do not use this skill to review skills that already live in this repository.
-
-This skill does not install anything. Final installation and trust decisions remain the user's responsibility.
-
-Governing policy: `docs/external-skills.md`.
+Governing policy: `docs/external-skills.md` — approval rules, content risk classes, provenance requirements, and the normative install tool are authoritative there. This skill states the decision cascade and invocation contract only; it does not restate that document's mechanics.
 
 ## Inputs
 
-Gather the following before proceeding. Ask the user for any that are missing.
+Gather before proceeding; ask the user for anything missing:
 
-- `repo` — upstream repository in `owner/repo` form
+- `repo` — upstream repository, `owner/repo`
 - `skill_path` — path or name of the skill within that repository
-- `pinned_ref` — commit SHA (preferred), or a branch or tag with a documented reason
+- `pinned_ref` — commit SHA (preferred), or a branch/tag with a documented reason
 - `targets` — agent targets (e.g. `claude`, `codex`, `copilot`, `gemini`)
-- `license` — SPDX identifier or plain description; state "unknown" if not yet checked
-- `notes` — any relevant review notes already available
-- `catalog_entry` — optional; pass if the user wants to reuse a prior approval
+- `license` — SPDX identifier or description; state "unknown" if not yet checked
+- `notes` — any review notes already available
+- `catalog_entry` — optional, pass if reusing a prior approval
 
-## Decision flow
-
-Work through these steps in order. Stop at the first blocking condition.
-
-### 1. Check the catalog
-
-Read `.agents/approved-external-skills.json` in the target workspace using the bundled script:
+## Catalog check (do first)
 
 ```sh
 python3 scripts/catalog.py get <repo> <skill_path> <pinned_ref>
 ```
 
-If the script prints an entry, an exact match on `(repo, skill_path, pinned_ref)` with `review_status: approved` exists — skip to step 8 and reuse the stored provenance.
+An entry printed means an exact `(repo, skill_path, pinned_ref)` match with `review_status: approved` exists — reuse its provenance and skip to **Required output**.
 
-If the script prints nothing, proceed from step 2. This covers: no catalog file, no matching entry, a matching entry with a different `pinned_ref`, and a matching entry that is not approved. Each upstream update requires a fresh review.
+No output covers: no catalog file, no matching entry, a different `pinned_ref`, or a non-approved entry — continue to the decision cascade; each upstream update requires a fresh review.
 
-### 2. Validate specificity
+## Decision cascade
 
-If `repo` or `skill_path` is missing or too vague to identify a unique upstream source, return `needs manual review` and ask for more detail.
+Evaluate in order. First match wins; do not evaluate further predicates once one matches.
 
-### 3. Check pinning
+1. **`not approved`** — a confirmed hard blocker exists:
+   - no `pinned_ref` at all
+   - license missing, ambiguous, or incompatible with the intended use
+   - content disallowed by `docs/external-skills.md` (e.g. compiled binaries, obfuscated/minified code, installers or bootstrap hooks pulling in additional code without separate approval)
+   - any other required approval-rule condition is confirmed to fail (not merely unverified)
 
-If `pinned_ref` is not a commit SHA:
-- If it is a branch or tag, the user must provide a documented reason before proceeding. Treat as a provisional exception, not the default.
-- If no ref is provided at all, return `not approved`. Do not approve an unpinned install.
+2. **`needs manual review`** — no confirmed hard blocker, but required evidence or judgement is unresolved:
+   - `repo` or `skill_path` missing or too vague to identify a unique upstream source
+   - `pinned_ref` is a branch or tag — with or without a documented reason. Approval requires an identified commit SHA (`docs/external-skills.md` approval rules), so this skill never returns `approved` for a floating ref; ask for a documented reason if none exists, record the exception, and leave the proceed/hold decision with the user
+   - license present but not yet checked for compatibility
+   - higher-risk-but-reviewable content present (workspace-modifying scripts, command-executing helpers, remote references that can drift from the pinned ref) and unconfirmed by the user
+   - any other approval-rule condition unresolved from the information available
 
-### 4. Check license
-
-If the license is missing, unknown, ambiguous, or incompatible with the intended use, return `not approved`.
-
-### 5. Check higher-risk content
-
-Identify whether the skill includes any of the following:
-- shell, Python, or Node.js helpers that modify the workspace
-- prompts or helpers that execute commands on behalf of the user
-- references to remote resources that may change independently of the pinned ref
-- compiled binaries, obfuscated or minified code
-- installers, update hooks, or bootstrap scripts that pull in additional code
-
-If disallowed content is present (compiled binaries, obfuscated code, auto-downloading installers), return `not approved`.
-
-If higher-risk but reviewable content is present, flag it explicitly and require the user to confirm they have reviewed it before returning `approved`.
-
-### 6. Apply policy
-
-Apply the full approval rules from `docs/external-skills.md`. All of the following must be true for `approved`:
-
-- upstream repository, skill path, and pinned commit SHA are identified
-- repository owner or maintainers are known and trusted for the intended use
-- skill content is readable and reviewable
-- license is clear enough to allow the intended use
-- any scripts or executable helpers are small enough to review directly and acceptable for project-local use
-
-### 7. Classify
-
-Return one of:
-- `approved` — all checks pass
-- `not approved` — at least one hard blocker (no SHA, bad license, disallowed content)
-- `needs manual review` — inputs are incomplete or a check cannot be resolved automatically
-
-### 8. Emit output
-
-See **Required output** below.
-
-If `approved` or reusing an approved catalog entry:
-- describe the catalog entry to write
-- provide Agent Skills CLI command examples
-
-If `not approved` or `needs manual review`:
-- explain what is missing or what blocks approval
-- do not emit install commands
+3. **`approved`** — every `docs/external-skills.md` approval-rule condition holds for the exact pinned commit SHA, and no higher-risk content remains unconfirmed.
 
 ## Required output
 
-Return all five items in this order:
+Return all five, in order:
 
-1. **Result** — `approved`, `not approved`, or `needs manual review`
-2. **Rationale** — short explanation tied to specific policy checks
-3. **Provenance fields** — the fields the user should preserve or update in the catalog:
-   - `repo`
-   - `skill_path`
-   - `pinned_ref`
-   - `targets`
-   - `license`
-   - `review_status`
-   - `reviewer`
-   - `review_date`
-   - `notes`
-4. **Next steps** — what the user should do after this review
-5. **Install commands** — only when result is `approved` or reusing an approved catalog entry
+1. **Result** — exactly one of `approved`, `not approved`, `needs manual review`
+2. **Rationale** — tied to the specific cascade predicate(s) matched
+3. **Provenance fields** to preserve or update: `repo`, `skill_path`, `pinned_ref`, `targets`, `license`, `review_status`, `reviewer`, `review_date`, `notes`
+4. **Next steps**
+5. **Install commands** — only when Result is `approved` (fresh or reused); never otherwise
 
-Example install commands (replace placeholders):
+On `not approved` or `needs manual review`: state precisely what blocks approval or is missing; never emit install commands.
 
-**Preferred (APM):**
+Install commands: use the current APM form and manual fallback in `docs/external-skills.md` (`apm install owner/repo/path#COMMIT_SHA`, or the pinned manual clone) — do not restate the mechanics here.
 
-```sh
-# Install with pinned commit
-apm install owner/repo/path/to/skill#COMMIT_SHA
+## Catalog
 
-# Or install from root if skill is at repo root
-apm install owner/repo#COMMIT_SHA
-```
-
-**Fallback (manual, APM unavailable):**
-
-```sh
-# Clone and checkout the reviewed commit SHA, then copy into the target directory
-git clone https://github.com/owner/repo /tmp/ext-skill-repo
-git -C /tmp/ext-skill-repo checkout COMMIT_SHA
-cp -r /tmp/ext-skill-repo/path/to/skill .agents/skills/skill-name
-```
-
-APM automatically deploys to detected target directories (`.github/skills/`, `.claude/skills/`, `.agents/skills/`, etc.).
-
-## Catalog model
-
-The catalog lives at `.agents/approved-external-skills.json` in the target workspace. It is a JSON array of provenance entries.
-
-Example entry:
+`.agents/approved-external-skills.json` in the target workspace: a project-local JSON array of provenance entries (never the home directory).
 
 ```json
 {
@@ -159,23 +82,25 @@ Example entry:
 }
 ```
 
-Use the bundled script to read and write the catalog reliably:
-
 ```sh
-# Look up an entry (repo, skill_path, pinned_ref must all match)
-python3 scripts/catalog.py get owner/repo skills/example abc1234
-
-# Add or update an entry (pass JSON string)
-python3 scripts/catalog.py add '{"repo":"owner/repo","skill_path":"skills/example",...}'
+python3 scripts/catalog.py get <repo> <skill_path> <pinned_ref>
+python3 scripts/catalog.py add '<json-entry>'
 ```
 
-The home directory is not the source of truth. Keep the catalog project-local.
+## Validation cases
+
+- **Every outcome**: approval-rule conditions all hold for a pinned SHA → `approved`. No `pinned_ref` at all → `not approved`. `skill_path` too vague to identify a unique source → `needs manual review`.
+- **`not approved` / `needs manual review` boundary**: no ref at all is a confirmed blocker (`not approved`); a branch/tag ref — even with a documented reason — is `needs manual review`, never `approved`: approval requires a commit SHA, and the documented exception is the user's decision to carry.
+- **`needs manual review` / `approved` boundary**: a workspace-modifying script flagged but not yet confirmed reviewed by the user → `needs manual review`; same script after confirmation, all else holding → `approved`.
+- **Multi-condition**: license missing (hard blocker) *and* `skill_path` vague (unresolved judgement) at once → `not approved` wins by precedence; never downgrade to `needs manual review`.
+- **Insufficient information**: `repo` given, `skill_path` absent → `needs manual review`, ask for `skill_path`.
+- **Exact enum formatting**: Result is always exactly `approved`, `not approved`, or `needs manual review` — lowercase, no alternate spellings.
 
 ## Constraints
 
 - Never auto-install. This skill reviews, catalogs, and recommends only.
-- Do not emit install commands unless the result is `approved` or the entry being reused is `approved`.
+- Do not emit install commands unless Result is `approved` or the reused entry is `approved`.
 - Do not approve when any required field is unknown or incomplete.
-- Treat branch or tag refs as documented exceptions, not the default.
-- Treat each upstream update as a new review event with a new commit SHA.
+- Treat branch or tag refs as documented exceptions, never the default.
+- Treat each upstream update as a new review event requiring a new pinned commit SHA.
 - Do not override `docs/external-skills.md`.
