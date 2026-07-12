@@ -11,8 +11,8 @@ Covers three skills:
 - `skills/math-claim-integrity/SKILL.md`
 
 Original implementation: PR [#118](https://github.com/t-uda/skills/pull/118).
-Active revision issue: [#126](https://github.com/t-uda/skills/issues/126) — any
-semantic rewrite of the rules below belongs there, not here. This document
+Latest semantic revision: [#149](https://github.com/t-uda/skills/issues/149).
+Future semantic rewrites need their own issue. This document
 preserves *design intent*; it must not silently weaken any target behaviour or
 drop any "Protected behaviour" clause when edited.
 
@@ -140,7 +140,50 @@ interdisciplinary concepts. Its purpose is to reject unnatural Japanese
 literal translations and decorative AI metaphors while preserving established
 Japanese technical terminology.
 
-## 3. `math-notation-consistency`: canonical definitions and live scope
+## 3. `wabun-math-style`: canonical terminology and concept-preserving translation
+
+### Originating failure mode
+
+A translation can be linguistically fluent and still alter the mathematics. A
+model may translate an unsuitable English label literally, flatten distinct
+operations into one Japanese term, ignore a repository glossary, or invent a
+technical-sounding Japanese noun where the source names only an ordinary
+organisational role.
+
+### Identify the concept before translating its label
+
+Definitions, formulas, and use determine the concept; an English label is not
+decisive evidence. If a source calls a simplex filtration threshold a "birth
+value" even though it is not homology-class birth, the review must report that
+source-side inconsistency rather than endorse `誕生値`. Natural English is not
+enough to justify a literal Japanese translation.
+
+### Terminology SoT is authoritative but not infallible
+
+When a document or repository supplies a glossary, it controls canonical
+Japanese wording and permitted aliases in its scope. The reviewer must not
+introduce a local alternative. A glossary does not override a conflicting
+definition, however, whether the definition is in the Japanese artifact or a
+supplied source: report the conflict and resolve the terminology at its source
+rather than mechanically replacing the prose.
+
+### Preserve distinctions and established usage
+
+Distinct concepts and operations must retain distinct names in Japanese. This
+is a semantic requirement, not a stylistic preference. Conversely, do not ban
+established Japanese mathematics terms such as `層`, `核`, or `台`, and retain
+English or katakana where that is the field's established usage. Local terms
+are valid when explicitly defined and consistent with the supplied SoT.
+
+### Ownership boundary
+
+`wabun-math-style` owns a SoT conflict and translation-level concept
+conflation. `math-notation-consistency` owns a separate document-wide alias or
+definition-locality defect; `math-claim-integrity` owns a separate claim-scope
+or truth-value defect. Do not emit duplicate findings for one terminology
+event.
+
+## 4. `math-notation-consistency`: canonical definitions and live scope
 
 ### Originating failure modes
 
@@ -197,7 +240,7 @@ A rewrite must continue to catch undefined and conflicting document-specific
 notation. It must not weaken the skill into a generic suggestion to "check
 context," nor turn it into a mechanical count of definition occurrences.
 
-## 4. `math-claim-integrity`: theorem inflation and contribution inflation
+## 5. `math-claim-integrity`: theorem inflation and contribution inflation
 
 ### Originating failure mode
 
@@ -260,12 +303,13 @@ cosmetic naming preferences. The skill exists to prevent flat, inflated
 presentations of AI-generated results and to make the paper's genuine
 scholarly contribution legible.
 
-## 5. Relationship among the three skills
+## 6. Relationship among the three skills
 
 Ownership boundaries to preserve:
 
-- `wabun-math-style` owns Japanese linguistic form, connective roles, and
-  unnatural Japanese translation patterns.
+- `wabun-math-style` owns Japanese linguistic form, connective roles,
+  unnatural Japanese translation patterns, terminology SoT conflicts, and
+  translation-level concept identity.
 - `math-notation-consistency` owns document-level symbol identity, aliases,
   definition locality, and notation reuse.
 - `math-claim-integrity` owns claim structure, proof/evidence boundaries,
