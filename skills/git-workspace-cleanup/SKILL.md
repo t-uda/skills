@@ -46,6 +46,9 @@ consolidated y/N prompt, and only in `--interactive` mode.
 - `--no-update-base`: skip fast-forward of the local base branch.
 - `--process-policy {skip,ask,ignore}`: how to treat worktrees held by live
   processes (default: skip).
+- `--remove-stale-locks`: for worktrees skipped with `reason: locked`,
+  extract a PID from the lock reason and remove the lock (`git worktree
+  unlock`) if that process is not running. See "Locked worktrees" below.
 - `--garbage-glob <pat>`: extend the disposable-glob list (additive only).
 - `--json`: emit one machine-readable JSON object.
 
@@ -74,10 +77,37 @@ The script is idempotent. The agent may re-run it only when:
   the holding processes are gone; or
 - the previous run reported `local_base_not_updated` for a transient reason
   the user has since cleared; or
-- the previous run was `--dry-run` and the user approved the plan.
+- the previous run was `--dry-run` and the user approved the plan; or
+- the previous run reported skipped items with `reason: locked` and the
+  agent has determined (per "Locked worktrees" below) that every one of
+  them is a stale lock.
 
 The agent must not re-run with a different mode hoping for a different
 classification, or loop without explicit user instruction.
+
+### Locked worktrees
+
+For every skipped item with `reason: locked`, resolve it before reporting to
+the user — do not report "skipped (locked)" without first checking whether
+the lock is stale. A stale lock (holding process no longer running) is not
+evidence of a live conflict; reporting it as an unresolved skip is the
+hand-back loop this section exists to prevent.
+
+1. Extract the PID from `detail` (format: `"claude agent <id> (pid <PID>)"`).
+2. Run `ps -p <PID>` — if the process does not exist, the lock is stale.
+3. If **all** locked items are stale, resolve them one of two ways:
+   - Re-run with `--remove-stale-locks` added to the same invocation. The
+     script performs steps 1–2 itself per worktree, removes the lock via
+     `git worktree unlock` only when the PID is dead, and continues
+     processing that worktree in the same run (reported under
+     `unlocked_stale_locks` in `--json` output). This is the preferred path.
+   - Or run `find <repo>/.git/worktrees -name locked -delete` and re-run the
+     script without the flag. This is the fourth sanctioned re-run case in
+     "Re-execution" above.
+4. Only escalate to the user if ≥1 lock is held by a live process, or the
+   `detail` has no parseable PID. `--remove-stale-locks` already leaves
+   those untouched and reports them as `skipped (locked)`; treat that
+   report as-is, do not attempt to force removal.
 
 ### Reporting back
 

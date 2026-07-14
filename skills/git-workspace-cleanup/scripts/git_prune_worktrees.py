@@ -184,6 +184,14 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
         help="how to treat worktrees held by live processes (default: skip)",
     )
     parser.add_argument(
+        "--remove-stale-locks", action="store_true",
+        help=(
+            "for skipped `locked` worktrees, extract a PID from the lock reason "
+            "and remove the lock (git worktree unlock) if that process is not "
+            "running; live-process or unparseable locks are left untouched"
+        ),
+    )
+    parser.add_argument(
         "--garbage-glob", action="append", default=[],
         help="repeatable; extend the disposable-glob list (additive only)",
     )
@@ -854,6 +862,34 @@ def process_probe_real(worktree_path: str) -> ProbeResult:
 PROCESS_PROBE: Callable[[str], ProbeResult] = process_probe_real
 
 
+LOCK_PID_RE = re.compile(r"pid[\s:]*?(\d+)", re.IGNORECASE)
+
+
+def extract_lock_pid(reason: str | None) -> int | None:
+    """Extract a PID from a worktree lock reason, e.g. "claude agent x (pid 123)"."""
+    if not reason:
+        return None
+    match = LOCK_PID_RE.search(reason)
+    if not match:
+        return None
+    return int(match.group(1))
+
+
+def pid_alive(pid: int) -> bool:
+    proc_path = Path(f"/proc/{pid}")
+    if proc_path.parent.is_dir():
+        return proc_path.exists()
+    try:
+        os.kill(pid, 0)
+    except ProcessLookupError:
+        return False
+    except PermissionError:
+        return True
+    except OSError:
+        return False
+    return True
+
+
 # ---------------------------------------------------------------------------
 # Dirty classification
 # ---------------------------------------------------------------------------
@@ -1038,6 +1074,7 @@ class RepoOutcome:
     skipped: list[dict[str, Any]] = field(default_factory=list)
     dirty: list[dict[str, Any]] = field(default_factory=list)
     process_probes: list[dict[str, Any]] = field(default_factory=list)
+    unlocked_stale_locks: list[dict[str, Any]] = field(default_factory=list)
     errors: list[dict[str, Any]] = field(default_factory=list)
 
 
@@ -1120,6 +1157,9 @@ def build_repo_plan(
     process_policy: str,
     garbage_globs: list[str],
     outcome: RepoOutcome,
+    *,
+    dry_run: bool = False,
+    remove_stale_locks: bool = False,
 ) -> None:
     merged: dict[str, bool] = {}
     pr_merged_numbers: dict[str, int] = {}
@@ -1166,10 +1206,35 @@ def build_repo_plan(
             ))
             continue
         if worktree.get("locked"):
-            outcome.skipped.append(skip_record(
-                "worktree", path, branch, "locked", worktree.get("locked_reason"),
-            ))
-            continue
+            lock_reason = worktree.get("locked_reason")
+            stale_pid = extract_lock_pid(lock_reason) if remove_stale_locks else None
+            if stale_pid is not None and not pid_alive(stale_pid):
+                if dry_run:
+                    outcome.skipped.append(skip_record(
+                        "worktree", path, branch, "locked",
+                        f"stale (pid {stale_pid} not running); "
+                        f"would unlock with --remove-stale-locks: {lock_reason}",
+                    ))
+                    continue
+                unlock = run_git(["worktree", "unlock", path], repo)
+                if unlock.returncode != 0:
+                    outcome.errors.append(error_record(
+                        "worktree_unlock_failed", unlock.command, unlock.stderr, path,
+                    ))
+                    outcome.skipped.append(skip_record(
+                        "worktree", path, branch, "locked", lock_reason,
+                    ))
+                    continue
+                outcome.unlocked_stale_locks.append({
+                    "path": path, "branch": branch, "pid": stale_pid, "reason": lock_reason,
+                })
+                # Fall through: the worktree is now unlocked and continues
+                # through the normal classification below in this same run.
+            else:
+                outcome.skipped.append(skip_record(
+                    "worktree", path, branch, "locked", lock_reason,
+                ))
+                continue
         if worktree.get("detached") or not branch:
             outcome.skipped.append(skip_record("worktree", path, branch, "detached"))
             continue
@@ -1454,6 +1519,7 @@ def outcome_to_dict(outcome: RepoOutcome) -> dict[str, Any]:
         "skipped": outcome.skipped,
         "dirty": outcome.dirty,
         "process_probes": outcome.process_probes,
+        "unlocked_stale_locks": outcome.unlocked_stale_locks,
         "errors": outcome.errors,
     }
 
@@ -1508,6 +1574,10 @@ def emit_text(
             for a in b_actions:
                 detail = f" — {a['detail']}" if a.get("detail") else ""
                 print(f"    {a['kind']} {a['target']} ({a['reason']}){detail} [{a['status']}]")
+        if outcome.unlocked_stale_locks:
+            print(f"  unlocked_stale_locks: {len(outcome.unlocked_stale_locks)}")
+            for u in outcome.unlocked_stale_locks:
+                print(f"    {u['path']} (pid {u['pid']} not running) — {u['reason']}")
         if outcome.skipped:
             print(f"  skipped: {len(outcome.skipped)}")
             for s in outcome.skipped:
@@ -1656,6 +1726,7 @@ def process_repo(
     build_repo_plan(
         repo, args, base_commit, local_base_branch, initial_branch,
         branches, worktrees, remote, args.process_policy, garbage_globs, outcome,
+        dry_run=dry_run, remove_stale_locks=args.remove_stale_locks,
     )
 
     return outcome

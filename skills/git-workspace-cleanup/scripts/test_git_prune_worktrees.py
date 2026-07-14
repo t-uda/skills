@@ -706,6 +706,117 @@ class ProcessProbeTests(unittest.TestCase):
             self.assertFalse(wt.exists())
 
 
+def spawn_dead_pid() -> int:
+    """Return a PID that recently existed but has since exited and been reaped."""
+    proc = subprocess.Popen([sys.executable, "-c", "pass"])
+    proc.wait()
+    return proc.pid
+
+
+class StaleLockTests(unittest.TestCase):
+    """--remove-stale-locks: extract PID from lock reason, unlock only if dead."""
+
+    def _locked_merged_worktree(self, root: Path, reason: str) -> tuple[RepoFixture, Path]:
+        fixture = RepoFixture.create(root)
+        make_merged_branch(fixture.repo, "feature")
+        wt = root / "feature-wt"
+        git(fixture.repo, "worktree", "add", str(wt), "feature")
+        git(fixture.repo, "worktree", "lock", "--reason", reason, str(wt))
+        return fixture, wt
+
+    def test_stale_lock_removed_and_worktree_cleaned_up(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            pid = spawn_dead_pid()
+            fixture, wt = self._locked_merged_worktree(root, f"claude agent x (pid {pid})")
+
+            result, data = run_script_v2(
+                fixture.repo, "--yes", "--base", "main", "--no-fetch", "--remove-stale-locks",
+            )
+            self.assertEqual(result.returncode, 0, msg=str(data))
+            self.assertFalse(wt.exists())
+            self.assertFalse(branch_exists(fixture.repo, "feature"))
+            r = data["repos"][0]  # type: ignore[index]
+            self.assertEqual(len(r["unlocked_stale_locks"]), 1)
+            self.assertEqual(r["unlocked_stale_locks"][0]["pid"], pid)
+            skip_reasons = {
+                s["reason"] for s in r["skipped"]
+                if Path(s["target"]).resolve() == wt.resolve()
+            }
+            self.assertNotIn("locked", skip_reasons)
+
+    def test_stale_lock_left_alone_without_flag(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            pid = spawn_dead_pid()
+            fixture, wt = self._locked_merged_worktree(root, f"claude agent x (pid {pid})")
+
+            result, data = run_script_v2(fixture.repo, "--yes", "--base", "main", "--no-fetch")
+            self.assertEqual(result.returncode, 0, msg=str(data))
+            self.assertTrue(wt.exists())
+            r = data["repos"][0]  # type: ignore[index]
+            self.assertEqual(r["unlocked_stale_locks"], [])
+            skip_reasons = {
+                s["reason"] for s in r["skipped"]
+                if Path(s["target"]).resolve() == wt.resolve()
+            }
+            self.assertIn("locked", skip_reasons)
+
+    def test_live_process_lock_left_alone_even_with_flag(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            fixture, wt = self._locked_merged_worktree(
+                root, f"claude agent x (pid {os.getpid()})",
+            )
+
+            result, data = run_script_v2(
+                fixture.repo, "--yes", "--base", "main", "--no-fetch", "--remove-stale-locks",
+            )
+            self.assertEqual(result.returncode, 0, msg=str(data))
+            self.assertTrue(wt.exists())
+            r = data["repos"][0]  # type: ignore[index]
+            self.assertEqual(r["unlocked_stale_locks"], [])
+            skip_reasons = {
+                s["reason"] for s in r["skipped"]
+                if Path(s["target"]).resolve() == wt.resolve()
+            }
+            self.assertIn("locked", skip_reasons)
+
+    def test_lock_without_pid_left_alone_even_with_flag(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            fixture, wt = self._locked_merged_worktree(root, "keep")
+
+            result, data = run_script_v2(
+                fixture.repo, "--yes", "--base", "main", "--no-fetch", "--remove-stale-locks",
+            )
+            self.assertEqual(result.returncode, 0, msg=str(data))
+            self.assertTrue(wt.exists())
+            r = data["repos"][0]  # type: ignore[index]
+            self.assertEqual(r["unlocked_stale_locks"], [])
+
+    def test_dry_run_reports_stale_lock_without_mutating(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            pid = spawn_dead_pid()
+            fixture, wt = self._locked_merged_worktree(root, f"claude agent x (pid {pid})")
+
+            result, data = run_script_v2(
+                fixture.repo, "--dry-run", "--base", "main", "--no-fetch", "--remove-stale-locks",
+            )
+            self.assertEqual(result.returncode, 0, msg=str(data))
+            self.assertTrue(wt.exists())
+            list_result = git(fixture.repo, "worktree", "list", "--porcelain")
+            self.assertIn("locked", list_result.stdout)
+            r = data["repos"][0]  # type: ignore[index]
+            self.assertEqual(r["unlocked_stale_locks"], [])
+            skip_reasons = {
+                s["reason"] for s in r["skipped"]
+                if Path(s["target"]).resolve() == wt.resolve()
+            }
+            self.assertIn("locked", skip_reasons)
+
+
 class ClassBAndInteractiveTests(unittest.TestCase):
     """Class B: PR-verified merged branch + dirty disposable content."""
 
