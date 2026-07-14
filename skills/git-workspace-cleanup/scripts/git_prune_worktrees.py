@@ -1199,13 +1199,11 @@ def build_repo_plan(
         branch = worktree.get("branch")
         exists = os.path.exists(path)
 
-        if not exists:
-            outcome.skipped.append(skip_record(
-                "worktree", path, branch, "missing_path",
-                "Run git worktree prune after confirming the path was not moved.",
-            ))
-            continue
         if worktree.get("locked"):
+            # Checked ahead of the missing-path skip below: `git worktree
+            # unlock` works on the registered path even after it has been
+            # deleted, and clearing a stale lock here is what lets a
+            # subsequent `git worktree prune` reclaim the metadata.
             lock_reason = worktree.get("locked_reason")
             stale_pid = extract_lock_pid(lock_reason) if remove_stale_locks else None
             if stale_pid is not None and not pid_alive(stale_pid):
@@ -1229,12 +1227,20 @@ def build_repo_plan(
                     "path": path, "branch": branch, "pid": stale_pid, "reason": lock_reason,
                 })
                 # Fall through: the worktree is now unlocked and continues
-                # through the normal classification below in this same run.
+                # through the normal checks below (including missing_path)
+                # in this same run.
             else:
                 outcome.skipped.append(skip_record(
                     "worktree", path, branch, "locked", lock_reason,
                 ))
                 continue
+
+        if not exists:
+            outcome.skipped.append(skip_record(
+                "worktree", path, branch, "missing_path",
+                "Run git worktree prune after confirming the path was not moved.",
+            ))
+            continue
         if worktree.get("detached") or not branch:
             outcome.skipped.append(skip_record("worktree", path, branch, "detached"))
             continue

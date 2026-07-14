@@ -816,6 +816,38 @@ class StaleLockTests(unittest.TestCase):
             }
             self.assertIn("locked", skip_reasons)
 
+    def test_stale_lock_on_missing_worktree_is_unlocked_so_prune_can_reclaim_it(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            pid = spawn_dead_pid()
+            fixture, wt = self._locked_merged_worktree(root, f"claude agent x (pid {pid})")
+            # Simulate the directory being deleted out from under Git while
+            # the admin metadata (including the lock) is left behind.
+            shutil.rmtree(wt)
+
+            result, data = run_script_v2(
+                fixture.repo, "--yes", "--base", "main", "--no-fetch", "--remove-stale-locks",
+            )
+            self.assertEqual(result.returncode, 0, msg=str(data))
+            r = data["repos"][0]  # type: ignore[index]
+            self.assertEqual(len(r["unlocked_stale_locks"]), 1)
+            self.assertEqual(r["unlocked_stale_locks"][0]["pid"], pid)
+            skip_reasons = {
+                s["reason"] for s in r["skipped"]
+                if Path(s["target"]).resolve() == wt.resolve()
+            }
+            self.assertIn("missing_path", skip_reasons)
+            self.assertNotIn("locked", skip_reasons)
+            # Unlocking clears the way for the script's existing
+            # prune_metadata step to reclaim the now-unlocked, still-missing
+            # worktree admin dir in the same --yes run.
+            prune_actions = [a for a in r["actions"] if a["kind"] == "prune_metadata"]
+            self.assertEqual(len(prune_actions), 1)
+            self.assertEqual(prune_actions[0]["status"], "done")
+            list_result = git(fixture.repo, "worktree", "list", "--porcelain")
+            self.assertNotIn(str(wt), list_result.stdout)
+            self.assertNotIn("locked", list_result.stdout)
+
 
 class ClassBAndInteractiveTests(unittest.TestCase):
     """Class B: PR-verified merged branch + dirty disposable content."""
