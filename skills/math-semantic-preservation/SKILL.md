@@ -46,7 +46,7 @@ Never assume an identifier name is semantically authoritative when its type, def
 
 ## Rule classification and severity
 
-Each rule is tagged with a classification that sets a default severity: **invariant** — a violation means the prose no longer describes the source's mathematics — defaults to BLOCKING; **convention** — a strong norm with bounded exceptions — defaults to MINOR, escalating per the rule's own condition. A rule's own text overrides this default where it states a severity explicitly. When a defect triggers more than one rule, report each tag; the defect's severity for gating purposes is the maximum across triggered findings (BLOCKING > MINOR > ADVISORY > NOTE).
+Each rule is tagged with a classification that sets a default severity: **invariant** — a violation means the prose no longer describes the source's mathematics — defaults to BLOCKING; **convention** — a strong norm with bounded exceptions — defaults to MINOR, escalating per the rule's own condition. A rule's own text overrides this default where it states a severity explicitly. When a defect triggers more than one rule, report each tag; the defect's severity for gating purposes is the maximum across triggered findings (BLOCKING > MINOR > ADVISORY).
 
 ## Procedure
 
