@@ -42,7 +42,7 @@ Gather or infer missing inputs before restructuring; state the inferred audience
 
 ## Rule classification and severity
 
-Each rule is tagged with a classification that sets a default severity: **invariant** — a violation breaks the reader's ability to interpret a load-bearing statement — defaults to BLOCKING; **convention** — a strong norm with bounded exceptions — defaults to MINOR, escalating to BLOCKING per the rule's own condition; **heuristic** — a review trigger requiring contextual judgement — defaults to ADVISORY. A rule's own text overrides this default where it states a severity explicitly. When a defect triggers more than one rule, report each tag; the defect's severity for gating purposes is the maximum across triggered findings (BLOCKING > MINOR > ADVISORY > NOTE).
+Each rule is tagged with a classification that sets a default severity: **invariant** — a violation breaks the reader's ability to interpret a load-bearing statement — defaults to BLOCKING; **convention** — a strong norm with bounded exceptions — defaults to MINOR, escalating to BLOCKING per the rule's own condition; **heuristic** — a review trigger requiring contextual judgement — defaults to ADVISORY. A rule's own text overrides this default where it states a severity explicitly. When a defect triggers more than one rule, report each tag; the defect's severity for gating purposes is the maximum across triggered findings (BLOCKING > MINOR > ADVISORY).
 
 ## Procedure
 
