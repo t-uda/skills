@@ -37,6 +37,10 @@ Each skill must live at `skills/<skill-name>/SKILL.md`.
 - `deslop-history`: clean final user-visible artifacts from accepted decisions or issue/PR discussion by removing historical residue and process framing
 - `deslop-prose`: clean academic or professional prose by removing hype, generic metadiscourse, decorative structure, and claim-evidence mismatch while preserving technical meaning
 
+### Writing structure
+
+- `exposition-flow`: turn repository-grounded source material into a self-contained, dependency-ordered document or presentation for an intended audience — audience prerequisites, define-before-use, discourse-role separation, and compression that preserves prerequisite closure
+
 ### Orchestration
 
 - `light-orchestration`: choose between single-agent execution and a minimal multi-agent split, and produce strictly bounded subtask contracts when a split is justified

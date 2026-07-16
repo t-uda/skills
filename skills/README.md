@@ -41,3 +41,4 @@ Current skills:
 - wabun-math-style
 - lean-formalization-discipline
 - research-significance
+- exposition-flow
