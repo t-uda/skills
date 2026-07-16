@@ -65,6 +65,13 @@ Each skill must live at `skills/<skill-name>/SKILL.md`.
 
 - `lean-formalization-discipline`: keep Lean / Mathlib proofs sound and axiom-clean while refactoring — no `sorry` on false statements, honest `sorry` over hidden axioms, self-contained in the repo, and `lake build` + `#print axioms` re-verified every commit
 
+### Mathematical writing
+
+- `math-claim-integrity`: audit the structural and logical integrity of a mathematics paper — quantifier scope, proof/computation honesty, theorem hierarchy, contribution-list discipline, stale claims, and standing assumptions
+- `math-notation-consistency`: audit a LaTeX mathematics document for notation drift — definition sites, aliases, symbol reuse across scopes, and back-references after gaps
+- `math-semantic-preservation`: review or rewrite mathematical prose so edits, paraphrases, and terminology migrations preserve the exact source meaning — referent identity, operation vs result, quantifier and equality mode, provenance, and notation role
+- `wabun-math-style`: detect and correct Japanese-language anti-patterns in mathematical writing — epistemic hedges, tense and voice discipline, connective and particle logic, borrowed vocabulary, terminology SoT drift, and concept-preserving translation
+
 ### Repository guidance
 
 - `growing-agents-md`: seed, lint, or update a compact canonical `AGENTS.md` with deterministic guardrails

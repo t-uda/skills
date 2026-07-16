@@ -38,6 +38,7 @@ required runtime context and not shipped with installed copies).
 - For quantifier scope errors, theorem hierarchy, or proof/computation distinction — use `math-claim-integrity`
 - For Japanese-language anti-patterns — use `wabun-math-style`
 - For prose inflation — use `deslop-prose`
+- For prose assigning the wrong mathematical role to notation (a family index read as an exponent, an argument position read as a tensor factor) — use `math-semantic-preservation`; this skill audits bookkeeping, not semantic interpretation
 
 ## Inputs
 
@@ -215,3 +216,4 @@ Before finishing, verify:
 - Use `wabun-math-style` for Japanese-language anti-patterns.
 - Use `deslop-prose` for prose inflation.
 - NC-1 (existence/uniqueness of definition) complements `math-claim-integrity` rule R-J (defined-before-use in theorem statements): R-J checks completeness of theorem statements; NC-1 checks uniqueness of the definition site.
+- NC-7 owns inconsistent typography for the same family of objects; `math-semantic-preservation` rule MS-6 owns an incorrect semantic reading of otherwise consistent notation (e.g. a family index described as a power).
