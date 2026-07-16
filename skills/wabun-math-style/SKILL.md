@@ -30,8 +30,9 @@ A Japanese mathematics paper, preprint, or lecture note (LaTeX with ltjsarticle,
 - Symbol-table consistency, aliases, and definition locality — use `math-notation-consistency`. (JP-14's alias case cross-reports as NC-3.) JP-16 owns a conflict with a supplied terminology SoT; do not duplicate that conflict as NC-3.
 - Language-agnostic prose inflation (hype, unsupported claims, decorative structure) — use `deslop-prose`; it composes with this skill rather than overlapping it.
 - Removing process history from planning/notes documents — use `deslop-history`.
+- Language-agnostic semantic drift during monolingual paraphrase, corpus editing, documentation generation, or terminology migration — use `math-semantic-preservation`. JP-16/JP-17 keep ownership of translation and source-naming events.
 
-A wording pattern here may reveal a deeper claim defect; state which layer is actually broken rather than duplicating a finding across skills. Cross-report a distinct document-wide alias or definition-locality defect to `math-notation-consistency`, and a distinct claim-scope or truth-value defect to `math-claim-integrity`; JP-16/JP-17 own the terminology or translation event itself.
+A wording pattern here may reveal a deeper claim defect; state which layer is actually broken rather than duplicating a finding across skills. Cross-report a distinct document-wide alias or definition-locality defect to `math-notation-consistency`, and a distinct claim-scope or truth-value defect to `math-claim-integrity`; JP-16/JP-17 own the terminology or translation event itself, while a monolingual paraphrase or migration event belongs to `math-semantic-preservation` — never report both for one defect.
 
 ## Inputs
 

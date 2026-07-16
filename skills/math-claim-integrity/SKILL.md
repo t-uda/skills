@@ -41,6 +41,7 @@ Do not use this skill for:
 - Symbol-table drift across sections → use `math-notation-consistency`
 - Japanese-specific language anti-patterns → use `wabun-math-style`
 - Discussion-history artifacts in planning docs → use `deslop-history`
+- Whether an edit, paraphrase, or terminology migration preserves the semantic content of its source (referent identity, operation vs result, quantifier or equality mode changed by an edit) → use `math-semantic-preservation`
 
 ## Inputs
 
@@ -216,3 +217,4 @@ Before finishing, verify:
 - Use `wabun-math-style` for Japanese-language anti-patterns (epistemic hedges, verb tense, particle misuse).
 - Use `math-notation-consistency` for symbol drift across sections, orphaned macros, or alias detection.
 - Use `deslop-history` when a planning or notes artifact leaks process history or prior-draft residue.
+- Use `math-semantic-preservation` when an edit or explanatory description changed a source statement's meaning or mode; this skill remains responsible when the claim itself exceeds what the proof establishes (its rule MS-4 defers claim-strength defects here).

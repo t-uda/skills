@@ -4,14 +4,16 @@ Maintenance-only document. It is not runtime skill context and is not copied int
 installed skill directories; it exists so a maintainer or reviewer can recover why
 a rule exists without reconstructing issue history.
 
-Covers three skills:
+Covers four skills:
 
 - `skills/wabun-math-style/SKILL.md`
 - `skills/math-notation-consistency/SKILL.md`
 - `skills/math-claim-integrity/SKILL.md`
+- `skills/math-semantic-preservation/SKILL.md`
 
 Original implementation: PR [#118](https://github.com/t-uda/skills/pull/118).
 Latest semantic revision: [#149](https://github.com/t-uda/skills/issues/149).
+`math-semantic-preservation` added: [#153](https://github.com/t-uda/skills/issues/153).
 Future semantic rewrites need their own issue. This document
 preserves *design intent*; it must not silently weaken any target behaviour or
 drop any "Protected behaviour" clause when edited.
@@ -303,7 +305,84 @@ cosmetic naming preferences. The skill exists to prevent flat, inflated
 presentations of AI-generated results and to make the paper's genuine
 scholarly contribution legible.
 
-## 6. Relationship among the three skills
+## 6. `math-semantic-preservation`: meaning-preserving mathematical edits
+
+### Originating failure mode
+
+Live review of a large mathematical prose corpus exposed edits that were
+linguistically smoother, internally consistent, and mechanically valid while
+no longer describing the same mathematics. Representative failures: the third
+argument of a trilinear form described as the third factor of a two-factor
+tensor product; an almost-everywhere assertion rewritten as apparent pointwise
+equality; composition with a continuous linear map renamed "pushforward";
+convolution described as an operation performed separately at each point; a
+restriction operation conflated with the restricted object; one overloaded
+term replaced uniformly although its occurrences denoted a Fourier truncation
+residual, an out-of-box coefficient sum, an orthogonal residual, a
+physical-space exterior part, and eventual sequence behaviour; a superscript
+index read as a power; a statement, proof explanation, link label, glossary,
+and audit record edited inconsistently for one concept; a property attributed
+to the wrong structure while the final conclusion stayed superficially
+plausible. These are semantic-preservation defects, not prose-style defects.
+
+### Ownership boundary
+
+`math-claim-integrity` owns whether a claim is supported at the strength its
+proof establishes; `math-notation-consistency` owns document-wide notation
+bookkeeping; `wabun-math-style` JP-16/JP-17 own terminology SoT conflicts and
+translation or source-naming events. `math-semantic-preservation` owns whether
+an edit, monolingual paraphrase, terminology migration, or explanatory
+description preserves the semantic content fixed by its source anchor. One
+defect is reported at exactly one layer — the layer whose invariant is
+actually broken.
+
+### Compact live examples
+
+Maintenance evidence and realistic validation material (full
+`owner/repository#number` form; not copied into the runtime skill):
+
+- `uda-lab/lean-pde-notes#51` — source proofreading campaign; umbrella context
+  for the mathematically unsafe paraphrases and migrations reviewed.
+- `uda-lab/lean-pde-notes#55` — the overloaded Japanese 尾部 problem that
+  motivated a corpus-wide terminology decision over mechanical replacement.
+- `uda-lab/lean-pde-notes#56` — explicit terminology decision and
+  classification task distinguishing Fourier truncation residuals, out-of-box
+  coefficient sums or families, orthogonal residuals, physical-space exterior
+  parts, and eventual sequence behaviour; primary live example for MS-7.
+- `uda-lab/lean-pde-notes#57` — MS-2 and MS-4 examples: composition described
+  as pushforward; time convolution described as if points were convolved; a
+  definition sentence completed only once its data and predicate were explicit.
+- `uda-lab/lean-pde-notes#58` — MS-1, MS-3, MS-5, MS-7 examples: trilinear-form
+  argument confused with a tensor factor; an a.e. representative statement
+  rewritten with an unclear pointwise referent; mechanical replacements
+  introducing pseudo-technical wording; an audit ledger recording wording
+  different from the change it documented.
+- `uda-lab/lean-pde-notes#59` — MS-2 and MS-7 examples: restriction to a ball
+  complement separated from the resulting exterior part; the canonical pair
+  球内部分/球外部分 kept synchronized; migration completed with glossary and
+  lint protection while compatibility-only identifiers containing `tail` were
+  intentionally retained.
+
+### Protected behaviour
+
+Future compression or generalisation must preserve the following:
+
+1. Natural language fluency must never be treated as evidence that
+   mathematical meaning was preserved.
+2. Definitions, formulas, types, and uses outrank labels and identifier names
+   as semantic evidence.
+3. Terminology migrations must classify occurrences before replacement.
+4. Pointwise, almost-everywhere, eventual, and uniform statements must remain
+   distinct.
+5. Argument positions, tensor factors, coordinates, indices, and exponents
+   must remain distinct.
+6. Operations must remain distinct from their results.
+7. Related human-facing descriptions of one concept must be synchronized
+   without requiring compatibility identifiers to be renamed.
+8. The skill must not become a general theorem prover or duplicate Japanese
+   style, notation bookkeeping, or paper-level claim-integrity review.
+
+## 7. Relationship among the four skills
 
 Ownership boundaries to preserve:
 
@@ -314,7 +393,10 @@ Ownership boundaries to preserve:
   definition locality, and notation reuse.
 - `math-claim-integrity` owns claim structure, proof/evidence boundaries,
   result hierarchy, and contribution hierarchy.
+- `math-semantic-preservation` owns semantic fidelity of edits, paraphrases,
+  explanatory descriptions, and terminology migrations against their semantic
+  anchor.
 
 A wording pattern may reveal a deeper claim defect, but a finding should state
 which layer is actually broken instead of duplicating the same rule across all
-three skills.
+four skills.

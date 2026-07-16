@@ -42,3 +42,4 @@ Current skills:
 - lean-formalization-discipline
 - research-significance
 - exposition-flow
+- math-semantic-preservation
