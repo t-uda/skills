@@ -72,6 +72,10 @@ Each skill must live at `skills/<skill-name>/SKILL.md`.
 - `math-semantic-preservation`: review or rewrite mathematical prose so edits, paraphrases, and terminology migrations preserve the exact source meaning — referent identity, operation vs result, quantifier and equality mode, provenance, and notation role
 - `wabun-math-style`: detect and correct Japanese-language anti-patterns in mathematical writing — epistemic hedges, tense and voice discipline, connective and particle logic, borrowed vocabulary, terminology SoT drift, and concept-preserving translation
 
+### Research review
+
+- `research-significance`: assess whether a mathematical or applied-mathematical research direction is locally significant — separating correctness, novelty, and scholarly value — before prose polishing or source-of-truth treatment
+
 ### Repository guidance
 
 - `growing-agents-md`: seed, lint, or update a compact canonical `AGENTS.md` with deterministic guardrails
@@ -87,6 +91,10 @@ Each skill must live at `skills/<skill-name>/SKILL.md`.
 ### Dev containers
 
 - `devcontainer-cli`: review, validate, and troubleshoot Dev Container setup with explicit CLI-first guidance
+
+### Shell scripting
+
+- `shell-script-engineering`: create, edit, or review non-trivial Bash/sh where correctness depends on execution context, permissions, filesystem mutation, argument parsing, idempotency, or CI/container behaviour
 
 ### Delivery workflow
 
