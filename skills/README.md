@@ -43,3 +43,4 @@ Current skills:
 - research-significance
 - exposition-flow
 - math-semantic-preservation
+- gcvx-vertex-teammates
