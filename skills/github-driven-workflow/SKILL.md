@@ -60,7 +60,9 @@ The PR must include:
 
 Independent review is required in principle. A qualifying review is review evidence produced by an actor other than the implementation author, durably visible on the PR.
 
-Run the bundled acquisition script. Resolve this path from the `github-driven-workflow` skill root, not from the target repository root:
+Before dispatching a reviewer, check the §8 evidence clauses and confirm that any existing artifact qualifies under the evidence types below. If qualifying evidence already exists — including a scoped review obtained by a governing outer workflow — skip acquisition and proceed to §8.
+
+If no qualifying evidence exists, run the bundled acquisition script. Resolve this path from the `github-driven-workflow` skill root, not from the target repository root:
 
 ```sh
 scripts/acquire-review.py <OWNER>/<REPO> <PR_NUMBER> [kind]
