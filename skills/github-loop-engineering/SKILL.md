@@ -49,7 +49,7 @@ Keep the Issue in flight until its quality-reviewed PR merges or the workflow re
 
 Before merge, give a reviewer distinct from the implementation worker both the hygiene invariant and permitted documentation scope. Require review of implementation quality, transient evidence, task provenance, stale historical framing, and unnecessary bookkeeping.
 
-Obtain one qualifying `github-driven-workflow` §7 artifact through either a scoped reviewer-agent dispatch or a project `REVIEW_ACQUIRE_SCRIPT` override. Let the workflow reuse that evidence; do not dispatch a duplicate generic reviewer.
+Obtain qualifying `github-driven-workflow` §7 evidence through either a scoped reviewer-agent dispatch or a project `REVIEW_ACQUIRE_SCRIPT` override. After review-driven changes, repeat the scoped review until its evidence covers the final PR head. Let the workflow reuse that evidence; do not dispatch a duplicate generic reviewer.
 
 Apply `deslop-history` to discussion or task-history residue and `deslop-prose` when prose quality is relevant. Route in-scope fixes through the PR; create a follow-up Issue for work that expands the accepted scope.
 
