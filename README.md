@@ -99,6 +99,7 @@ Each skill must live at `skills/<skill-name>/SKILL.md`.
 ### Delivery workflow
 
 - `github-driven-workflow`: enforce issue-first, PR-gated delivery with no direct main pushes, independent review requirement, and deterministic merge gates
+- `github-loop-engineering`: run bounded, supervised-autonomous repository work through a dynamic authorized GitHub Issue queue, per-Issue delivery gates, independent quality review, and repository-hygiene constraints
 - `github-project-board-maintenance`: rate-limit-aware GitHub Projects v2 board maintenance — REST-first candidate discovery, single GraphQL snapshot, mechanical status-update planning, and guarded apply
 
 ### Randomness

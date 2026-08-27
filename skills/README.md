@@ -29,6 +29,7 @@ Current skills:
 - deslop-prose
 - devcontainer-cli
 - github-driven-workflow
+- github-loop-engineering
 - randomness
 - computational-reproducibility
 - headson

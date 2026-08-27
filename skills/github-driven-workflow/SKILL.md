@@ -42,6 +42,12 @@ Implement the change on the `issue-<id>-<slug>` branch.
 
 Run repo-appropriate validation. Record commands and output.
 
+### 5a. Place evidence
+
+Keep validation commands and results in the PR as required below. Do not create or expand repository files solely to record progress, completion, validation, review evidence, freshness timestamps, or GitHub queue state.
+
+Keep durable repository content focused on the current system, its contracts, constraints, and reader-relevant rationale. Omit historical text when Git or the Issue/PR trail already answers the question and the text adds no current meaning. Preserve repository-required changelogs, ADRs, audit or migration records, and Issue/PR references that define current authority, unresolved boundaries, or compatibility constraints.
+
 ### 6. Create a PR
 
 The PR must include:
