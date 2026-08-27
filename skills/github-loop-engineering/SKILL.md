@@ -59,6 +59,8 @@ Treat the Issue as in flight until the quality-reviewed PR merges through `githu
 
 Before merge, use a reviewer distinct from the implementation worker to inspect both implementation quality and repository quality. Require the reviewer to check for transient evidence, task provenance, stale historical framing, and unnecessary bookkeeping in the diff.
 
+Pass the repository-hygiene invariant and any permitted documentation scope directly to the reviewer. Do not assume the default generic review request from `github-driven-workflow` carries that scope. Use a scoped reviewer-agent dispatch or a project `REVIEW_ACQUIRE_SCRIPT` override, require it to post qualifying review evidence on the PR, and keep the implementation worker from merging until that evidence is recorded.
+
 Apply `deslop-history` when a drafted artifact contains discussion or task-history residue. Apply `deslop-prose` when prose quality is relevant. The same independent review may satisfy both this repository-quality role and `github-driven-workflow` review evidence when it is durably recorded on the PR and covers both; do not require duplicate reviewers mechanically.
 
 Route fixes required by the authorized Issue back through its PR. Create a follow-up Issue for independently useful work that would expand the accepted scope.
