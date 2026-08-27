@@ -42,6 +42,12 @@ Implement the change on the `issue-<id>-<slug>` branch.
 
 Run repo-appropriate validation. Record commands and output.
 
+### 5a. Place evidence
+
+Keep validation commands and results in the PR as required below. Do not create or expand repository files solely to record progress, completion, validation, review evidence, freshness timestamps, or GitHub queue state.
+
+Keep durable repository content focused on the current system, its contracts, constraints, and reader-relevant rationale. Omit historical text when Git or the Issue/PR trail already answers the question and the text adds no current meaning. Preserve repository-required changelogs, ADRs, audit or migration records, and Issue/PR references that define current authority, unresolved boundaries, or compatibility constraints.
+
 ### 6. Create a PR
 
 The PR must include:
@@ -54,7 +60,9 @@ The PR must include:
 
 Independent review is required in principle. A qualifying review is review evidence produced by an actor other than the implementation author, durably visible on the PR.
 
-Run the bundled acquisition script. Resolve this path from the `github-driven-workflow` skill root, not from the target repository root:
+Before dispatching a reviewer, check the §8 evidence clauses and confirm that any existing artifact qualifies under the evidence types below. If qualifying evidence already exists — including a scoped review obtained by a governing outer workflow — skip acquisition and proceed to §8.
+
+If no qualifying evidence exists, run the bundled acquisition script. Resolve this path from the `github-driven-workflow` skill root, not from the target repository root:
 
 ```sh
 scripts/acquire-review.py <OWNER>/<REPO> <PR_NUMBER> [kind]
