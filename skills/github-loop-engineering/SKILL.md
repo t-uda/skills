@@ -49,15 +49,15 @@ Select only an authorized, unblocked Issue with clear scope and acceptance crite
 
 ### 3. Execute
 
-Delegate each selected Issue through `github-driven-workflow` and let that skill govern branch creation, implementation, validation, PR evidence, review gates, and merge. Do not duplicate or weaken its delivery protocol.
+Delegate each selected Issue through `github-driven-workflow` and let that skill govern branch creation, implementation, validation, PR evidence, review gates, and merge. Require the dispatch to obtain an independent review covering both implementation quality and repository hygiene before merge. Do not duplicate or weaken the delivery protocol.
 
 Include the repository-hygiene invariant below in every implementation and reviewer dispatch. A freshly dispatched worker must not depend on outer-loop memory. When the task may modify durable documentation, state the permitted documentation scope.
 
-Treat the Issue as in flight until `github-driven-workflow` reports a merged PR or an exact blocking condition. Re-observe GitHub state before selecting more work.
+Treat the Issue as in flight until the quality-reviewed PR merges through `github-driven-workflow` or the workflow reports an exact blocking condition. Re-observe GitHub state before selecting more work.
 
 ### 4. Review
 
-Use a reviewer distinct from the implementation worker to inspect both implementation quality and repository quality. Require the reviewer to check for transient evidence, task provenance, stale historical framing, and unnecessary bookkeeping in the diff.
+Before merge, use a reviewer distinct from the implementation worker to inspect both implementation quality and repository quality. Require the reviewer to check for transient evidence, task provenance, stale historical framing, and unnecessary bookkeeping in the diff.
 
 Apply `deslop-history` when a drafted artifact contains discussion or task-history residue. Apply `deslop-prose` when prose quality is relevant. The same independent review may satisfy both this repository-quality role and `github-driven-workflow` review evidence when it is durably recorded on the PR and covers both; do not require duplicate reviewers mechanically.
 
@@ -65,7 +65,7 @@ Route fixes required by the authorized Issue back through its PR. Create a follo
 
 ### 5. Merge
 
-Merge only through the gates defined by `github-driven-workflow`. Do not invent replacement or additional merge gates in this outer loop.
+After the independent review covers both implementation quality and repository hygiene, merge only through the gates defined by `github-driven-workflow`. Use that review as the workflow's independent-review evidence when it qualifies; do not invent replacement or additional merge gates in this outer loop.
 
 ### 6. Discover
 
