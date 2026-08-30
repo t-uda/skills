@@ -135,9 +135,10 @@ If a supposedly stylistic difference can change identity or version interpretati
 Default to review mode. Report:
 
 1. **Summary** — counts by per-record status and any blocking condition.
-2. **Record findings** — for each non-`VERIFIED` record: citation key or location, status, severity, field, observed value, authoritative evidence, and concrete correction or unresolved requirement.
-3. **Duplicate/version findings** — duplicate keys, duplicate records, or version-family collisions; write `None` when absent.
-4. **Repair output** — corrected citation/BibTeX text when requested and evidence is sufficient. Never fill unresolved fields.
+2. **Record evidence** — for every record: citation key or location, status, and authoritative supporting source(s) sufficient to audit the verification decision.
+3. **Defect details** — for each non-`VERIFIED` record: severity, affected field, observed value, and concrete correction or unresolved requirement.
+4. **Duplicate/version findings** — duplicate keys, duplicate records, or version-family collisions; write `None` when absent.
+5. **Repair output** — corrected citation/BibTeX text when requested and evidence is sufficient. Never fill unresolved fields.
 
 In generation or fix mode, still surface `CONFLICTED` and `UNRESOLVED` records rather than hiding them behind polished output.
 
