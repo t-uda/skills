@@ -24,6 +24,7 @@ Current skills:
 - git-workspace-cleanup
 - external-skill-review
 - sot-integrity
+- bib-integrity
 - light-orchestration
 - deslop-history
 - deslop-prose

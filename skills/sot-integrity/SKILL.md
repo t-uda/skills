@@ -26,6 +26,7 @@ Do not use this skill for generic prose/style review, broad research unrelated t
 
 - `metaplan` checks whether a *plan* names its governing SoT artifact, that artifact's authority, and precedence against other artifacts — it does not re-derive the trust model here.
 - When `metaplan` finds that trust or conflict in a named SoT is material to execution readiness, `sot-integrity` runs on that artifact and returns one of the verdicts below.
+- When scholarly references are material, delegate bibliographic identity, metadata, version, and citation-representation checks to `bib-integrity`; consume unresolved or invalid records as Source grounding evidence, while retaining responsibility for whether each source actually supports the SoT claim.
 - `sot-integrity` does not judge execution readiness, task decomposition, or research worthiness (`metaplan`, `research-significance`).
 
 ## Inputs
@@ -185,6 +186,7 @@ Before finishing, verify: the verdict came from Decision order top-down (not ove
 This skill complements but does not replace:
 
 - `metaplan` — execution-readiness review of specs and plans; see Responsibility boundary above
+- `bib-integrity` — scholarly bibliographic-record verification; use its findings as Source grounding evidence while `sot-integrity` retains claim/source faithfulness and artifact-level verdicts
 - `growing-agents-md` — compact repository guidance maintenance
 - `handoff-prompt` — minimal transfer prompt generation
 
