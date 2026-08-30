@@ -27,14 +27,14 @@ Do not emit `sot-integrity` verdicts such as `TRUSTED`, `CONFLICTED`, or `BROKEN
 
 ## Inputs
 
-Gather or infer:
+Collect from the task, artifact, or user:
 
 - `artifact` — reference list, manuscript, bibliography database, or records to verify
 - `target_style` — journal/conference/publisher style or other citation rules, if supplied
 - `target_format` — prose references, BibTeX, BibLaTeX, CSL-oriented data, or another requested representation
 - `source_constraints` — supplied authoritative sources or repository constraints, if any
 
-If no target style is supplied, preserve a coherent existing style. Do not invent venue-specific formatting rules.
+Do not infer missing bibliographic metadata as input. If no target style is supplied, preserve a coherent existing style. Do not invent venue-specific formatting rules.
 
 ## Evidence rules
 
@@ -111,21 +111,19 @@ When generating a new record, omit optional metadata that cannot be verified rat
 
 ## Per-record status
 
-Assign exactly one status to each material record:
+Assign exactly one status to each material record, applying this order:
 
-- `VERIFIED` — unique work resolved; material metadata and requested representation are grounded
-- `REPAIRABLE` — unique work resolved; one or more material fields are wrong or incomplete and authoritative corrections are available
 - `CONFLICTED` — identifiers or authoritative records disagree materially about work identity or required metadata
 - `UNRESOLVED` — work identity or a required material field cannot be verified from available authoritative evidence
-
-Use the first applicable status in this order: `CONFLICTED` → `UNRESOLVED` → `REPAIRABLE` → `VERIFIED`.
+- `REPAIRABLE` — unique work resolved; material metadata is wrong/incomplete or the requested representation violates an applicable target-style rule, and authoritative correction is available
+- `VERIFIED` — unique work resolved; material metadata and requested representation are grounded
 
 A formatting-only difference that is permitted by the target style does not make a record `REPAIRABLE`.
 
 ## Severity
 
 - **BLOCKING** — wrong or unresolved work identity; identifier points to another work; wrong author identity/order; wrong version identity; fabricated material metadata; duplicate structured key that breaks bibliography resolution
-- **MINOR** — verified work with a correctable style or non-identity metadata defect that does not risk citing the wrong work
+- **MINOR** — correctable representation/style defect that violates the applicable target style but does not alter work identity, version identity, or material bibliographic metadata
 - **NOTE** — optional normalisation or a better-supported representation that does not correct an error
 
 If a supposedly stylistic difference can change identity or version interpretation, treat it as BLOCKING.
