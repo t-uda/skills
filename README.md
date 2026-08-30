@@ -32,6 +32,10 @@ Each skill must live at `skills/<skill-name>/SKILL.md`.
 
 - `sot-integrity`: audit a source-of-truth artifact for authority, evidentiary grounding, trust scope, and conflict with repository reality before implementation or orchestration relies on it
 
+### Bibliographic review
+
+- `bib-integrity`: verify and repair academic bibliographic records against authoritative sources — work identity, authorship, publication metadata, persistent identifiers, version status, and citation-style representation
+
 ### Artifact cleanup
 
 - `deslop-history`: clean final user-visible artifacts from accepted decisions or issue/PR discussion by removing historical residue and process framing
