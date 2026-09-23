@@ -46,3 +46,4 @@ Current skills:
 - exposition-flow
 - math-semantic-preservation
 - gcvx-vertex-teammates
+- owner-file-request
