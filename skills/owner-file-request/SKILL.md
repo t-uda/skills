@@ -20,7 +20,7 @@ Never offer the Git repository as the drop point, and commit received material o
 - Claude Code: call the connected `claude.ai Google Drive` MCP tool `search_files` (load it with `ToolSearch` if it is deferred).
 - Codex: call the connected apps MCP tool `mcp__codex_apps__google_drive_search`.
 
-If the tool is absent, the integration is not connected in this session; say so and fall back to step 3.
+If the tool is absent, the integration is not connected in this session; say so and use the owner's usual channel instead.
 
 ## Out of scope
 
