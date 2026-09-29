@@ -35,10 +35,11 @@ Agents that build repository-wide context — files, history, issue and PR discu
 - `intended_audience` — the expected background and purpose of the readers or listeners
 - `communication_goal` — what the audience should understand, decide, or be able to do
 - `allowed_prerequisites` — concepts that may safely be assumed without explanation
+- `negative_scope_constraints` — material that the artifact must not re-teach for this audience
 - `terminology_sot` — canonical terminology or glossary, when supplied (optional)
 - `length_or_time_budget` — page, slide, word, or speaking-time constraint (optional)
 
-Gather or infer missing inputs before restructuring; state the inferred audience model explicitly so the user can correct it. Repository ownership or familiarity is never evidence that the intended audience knows repository-local concepts.
+Gather or infer missing inputs before restructuring; state the inferred audience model explicitly, including positive prerequisites, negative scope constraints, communication goal, and length budget, so the user can correct it. Repository ownership or familiarity is never evidence that the intended audience knows repository-local concepts.
 
 ## Rule classification and severity
 
@@ -46,7 +47,7 @@ Each rule is tagged with a classification that sets a default severity: **invari
 
 ## Procedure
 
-1. **Model the audience.** From `intended_audience`, `communication_goal`, and `allowed_prerequisites`, state what may be assumed. Everything else requires introduction, explanation, or omission.
+1. **Model the audience.** From `intended_audience`, `communication_goal`, `allowed_prerequisites`, and `negative_scope_constraints`, state the positive prerequisites (what the reader knows) and negative scope constraints (what the artifact must not re-teach), together with the communication goal and any length budget. Everything else requires introduction, explanation, or omission.
 2. **Extract information units.** From the source material and target artifact, identify terms, concepts, notation, assumptions, constructions, claims, reasons or proofs, examples, caveats, limitations, and open questions.
 3. **Assign discourse roles.** Classify each load-bearing unit as a definition or explanation, claim, justification, example, consequence, limitation, or outlook. A fragment whose role cannot be determined must be rewritten or removed.
 4. **Build prerequisite edges.** Add an edge `A -> B` when understanding or evaluating `B` requires `A` — because `B` uses a term, notation, or assumption introduced by `A` (definitional), or because the reader must see why `B` follows from `A` (explanatory or derivational). Repository file order, commit order, and implementation order must not override this dependency order. An edge whose source unit is absent from the artifact marks an omitted prerequisite branch: add the missing unit or remove its dependents.
@@ -60,8 +61,14 @@ Each rule is tagged with a classification that sets a default severity: **invari
 **EF-1 — Audience boundary.** *(invariant)*
 Repository knowledge is source material, not audience knowledge. Internal names, architecture labels, issue shorthand, acronyms, and coined abstractions are unknown unless explicitly included in `allowed_prerequisites`. The artifact includes only the source detail needed for the communication goal; provenance, formalisation status, and repository metadata may remain in a sidecar source-of-truth artifact instead of the audience-facing artifact.
 
+**EF-7 — Audience model and abstract entry point.** *(convention)*
+The audience model must record both positive prerequisites (what the reader knows) and negative scope constraints (what the artifact must not re-teach), together with the communication goal and any length budget. For a specialist audience, do not spend load-bearing exposition on standard definitions in that field unless the document uses a nonstandard variant. Audit the abstract as a separate entry point: in at most 5 sentences, state the objects, main existence/result claims, and proof idea in that order, followed by the formalisation deliverable when the artifact reports a formalisation; do not defer the central setup, invoke an unexplained “original problem,” or (for a formalisation report) define the word `formalisation` there. Severity is BLOCKING when the abstract cannot identify the result or when over-explanation displaces a prerequisite needed for the result; MINOR for removable background exposition.
+
 **EF-2 — Define or explain before use.** *(invariant)*
 Every nonstandard term, symbol, abbreviation, relation, or local concept used in a load-bearing statement must be introduced beforehand. A glossary elsewhere in the repository is not sufficient unless the audience-facing artifact explicitly points to it and may reasonably require the audience to consult it. A term may be introduced informally before formal treatment when the text makes that provisional role clear.
+
+**EF-8 — Do not re-display an established definition without a recoverability reason.** *(convention)*
+After a symbol, function, or relation has a canonical definition, do not re-define it or re-display its defining formula merely to use it in a later section. Use the established name, a short property recap, or a cross-reference. Permit a recap only after a genuine context gap has made local recovery difficult, and mark it as a recall rather than a new definition. Severity is BLOCKING when the re-display suggests a changed meaning or creates competing definitions and MINOR when it is merely redundant. This check is distinct from EF-2’s define-before-use requirement and from `math-notation-consistency` NC-1’s canonical-definition existence check.
 
 **EF-3 — No unexplained coinages.** *(convention)*
 Prefer established terminology. Replace repository-local or improvised terms with ordinary descriptive language when possible. Permit a new local term only when it denotes a genuinely recurring concept, has a precise definition, and reduces rather than increases cognitive load. A terminology SoT controls canonical wording within its scope but does not by itself make a term known to the audience. Severity: MINOR; BLOCKING when the coined term carries a load-bearing statement the audience cannot interpret.
@@ -75,6 +82,9 @@ Definitions or explanatory introductions, claims, reasons or proofs, examples, c
 **EF-6 — Compression preserves dependency closure.** *(invariant)*
 When a page, word, or slide limit is tight, remove lower-priority branches of the dependency graph rather than deleting prerequisites while retaining dependent claims. A shorter artifact must remain closed under the prerequisites of every retained load-bearing statement.
 
+**EF-9 — Mark a salient dropped hypothesis.** *(convention)*
+When a section moves from a conditional result to a stronger result that drops a salient hypothesis, state that change explicitly and, when useful, indicate what new mechanism replaces the old assumption. Do not make the reader infer the logical strengthening solely by comparing theorem statements.
+
 ## Examples
 
 ```
@@ -87,12 +97,69 @@ Finding (BLOCKING): repository-local name used as audience knowledge. Introduce
 ```
 
 ```
+EF-7 (specialist audience and abstract entry point):
+The audience is graph theorists, for whom connectivity is standard, but the
+report spends load-bearing space defining graph connectivity and Mathlib. The
+abstract also combines the objects, several results, proof strategy, tool
+background, and the meaning of formalisation in one paragraph.
+Finding (MINOR): removable background exposition is displacing the result's
+     presentation. Record the positive prerequisite and the negative scope
+     constraint, then omit standard graph definitions unless a nonstandard
+     variant is used.
+Abstract check (BLOCKING): an abstract of at most 5 sentences must state the
+     objects, main existence/result claims, and proof idea in that order,
+     followed by the formalisation deliverable since this report is a
+     formalisation, with the central setup present and no unexplained
+     “original problem.”
+
+Before: “Mathlib is a mathematical library for Lean 4 and provides definitions
+and lemmas for finite sets, real numbers, graphs, and so on. In Lean, types
+represent kinds of mathematical objects …”
+After: “Using Lean 4 and Mathlib definitions and lemmas, we represent a
+`SimpleGraph V` equipped with `Fintype V` and a labelling as a bijection to
+`Fin (Fintype.card V)`.”
+```
+
+```
+EF-7 (regression pairs from a zero-finding round):
+Before: An abstract states a strict inequality (“the sum becomes smaller”)
+where the theorem it summarises proves only a non-strict bound.
+After: “The sum is at most the stated bound,” matching the theorem's actual
+quantifier and inequality strength.
+
+Before: A specialist report defines edge–vertex incidence and explains
+quotient types at length.
+After: It uses the established specialist terminology without remedial
+definitions.
+
+Before: “It follows.” followed by a display that stands as its own sentence.
+After: “It follows that” followed by the display.
+
+Before: Three paragraphs contain six occurrences of “this formalisation.”
+After: Use the established name, “the construction,” or “the Lean
+development” where the reference is needed, and omit the repetition otherwise.
+```
+
+```
 EF-2 (use before introduction):
 Slide 4 states the main result using the operator ⊞ and the parameter t_max;
 ⊞ is defined on slide 7 and t_max is never introduced.
 Finding (BLOCKING): load-bearing statement precedes its prerequisites. Move the
          definitions before the result, or state the result informally first and
          mark the formal version as forthcoming.
+```
+
+```
+EF-8 (redundant re-display of an established definition):
+Before: “In Theorem 1, set `I_n = {i ∈ ℕ₀ | i < n}`, and …”
+After: “Using `I_n` defined in Theorem 1, …”
+
+Before: “For the empty graph, the edge potential
+`Φ(f) = ∑_{\{x,y\} ∈ E} c(f(x))c(f(y))` is an empty sum.”
+After: “For the empty graph, the edge potential `Φ(f)` is an empty sum.”
+Finding (MINOR): the defining formula is redundantly re-displayed. Use the
+established name or a cross-reference; report BLOCKING if the re-display
+suggests a changed or competing definition.
 ```
 
 ```
@@ -169,12 +236,25 @@ Finding: none — the compressed artifact is closed under the prerequisites of i
          retained statements.
 ```
 
+```
+EF-9 (conditional result followed by a stronger result):
+Before: “The band-condition argument proves stability under the band
+condition. The next theorem applies to all R-trees and gives an explicit
+construction.”
+After: “Unlike the preceding argument, the explicit construction below does
+not require the band condition. It therefore proves stability for all
+R-trees.”
+Finding (MINOR): the stronger result drops a salient hypothesis without an
+explicit transition. State the dropped condition and, when useful, the new
+mechanism that replaces it.
+```
+
 ## Output
 
 Two modes; review mode is the default.
 
 **Review mode** — report dependency-order defects, undefined audience-facing concepts, ambiguous discourse roles, and proposed restructuring. Each finding lists:
-- Rule tag (EF-1 through EF-6), classification, and severity
+- Rule tag (EF-1 through EF-9), classification, and severity
 - Location (section, slide, or line)
 - Affected audience assumption (what the text wrongly assumes the reader knows)
 - Missing or misplaced prerequisite
@@ -191,6 +271,10 @@ Before finishing, verify:
 - No cyclic dependency was left silently unresolved (merged block or marked provisional introduction only)
 - Every retained load-bearing statement's prerequisite closure survives any compression applied
 - No finding demands a definition for a standard concept covered by `allowed_prerequisites`
+- The audience model records positive prerequisites, negative scope constraints, the communication goal, and any length budget; specialist standard definitions are not used as load-bearing exposition unless a nonstandard variant is in play
+- The abstract is audited as a separate entry point: it has at most 5 sentences; states the objects, main existence/result claims, and proof idea in that order, followed by the formalisation deliverable only when the artifact reports a formalisation; does not defer the central setup, invoke an unexplained “original problem,” or (for a formalisation report) define `formalisation`; and identifies the result without over-explanation displacing a needed prerequisite
+- Established symbols, functions, and relations are not re-defined or re-displayed merely for later use; any recap follows a genuine context gap and is marked as recall, with no competing meaning; this check is separate from EF-2 and `math-notation-consistency` NC-1
+- A transition from a conditional result to a stronger result states any salient dropped hypothesis and, when useful, the mechanism replacing it
 - Findings did not drift into prose polishing, factual verification, or correctness review owned by neighbouring skills
 - Rewrite mode changed order, framing, and introduction — not facts, qualifications, or evidence boundaries
 - The forward-read audit (Procedure 8) was performed from the audience's entry point, not from the source material's order

@@ -26,7 +26,7 @@ A Japanese mathematics paper, preprint, or lecture note (LaTeX with ltjsarticle,
 
 ## Do not use / Boundaries
 
-- Structural issues (theorem hierarchy, quantifier scope, proof/computation conflation, contribution-list inflation) — use `math-claim-integrity`.
+- Structural issues (theorem hierarchy, quantifier scope, proof/computation conflation, contribution-list inflation) — use `math-claim-integrity`. JP-20 covers only the language choice between a universal assertion and selecting an arbitrary object; use `math-claim-integrity` for actual quantifier-scope defects.
 - Symbol-table consistency, aliases, and definition locality — use `math-notation-consistency`. (JP-14's alias case cross-reports as NC-3.) JP-16 owns a conflict with a supplied terminology SoT; do not duplicate that conflict as NC-3.
 - Language-agnostic prose inflation (hype, unsupported claims, decorative structure) — use `deslop-prose`; it composes with this skill rather than overlapping it.
 - Removing process history from planning/notes documents — use `deslop-history`.
@@ -56,7 +56,7 @@ Precedence when a span matches more than one rule tag: report every matching tag
 ## Procedure
 
 1. If `terminology_sot` is supplied, identify its canonical terms, scopes, and permitted aliases. If `source_artifact` is supplied, identify each source term from its definition, formula, and use before assessing its Japanese rendering.
-2. Scan the artifact for each rule tag JP-1 through JP-17 (JP-10 is merged into JP-3), in the order listed under Rules.
+2. Scan the artifact for each rule tag JP-1 through JP-25 (JP-10 is merged into JP-3), in the order listed under Rules.
 3. For each match, determine class and severity per the mapping above, check stated exceptions before flagging, and record location, violation, and rewrite.
 4. When JP-16 or JP-17 applies, record the relevant SoT, source, or definition evidence. Do not create a duplicate finding in another skill for the same terminology event.
 5. Produce the structured finding report (see Output).
@@ -70,8 +70,17 @@ Precedence when a span matches more than one rule tag: report every matching tag
 **JP-2 (convention) — Present-tense invariance for mathematical facts.**
 Mathematical statements use present tense (〜する, 〜である, 〜が成り立つ, 〜が存在する). BLOCKING in theorem/proposition statements; MINOR elsewhere. Exceptions: historical attribution (「Euler は〜を示した」), referencing a step already completed earlier in the same proof.
 
+**JP-18 (convention) — Arabic numerals for countable quantities.**
+Use Arabic numerals for every countable quantity in Japanese mathematical prose, including compounds, arithmetic operations, ordinal section references, and powers: `2 頂点`, `1 を引く`, `2 倍`, `1/2`, `4 種類`, and `第 1 節`. Retain kanji only when it is part of a fixed word whose mathematical numeral is not being counted, such as `一意`, `一般`, and `唯一`. Severity is MINOR outside load-bearing statements and BLOCKING in theorem statements, abstracts, and result summaries when the mixed style obscures the quantity.
+
+**JP-19 (convention) — Remove redundant zero-based natural-number qualifications.**
+Applies only when the artifact already treats natural numbers as zero-based (uses or intends `$\mathbb N=\{0,1,2,\ldots\}$` and a zero-based index set such as `$I_n$`); it does not authorize changing a document's own convention (e.g. a document that fixes `$\mathbb N=\{1,2,\ldots\}$` or a one-based index set). Within that scope, define natural numbers once as `$\mathbb N=\{0,1,2,\ldots\}$`, define `$I_n=\{0,1,\ldots,n-1\}$` once, and thereafter write `ラベル付け` and `自然数` without restating `0 始まり`, `0 以上`, `非負整数`, or `$\mathbb N_0$ 値`. Do not redefine `$I_n$` in a later section. Severity is MINOR, escalating to BLOCKING when repeated qualifications make a theorem or abstract's representation ambiguous.
+
 **JP-3 (convention) — Proof-step voice discipline.**
 Sentences that construct or advance an argument use active forms (〜を示す, 〜とおく, 〜が従う). Passive (〜が示された/〜が示されている) is for citing a result proved outside this proof. BLOCKING when the passive misattributes a result actually proved in this proof as if merely cited; MINOR otherwise. The stative citation register 〜が示されている／〜が証明されている with an external citation is always legitimate — never flag it.
+
+**JP-24 (convention) — Keep とる, 構成する, and 得る semantically distinct.**
+Use `とる` when choosing an already existing element or minimizer, `構成する` when explicitly defining or producing an object from data, and `得る` only when stating a conclusion derived from preceding facts. Do not rewrite an element-selection step as construction or a construction as an unexplained obtained result. Severity is MINOR, escalating to BLOCKING when the operation's provenance is load-bearing.
 
 **JP-4 (heuristic) — Connective discipline.**
 すなわち restates the immediately preceding sentence and must not introduce a new deductive step; ゆえに/よって/したがって assert that the conclusion follows by logical necessity from what immediately precedes; つまり is informal restatement, appropriate in notes but not theorem proofs. Test: does the conclusion actually follow from the immediately preceding text? BLOCKING if not (a real logical gap); MINOR if the connective is merely used in the wrong register.
@@ -81,6 +90,9 @@ These require a same- or next-sentence justification or reference. Test: can a r
 
 **JP-6 (heuristic) — Redundant meta-discourse openers.**
 本節では〜, 以下では〜, なお〜, ここでは〜 at a paragraph opening are MINOR findings only when the section/subsection heading already signposts the same content, i.e. deleting the opener loses no information. Not a density quota — one purposeful orientation sentence per section is fine.
+
+**JP-25 (heuristic) — Restrict この to an immediately recoverable noun phrase.**
+Use `この` only when its referent is the immediately preceding noun phrase and no competing referent is live. Otherwise name the object (`重み付き近傍和`, `形式化`, `SimpleGraph V 型`, or `隣接関係`), use a precise cross-reference, or delete the pronoun. Severity is MINOR, escalating to BLOCKING when a theorem, proof step, or abstract contains an ambiguous reference.
 
 **JP-7 (advisory style) — Particle が/は in theorem subjects.**
 は marks an established topic; が marks new information or the logical subject of an existential claim (「X は存在する」 wrongly presupposes X; 「X が存在する」 correctly asserts existence). Always ADVISORY — choice is context-dependent and may be deliberate.
@@ -92,6 +104,12 @@ Anti-pattern: collapsing logical implication, case selection, parameter regimes,
 - *Expository prose*: regime/comparison uses (`有限次元の場合`, `正則性を仮定しないとき`, `従来法を用いる場合`) remain valid unless the sentence is actually stating a theorem-like implication and obscures its antecedent/consequent.
 
 Severity: BLOCKING when a theorem/proposition/lemma statement hides its antecedent this way, or a proof restates an available implication with full syllogistic redundancy across consecutive steps; MINOR for an isolated indirect phrasing in a proof; no finding for genuine case/regime/comparison uses in any context.
+
+**JP-20 (convention) — Distinguish universal statements from arbitrary-element selection.**
+In theorem, proposition, corollary, and definition statements, render universal quantification as `全ての` (or an equivalent explicit quantifier). In a proof, use `任意に ... をとる` only when selecting an arbitrary element or tuple for the current argument; do not use `任意の` as a general substitute for `全ての`. Do not flag `任意に` when it explicitly introduces the arbitrary object being fixed or chosen. Severity is BLOCKING in a load-bearing statement whose quantifier role is obscured and MINOR otherwise.
+
+**JP-21 (convention) — Announce case splits and contradiction arguments before opening branches.**
+Before the first branch of a proof by cases, state the partition criterion (for example, `$v$ と $w$ が隣接するか否かで場合を分ける`). Label each branch with the corresponding condition. Before a proof by contradiction, state that contradiction is being assumed or that the argument proceeds by contradiction. After all branches or the contradiction discharge, state the common conclusion with `以上より` (or an equally explicit closing sentence). Do not flag a genuine case label that is itself the announced branch. Severity is BLOCKING when the proof structure is difficult to reconstruct and MINOR for a merely unclosed local split.
 
 **JP-9 (convention) — Double-negation ban.**
 〜でないとは言えない, 〜でないわけではない, 〜ないこともない read as hedged though logically equivalent to "possibly 〜". BLOCKING in theorem/proposition statements (replace with a direct affirmative or a precisely quantified partial statement); MINOR elsewhere.
@@ -118,6 +136,12 @@ The test: would the word, with the same meaning and undefined, appear in a publi
 
 Narrow exceptions apply only when the term is established in the relevant field with that exact technical meaning, or is explicitly defined as a local technical term — e.g. 模型 in model theory, 検出 where detection is an established technical operation, 層別 in a recognised statistical procedure, or established terms sharing surface form with everyday/physics words (核, 流, スペクトル, 作用素, エネルギー法, 安定性). Never infer an exception from English usage or naturalness alone. BLOCKING in theorem statements, proofs, abstracts, and contribution summaries; MINOR elsewhere.
 
+**JP-22 (convention) — Name a standard order or enumeration, not a vague 順位.**
+Do not use `順位` for an auxiliary ordering of mathematical objects. State the standard object or construction, such as `集合 $V$ に全順序を 1 つ固定する` or `$V=\{v_0,\ldots,v_{n-1}\}$`. Severity is BLOCKING when the order is part of a construction or theorem hypothesis and MINOR elsewhere.
+
+**JP-23 (convention) — Prefer the standard empty-sum phrase to 規約.**
+When a displayed or invoked convention is the standard empty-sum value, state the mathematical fact directly as `空和は $0$ である` or `空和は $0$ だから`; do not call it `規約` unless the document is deliberately discussing an alternative convention. Severity is MINOR.
+
 **JP-14 (convention) — No full-width semicolons; no untranslated English for defined Japanese terms.**
 No「；」in Japanese prose (use 読点・句点, or split the sentence). A term the document defines in Japanese must not also appear in its English form (e.g. a defined 平衡条件 later written as balanced/unbalanced) — this is an undeclared alias; also report it as NC-3 to `math-notation-consistency`. Bare English adjectives (genuine, strict, …) qualifying Japanese nouns must be unpacked in Japanese. Terms the document itself introduces because no established Japanese translation exists (generic, well-posed) are exempt. MINOR for a semicolon; BLOCKING for an English alias of a defined term in a theorem statement or results summary.
 
@@ -133,6 +157,63 @@ Identify a source term from its definition, formula, and use before translating 
 ## Examples
 
 Decisive, non-obvious branches only — see Rules above for the full statement of each rule.
+
+```
+JP-18, Arabic numerals for countable quantities:
+Before: 同じ次数の二頂点については，ラベルの大きい頂点のこの和がラベルの小さい頂点のこの和以下となる．
+After:  同じ次数の 2 頂点については，ラベルの大きい頂点の重み付き近傍和がラベルの小さい頂点の重み付き近傍和以下となる．
+```
+
+```
+JP-19, one definition for zero-based natural-number notation:
+Before: $\mathbb N_0=\{0,1,2,\ldots\}$ とおき，ラベルの集合を $I_n=\{i\in\mathbb N_0\mid i<n\}$ とする．
+After:  自然数を $\mathbb N=\{0,1,2,\ldots\}$ とし，ラベルの集合を $I_n=\{0,1,\ldots,n-1\}$ とする．
+```
+
+```
+JP-20, universal statement versus arbitrary-element selection:
+Before: 任意の狭義単調増加な実数値関数 $c:I_n\to\mathbb R$ に対し，…
+After:  全ての狭義単調増加な実数値関数 $c:I_n\to\mathbb R$ について，…
+
+Before: …を満たす任意の $v,w\in V$ を固定する．
+After:  …を満たす $v,w\in V$ を任意にとる．
+```
+
+```
+JP-21, announced case split and explicit closure:
+Before: $v$ と $w$ が隣接する場合には…．$v$ と $w$ が隣接しない場合には…．二つの場合が同次数近傍和条件を示し，定理1が成り立つ．
+After:  $v$ と $w$ が隣接するか否かで場合を分ける．
+        【隣接する場合】 …．
+        【隣接しない場合】 …．
+        以上より同次数近傍和条件が成り立ち，定理1の証明を終える．
+```
+
+```
+JP-22, standard order instead of vague ranking:
+Before: まず頂点集合 $V$ の各頂点に相異なる順位を一つずつあらかじめ付ける．
+After:  $V$ に全順序を 1 つ固定する．
+```
+
+```
+JP-23, standard empty-sum fact:
+Before: 空集合上の和を $0$ とする第1節の空和の規約により，…
+After:  空和は $0$ だから，…
+```
+
+```
+JP-24, distinct proof operations:
+Before: その順に $0,1,\ldots,n-1$ を割り当て，次数条件を満たす全単射を得る．
+After:  その順に $0,1,\ldots,n-1$ を割り当て，次数条件を満たすラベル付けを構成する．
+
+Before: $v,w$ のラベルを交換し，交換後のラベル付けを $f'$ とおく．
+After:  $v,w$ のラベルを交換してラベル付け $f'$ を構成する．
+```
+
+```
+JP-25, immediately recoverable referent for この:
+Before: ラベルの大きい頂点のこの和がラベルの小さい頂点のこの和以下となる．
+After:  ラベルの大きい頂点の重み付き近傍和がラベルの小さい頂点の重み付き近傍和以下となる．
+```
 
 ```
 JP-3, legitimate citation passive — do not flag:
@@ -222,7 +303,7 @@ for compatibility.
 ## Output
 
 Default: review-only. Produce a structured finding report listing:
-- Rule tag (JP-1 through JP-17, skipping JP-10 which is merged into JP-3) and class
+- Rule tag (JP-1 through JP-25, skipping JP-10 which is merged into JP-3) and class
 - Severity: BLOCKING / MINOR / ADVISORY, per the classification mapping above
 - Location: environment label (e.g. `\begin{theorem}[thm:main]`), proof section, or paragraph identifier
 - One-sentence description of the violation
@@ -238,9 +319,17 @@ Before finishing, verify:
 - JP-1 findings mark only proved claims, not open problems in remark/conjecture environments
 - JP-3 findings never flag the legitimate citation passive
 - JP-8 findings distinguish theorem/proof/exposition and pass the deciding test (case-label vs. silent antecedent) before flagging; genuine case/regime/comparison uses are never flagged in any context
+- JP-18 findings use Arabic numerals for countable quantities, retain kanji only for fixed lexical items, and escalate mixed style only at the stated load-bearing locations
+- JP-19 findings verify that natural numbers and `$I_n$` are defined once, with no repeated zero-based qualifications or later `$I_n$` redefinition
+- JP-20 findings distinguish universal assertions from proof-time arbitrary-element selection, do not flag explicit `任意に` selections, and do not replace actual quantifier-scope review by `math-claim-integrity`
+- JP-21 findings verify that case partitions and contradiction arguments are announced before their branches or discharge, that branches are labelled, and that the common conclusion is explicitly closed
 - JP-13 findings respect the narrow established-term exceptions and the 統計量 genuine-statistic exception, and are never based on English naturalness alone
+- JP-22 findings name a standard order or enumeration instead of `順位`, with BLOCKING only when the order is constructional or a theorem hypothesis
+- JP-23 findings state the standard empty-sum fact directly and permit `規約` only for a deliberately discussed alternative convention
+- JP-24 findings distinguish selection, construction, and derived conclusion, escalating only when provenance is load-bearing
+- JP-25 findings apply the immediately preceding noun-phrase test and require a precise replacement only when `この` has a competing or unrecoverable referent
 - JP-15 findings exempt the differential-form sense, closed-form-as-subject documents, and cited titles
 - JP-16 findings compare only against a supplied SoT, honor its permitted aliases and scope, and defer a SoT-to-definition conflict to one JP-17 finding
 - JP-17 findings identify the concept from a definition, formula, or source use before assessing its name; this includes a SoT-to-definition conflict when no `source_artifact` is supplied, preserves established technical terms, and never duplicates the same event in `math-notation-consistency` or `math-claim-integrity`
 - Severities follow the classification mapping (§ Rule classification and severity), with deterministic precedence when multiple tags match one span
-- No finding belongs to `math-claim-integrity` territory (quantifier scope, theorem hierarchy, proof/computation distinction). JP-14's English-alias case stays a finding of this skill (with its additional NC-3 cross-report to `math-notation-consistency`) — do not suppress it as out-of-territory
+- No finding belongs to `math-claim-integrity` territory (quantifier scope, theorem hierarchy, proof/computation distinction). JP-20 assesses only the wording of quantifier and proof roles; actual quantifier-scope defects remain with `math-claim-integrity`. JP-14's English-alias case stays a finding of this skill (with its additional NC-3 cross-report to `math-notation-consistency`) — do not suppress it as out-of-territory

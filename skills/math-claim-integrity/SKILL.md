@@ -55,7 +55,7 @@ Gather or infer these before starting:
 
 1. Read the abstract and introduction. List all informal theorem descriptions and every contribution-list item.
 2. Locate every theorem-level environment (theorem, proposition, lemma, corollary) in the body.
-3. Apply rules R-A through R-M in sequence; record findings.
+3. Apply rules R-A through R-N in sequence; record findings.
 4. Produce a structured finding report.
 
 ## Rules
@@ -100,6 +100,42 @@ Every relation symbol (≺, ⊏, ⋖, an arrow used as an ordering, or any ad ho
 
 **R-M — Contribution-list mapping discipline.** *(convention; primary requirement)*
 Every item in a §1 contribution list must map to: (a) the formal result it corresponds to; (b) the incumbent or prior baseline; (c) the concrete new gain over that baseline; (d) why the item is independently significant rather than merely supporting another listed item; (e) whether it duplicates another listed item at a different level of granularity. Unless independent significance is established, the following must not appear as parallel main contributions: infrastructure lemmas, routine corollaries, direct computational observations, worked examples, known-result reformulations, or several proof components of one result counted separately. Repair: move such material into a proof, remark, example, or auxiliary proposition, or omit it from the list. Escalates to BLOCKING when the abstract or introduction materially misrepresents the paper's main scholarly contribution, even though every individual statement is mathematically true. R-F and R-M often co-fire on the same underlying inflation — R-F concerns the theorem-environment label in the body, R-M concerns whether the §1 list conflates that result with genuine main contributions; report both tags rather than treating them as duplicates.
+
+**R-N — Exact contextual claim before counterexample.** *(invariant)*
+Before reporting a counterexample, the reviewer must write down the exact proposition being challenged with all hypotheses available at that location. A valid counterexample must satisfy those hypotheses and falsify that exact proposition.
+
+Do not:
+- replace a statement about a specifically constructed object by a universal statement about all objects of the same broad type;
+- discard local invariants, minimality/maximality assumptions, endpoint conditions, representation constraints, or properties established immediately before the claim;
+- infer an unstated stronger lemma merely because it would be one possible route to the written conclusion;
+- report failure of that stronger lemma as failure of the manuscript's actual argument.
+
+If a stronger inferred proposition is false but the exact contextual claim is not refuted, this is **not** a mathematical-error finding.
+
+For any suspicious proof step, classify the result as one of:
+1. **Refuted claim** — an example satisfies the actual local hypotheses and falsifies the exact claim.
+2. **Justification gap** — the exact claim may be true, but the written text does not supply enough argument to verify it from the stated hypotheses.
+3. **Irrelevant stronger generalisation is false** — a stronger proposition invented by the reviewer fails, while the actual local claim remains untouched. This is not a finding against the manuscript.
+
+A reviewer must not collapse (2) or (3) into (1).
+
+Before escalating a local proof step, inspect enough preceding context to recover:
+- how the object under discussion was constructed;
+- which properties of that construction were already established;
+- which assumptions remain live at that point;
+- whether the claim is about that particular object, a named class of objects, or all objects of some type.
+
+This is particularly important when prose uses demonstratives such as `this path`, `the resulting map`, `the above factorisation`, or `the chosen chain`: their semantics include the construction history.
+
+A counterexample finding should explicitly contain:
+- **Claim as used:** the exact local proposition;
+- **Live hypotheses:** all assumptions relevant at that point;
+- **Example:** a configuration satisfying those hypotheses;
+- **Failure:** the precise conclusion that fails.
+
+If the reviewer cannot fill all four fields because no attempted counterexample refutes the exact claim — the claim appears to hold under the live hypotheses — report no finding, not a justification gap. Report a possible justification gap only when a field cannot be filled because the written text does not supply enough argument to verify the claim from its stated hypotheses.
+
+As an **invariant** review rule, a counterexample that misses a live hypothesis or attacks only a stronger unstated proposition is itself an invalid finding and must not be used to block a manuscript change. A genuine justification gap can still be BLOCKING when the step is load-bearing, but its diagnosis must remain `gap`, not `false claim`, until the exact contextual statement is disproved.
 
 ## Examples
 
@@ -189,10 +225,20 @@ R-L — Before: The invariants are ordered I₁ ≺ I₂ ≺ I₃. (≺ never de
               which the former agrees while the latter differs (Thm. 6.5).
 ```
 
+```
+R-N — Context: A proof constructs a particular path with a separation property
+      and then asserts that the resulting loop is nontrivial.
+      Invalid finding: Replace this by the stronger claim "every simple closed
+      path is nontrivial," refute that stronger statement, and conclude that the
+      original proof fails.
+      Required review: Test whether the constructed path with the separation
+      property has the asserted nontriviality.
+```
+
 ## Output
 
 Default: review-only. Produce a structured finding report listing:
-- Rule tag (R-A through R-M)
+- Rule tag (R-A through R-N)
 - Classification (invariant / convention / heuristic — see Rules) and Severity: BLOCKING / MINOR / ADVISORY / NOTE, following the default-severity mapping above unless the rule states otherwise
 - Location: section heading, theorem label, or equation reference
 - One-sentence description of the violation
@@ -210,6 +256,11 @@ Before finishing, verify:
 - R-F and R-M findings identify the actual scholarly gain and hierarchy the paper misrepresents, not merely the environment label used
 - R-M findings are not raised merely because a contribution list is long; they require an item that fails the (a)-(e) mapping or duplicates another item's granularity
 - A paper is not penalized under R-F/R-M for stating true results — the finding is about hierarchy and presentation, not mathematical correctness
+- R-N findings write down the exact local claim and all live hypotheses before reporting a counterexample; the example satisfies those hypotheses and falsifies that claim
+- R-N reviews reconstruct the preceding construction, established properties, and assumptions still live at the proof step, including the referent of demonstratives such as `this path` or `the resulting map`
+- R-N findings distinguish Refuted claim, Justification gap, and Irrelevant stronger generalisation is false; they do not collapse a justification gap or a false stronger proposition into a refuted claim
+- R-N counterexample findings contain Claim as used, Live hypotheses, Example, and Failure; when a field cannot be supplied because no attempted example refutes the exact claim, the review reports no finding; when it cannot be supplied because the text lacks enough argument to verify the claim, the review reports a possible justification gap instead
+- A genuine R-N justification gap may be BLOCKING when load-bearing, but its diagnosis remains `gap`, not `false claim`, until the exact contextual claim is disproved
 
 ## Relationship to Other Skills
 

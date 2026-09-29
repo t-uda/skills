@@ -47,7 +47,7 @@ Ask only when rewriting could blur a technical term, scope boundary, or required
 ## Procedure
 
 1. Identify the intended reader, artifact type, and evidence scope.
-2. Mark sentences where style is carrying more weight than content.
+2. Mark sentences where style is carrying more weight than content. Audit paragraph boundaries for adjacent one-sentence or formula-linked paragraphs that perform the same discourse role.
 3. Tighten claims so their strength matches the stated support.
 4. Remove decorative structure, generic metadiscourse, and pseudo-technical inflation.
 5. Rewrite with stable terminology and direct claims.
@@ -58,6 +58,7 @@ Ask only when rewriting could blur a technical term, scope boundary, or required
 - `hype-inflation` — unsupported importance claims such as "transformative" or "pivotal"
 - `enumeration-inflation` — decorative lists that imply coverage without support
 - `generic-metadiscourse` — scaffolding like "It is important to note that"
+- `paragraph-fragmentation` — flag adjacent one-sentence or formula-linked paragraphs that perform the same discourse role and whose separation adds no prerequisite, claim-status, or topic boundary. Merge them into a coherent paragraph, while preserving separate paragraphs for theorem environments, figures, explicit case branches, changes of discourse role, or a deliberate readability break. Severity is MINOR unless fragmentation obscures the dependency or epistemic status of the argument. Classification: MINOR (proposed heuristic; MINOR by default).
 - `framework-inflation` — grand labels such as "broader landscape" or "holistic framework" without a concrete framework
 - `methodological-theatre` — vague rigor language where a concrete method should be named
 - `vague-significance` — "valuable insights" or "important implications" without the concrete insight or implication
@@ -102,6 +103,13 @@ Owned by a neighbouring skill, not this one: We prove three new theorems, but on
 This is a theorem-hierarchy defect (independent results conflated with proof infrastructure), not prose inflation — use `math-claim-integrity` (rule R-F), not `deslop-prose`.
 ```
 
+```text
+Before: [three consecutive one-sentence paragraphs describing the construction,
+         the swap identity, and the edge-case scope]
+After:  [one paragraph for the proof-plan explanation, with a new paragraph only
+         where the discourse role changes to a separate scope limitation]
+```
+
 ## Output
 
 If the user asks to edit a file, apply the rewrite directly. If the user asks for cleanup text only, return the revised prose without an audit log.
@@ -128,6 +136,8 @@ Before finishing, verify:
 - the prose sounds more direct, not more impressive
 - `deslop-history` would not be the more appropriate skill
 - no quantifier, hypothesis, or theorem-hierarchy content changed in the course of tightening a sentence
+- adjacent one-sentence or formula-linked paragraphs with the same discourse role were merged when their separation adds no prerequisite, claim-status, or topic boundary; preserve separate paragraphs for theorem environments, figures, explicit case branches, changes of discourse role, or a deliberate readability break
+- paragraph fragmentation is treated as MINOR by default unless it obscures the dependency or epistemic status of the argument
 
 ## Relationship to Other Skills
 

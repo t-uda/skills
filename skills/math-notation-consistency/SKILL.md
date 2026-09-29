@@ -34,7 +34,7 @@ required runtime context and not shipped with installed copies).
 
 ## Do not use
 
-- For evaluating whether a notation choice is mathematically optimal or conventional — this skill checks internal consistency, not external convention
+- For evaluating whether a notation choice is mathematically optimal or conventional outside the bounded conventions in NC-8 and NC-9 — this skill checks internal consistency, not external convention
 - For quantifier scope errors, theorem hierarchy, or proof/computation distinction — use `math-claim-integrity`
 - For Japanese-language anti-patterns — use `wabun-math-style`
 - For prose inflation — use `deslop-prose`
@@ -52,7 +52,7 @@ required runtime context and not shipped with installed copies).
 2. Extract all first-use-in-prose definitions (e.g., "let X denote …", 「\(f\) を〜とおく」); note section and location.
 3. For each macro in the definition table, check whether it appears in the document body; flag unused macros (NC-2).
 4. For each nonstandard or document-specific symbol used in a load-bearing claim (a theorem/proposition/lemma/corollary statement, a proof step it depends on, or a claim in the abstract or conclusion), locate its canonical definition. Flag a missing definition, or two or more definition sites that assign incompatible content (NC-1, BLOCKING). A second passage that only restates the same canonical meaning is not a finding.
-5. Scan for multiple names applied to the same object (NC-3); compare against `known_aliases` if provided.
+5. Scan for multiple names applied to the same object (NC-3); compare against `known_aliases` if provided. Distinguish an unnecessary one-use name from a genuine alias or definition (NC-8), and scan for parallel notations that should expose varying parameters or index sets (NC-9).
 6. Scan for the same symbol applied to different objects within a live scope, asking whether a reader could plausibly assign two incompatible meanings at the point of use (NC-4).
 7. For each symbol reused after a gap, check whether its canonical definition is still readily recoverable from local context; if not, flag for back-reference (NC-5).
 8. Scan `\ref`, `\eqref`, `\autoref` for labels that do not match any defined `\label` in the document (NC-6).
@@ -83,6 +83,12 @@ Every `\ref{label}`, `\eqref{label}`, `\autoref{label}` must resolve to a `\labe
 
 **NC-7 — Consistent subscript/superscript conventions.** *(convention)*
 For a family of related objects, subscript and superscript placement must be consistent. Example: if eigenvalues are written λ_r in most places but λ^r in one section, flag the inconsistency. Similarly, ν_- and ν⁻ (minus as subscript vs. superscript) for the same object must be unified.
+
+**NC-8 — No unnecessary one-use names.** *(convention)*
+Do not introduce a name for a quantity when its inline expression is short, unambiguous, and used only once or a small number of times. Prefer the inline expression in the definition, theorem, proof, table, caption, and figure. Permit one abbreviation only when the expression is materially unwieldy or is used in more than 3 displays; define it once and use it consistently. Introduce a local abbreviation only when its reuse or conceptual role repays the lookup cost. Shortness of the expanded expression is evidence against an alias, but not decisive when the abbreviation becomes a genuine structural parameter of the argument. A useful review question is: *if the reader forgets the abbreviation two sentences later, does the proof become harder to follow than if the expression had been written directly?* If yes, the alias is probably harmful. Severity is MINOR by default and BLOCKING when an unnecessary name creates a credible ambiguity in a load-bearing claim.
+
+**NC-9 — No parallel parameter/index notations.** *(convention)*
+For one mathematical operation or family, use one notation whose parameters expose the varying domain or index set. Do not create parallel names that differ only because one argument or summation range changed (`S_v^{(c)}(f)` versus `A_v`); write the parameterized inline expression or declare one uniform operator. If `c` is a function, write application as `c(i)` throughout and do not introduce `c_i` as a parallel function notation. Severity is BLOCKING when the parallel forms can be mistaken for distinct quantities and MINOR otherwise. This rule complements NC-3 without treating the issue as an undeclared-alias-only problem: NC-3 owns names for the same concept; NC-9 owns notation economy and parameter exposure.
 
 ## Examples
 
@@ -189,16 +195,59 @@ Section 2: ν_- (subscript minus)   Section 5: ν⁻ (same quantity, superscript
 Finding: Inconsistent placement. Unify to the form matching the preamble macro.
 ```
 
+```
+NC-8 (short, one-use quantity — flag):
+Before: `$a=c_{f(v)}$`, `$b=c_{f(w)}$`, and
+        `$A_v=\sum_{u\in N(v)\setminus\{w\}}c_{f(u)}$`.
+After:  `$c(f(w))<c(f(v))$` and
+        `$\sum_{u\in N(v)\setminus\{w\}}c(f(u))\leq
+        \sum_{u\in N(w)\setminus\{v\}}c(f(u))$`.
+Finding (MINOR): short, one-use names add lookup cost without a material gain in
+         readability. Inline the expressions unless an abbreviation is materially
+         unwieldy, reused in more than 3 displays, or has a genuine structural role.
+```
+
+```
+NC-8 (useful local abbreviation — must not flag):
+Bad:  `P := U_\eps S` inside a lemma whose statement and proof are clearer when
+      they simply say `U_\eps S`. `P` has no independent conceptual role and merely
+      forces the reader to remember an alias.
+Good: in Proposition 61, `a := f(x)+t` and `b := f(y)+s` are repeatedly reused as
+      the two endpoint heights, control sublevel/superlevel sets, and organize the
+      later case analysis.
+Finding: flag `P` as an unnecessary alias; do not flag `a` and `b`, whose reuse and
+         conceptual role repay the lookup cost.
+```
+
+```
+NC-9 (parallel notation — flag):
+Before: `$S_v^{(c)}(f)=\sum_{u\in N(v)}c_{f(u)}$`,
+        `$A_v=\sum_{u\in N(v)\setminus\{w\}}c_{f(u)}$`.
+After:  `$\sum_{u\in N(v)}c(f(u))$` and
+        `$\sum_{u\in N(v)\setminus\{w\}}c(f(u))$`.
+Finding (BLOCKING): parallel names hide that these are the same operation with a
+         changed summation range and can make the quantities appear distinct. Expose
+         the range inline or declare one uniform operator.
+```
+
+```
+NC-9 (parallel function notation — flag):
+Before: `$c:I_n\to\mathbb R$` is defined, but later costs are written as `$c_i$`.
+After:  define `$c:I_n\to\mathbb R$` and write `$c(i)$` throughout.
+Finding (MINOR): `$c_i$` is a parallel function notation; use `$c(i)$` consistently
+         when `$c$` is the function.
+```
+
 ## Output
 
 Default: review-only. Produce a finding report listing:
-- Rule tag (NC-1 through NC-7)
+- Rule tag (NC-1 through NC-9)
 - Classification (invariant / convention / heuristic — see Rules) and Severity: BLOCKING / MINOR / ADVISORY, following the default-severity mapping above unless the rule states otherwise
 - Location: line number, section heading, or macro name
 - One-sentence description
 - Concrete fix suggestion
 
-When the user asks to apply fixes: edit the LaTeX source in-place for NC-6 (dangling refs) and NC-7 (subscript unification) only — these are purely mechanical. For NC-1/NC-3/NC-4, produce a fix suggestion but do not edit without author confirmation, since renaming a symbol requires global replace.
+When the user asks to apply fixes: edit the LaTeX source in-place for NC-6 (dangling refs) and NC-7 (subscript unification) only — these are purely mechanical. For NC-1/NC-3/NC-4/NC-8/NC-9, produce a fix suggestion but do not edit without author confirmation, since renaming or removing notation requires author judgement and may require global replace.
 
 ## Quality Check
 
@@ -209,6 +258,8 @@ Before finishing, verify:
 - NC-1 findings do not merely count definition-phrase occurrences: a second passage restating the same canonical meaning is not a finding, only a genuinely incompatible second meaning is
 - NC-4 findings turn on whether a competing meaning is actually live at the point of reuse, not on whether the same character was ever reused anywhere in the document
 - NC-5 findings turn on local recoverability, not on a fixed section-count gap
+- NC-8 findings distinguish an unnecessary short, one-use name from a genuine local abbreviation whose reuse or conceptual role repays the lookup cost; shortness alone is not decisive when the abbreviation is a structural parameter, and severity is MINOR by default and BLOCKING only for credible load-bearing ambiguity
+- NC-9 findings check that varying domains or index sets are exposed by the notation, and distinguish notation economy and parameter exposure from NC-3's undeclared-alias findings
 
 ## Relationship to Other Skills
 
