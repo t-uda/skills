@@ -62,7 +62,7 @@ Each rule is tagged with a classification that sets a default severity: **invari
 Repository knowledge is source material, not audience knowledge. Internal names, architecture labels, issue shorthand, acronyms, and coined abstractions are unknown unless explicitly included in `allowed_prerequisites`. The artifact includes only the source detail needed for the communication goal; provenance, formalisation status, and repository metadata may remain in a sidecar source-of-truth artifact instead of the audience-facing artifact.
 
 **EF-7 — Audience model and abstract entry point.** *(convention)*
-The audience model must record both positive prerequisites (what the reader knows) and negative scope constraints (what the artifact must not re-teach), together with the communication goal and any length budget. For a specialist audience, do not spend load-bearing exposition on standard definitions in that field unless the document uses a nonstandard variant. Audit the abstract as a separate entry point: in at most 5 sentences, state the objects, main existence/result claims, proof idea, and formalisation deliverable in that order; do not defer the central setup, invoke an unexplained “original problem,” or define the word `formalisation` there. Severity is BLOCKING when the abstract cannot identify the result or when over-explanation displaces a prerequisite needed for the result; MINOR for removable background exposition.
+The audience model must record both positive prerequisites (what the reader knows) and negative scope constraints (what the artifact must not re-teach), together with the communication goal and any length budget. For a specialist audience, do not spend load-bearing exposition on standard definitions in that field unless the document uses a nonstandard variant. Audit the abstract as a separate entry point: in at most 5 sentences, state the objects, main existence/result claims, and proof idea in that order, followed by the formalisation deliverable when the artifact reports a formalisation; do not defer the central setup, invoke an unexplained “original problem,” or (for a formalisation report) define the word `formalisation` there. Severity is BLOCKING when the abstract cannot identify the result or when over-explanation displaces a prerequisite needed for the result; MINOR for removable background exposition.
 
 **EF-2 — Define or explain before use.** *(invariant)*
 Every nonstandard term, symbol, abbreviation, relation, or local concept used in a load-bearing statement must be introduced beforehand. A glossary elsewhere in the repository is not sufficient unless the audience-facing artifact explicitly points to it and may reasonably require the audience to consult it. A term may be introduced informally before formal treatment when the text makes that provisional role clear.
@@ -107,9 +107,10 @@ Finding (MINOR): removable background exposition is displacing the result's
      constraint, then omit standard graph definitions unless a nonstandard
      variant is used.
 Abstract check (BLOCKING): an abstract of at most 5 sentences must state the
-     objects, main existence/result claims, proof idea, and formalisation
-     deliverable in that order, with the central setup present and no
-     unexplained “original problem.”
+     objects, main existence/result claims, and proof idea in that order,
+     followed by the formalisation deliverable since this report is a
+     formalisation, with the central setup present and no unexplained
+     “original problem.”
 
 Before: “Mathlib is a mathematical library for Lean 4 and provides definitions
 and lemmas for finite sets, real numbers, graphs, and so on. In Lean, types
@@ -121,11 +122,10 @@ After: “Using Lean 4 and Mathlib definitions and lemmas, we represent a
 
 ```
 EF-7 (regression pairs from a zero-finding round):
-Before: “The sum becomes smaller.”
-After: “The sum is at most the stated bound.”
-
-Before: “Since `f(w) < f(v)`, it follows that `v ≠ w`.”
-After: “Since `f` is injective and `f(w) < f(v)`, we have `v ≠ w`.”
+Before: An abstract states a strict inequality (“the sum becomes smaller”)
+where the theorem it summarises proves only a non-strict bound.
+After: “The sum is at most the stated bound,” matching the theorem's actual
+quantifier and inequality strength.
 
 Before: A specialist report defines edge–vertex incidence and explains
 quotient types at length.
@@ -272,7 +272,7 @@ Before finishing, verify:
 - Every retained load-bearing statement's prerequisite closure survives any compression applied
 - No finding demands a definition for a standard concept covered by `allowed_prerequisites`
 - The audience model records positive prerequisites, negative scope constraints, the communication goal, and any length budget; specialist standard definitions are not used as load-bearing exposition unless a nonstandard variant is in play
-- The abstract is audited as a separate entry point: it has at most 5 sentences; states the objects, main existence/result claims, proof idea, and formalisation deliverable in that order; does not defer the central setup, invoke an unexplained “original problem,” or define `formalisation`; and identifies the result without over-explanation displacing a needed prerequisite
+- The abstract is audited as a separate entry point: it has at most 5 sentences; states the objects, main existence/result claims, and proof idea in that order, followed by the formalisation deliverable only when the artifact reports a formalisation; does not defer the central setup, invoke an unexplained “original problem,” or (for a formalisation report) define `formalisation`; and identifies the result without over-explanation displacing a needed prerequisite
 - Established symbols, functions, and relations are not re-defined or re-displayed merely for later use; any recap follows a genuine context gap and is marked as recall, with no competing meaning; this check is separate from EF-2 and `math-notation-consistency` NC-1
 - A transition from a conditional result to a stronger result states any salient dropped hypothesis and, when useful, the mechanism replacing it
 - Findings did not drift into prose polishing, factual verification, or correctness review owned by neighbouring skills

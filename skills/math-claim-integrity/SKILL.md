@@ -133,7 +133,7 @@ A counterexample finding should explicitly contain:
 - **Example:** a configuration satisfying those hypotheses;
 - **Failure:** the precise conclusion that fails.
 
-If the reviewer cannot fill all four fields, report a possible justification gap instead of a counterexample.
+If the reviewer cannot fill all four fields because no attempted counterexample refutes the exact claim — the claim appears to hold under the live hypotheses — report no finding, not a justification gap. Report a possible justification gap only when a field cannot be filled because the written text does not supply enough argument to verify the claim from its stated hypotheses.
 
 As an **invariant** review rule, a counterexample that misses a live hypothesis or attacks only a stronger unstated proposition is itself an invalid finding and must not be used to block a manuscript change. A genuine justification gap can still be BLOCKING when the step is load-bearing, but its diagnosis must remain `gap`, not `false claim`, until the exact contextual statement is disproved.
 
@@ -259,7 +259,7 @@ Before finishing, verify:
 - R-N findings write down the exact local claim and all live hypotheses before reporting a counterexample; the example satisfies those hypotheses and falsifies that claim
 - R-N reviews reconstruct the preceding construction, established properties, and assumptions still live at the proof step, including the referent of demonstratives such as `this path` or `the resulting map`
 - R-N findings distinguish Refuted claim, Justification gap, and Irrelevant stronger generalisation is false; they do not collapse a justification gap or a false stronger proposition into a refuted claim
-- R-N counterexample findings contain Claim as used, Live hypotheses, Example, and Failure; if any field cannot be supplied, the finding is reported as a possible justification gap instead
+- R-N counterexample findings contain Claim as used, Live hypotheses, Example, and Failure; when a field cannot be supplied because no attempted example refutes the exact claim, the review reports no finding; when it cannot be supplied because the text lacks enough argument to verify the claim, the review reports a possible justification gap instead
 - A genuine R-N justification gap may be BLOCKING when load-bearing, but its diagnosis remains `gap`, not `false claim`, until the exact contextual claim is disproved
 
 ## Relationship to Other Skills
