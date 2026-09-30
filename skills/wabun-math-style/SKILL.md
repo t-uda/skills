@@ -37,11 +37,11 @@ A wording pattern here may reveal a deeper claim defect; state which layer is ac
 
 ## Inputs
 
-- `artifact` — the Japanese source text (LaTeX or other markup) or section range
+- `artifact` — the Japanese source text (LaTeX or other markup) or section range to review or revise; for drafting, the notes, outline or partial text to write from
 - `register` — 論文 (formal paper), ノート (preprint/note), or 講義録 (lecture notes); conventions differ slightly
 - `proof_sections` — proof environments where active-voice standards are strictest (optional; defaults to all \begin{proof}...\end{proof} blocks)
 - `terminology_sot` — a supplied document or repository glossary that gives canonical terms and permitted aliases (optional)
-- `source_artifact` — the English source text or corresponding source passages for a translation (optional)
+- `source_artifact` — the English source text or corresponding source passages for a translation (required when translating; optional for review)
 - `rendered_text` — generated text from the current built artifact, when available, with page or output locations where the extraction preserves them (optional)
 
 ## Rule classification and severity
@@ -56,6 +56,8 @@ Every rule carries one class, which fixes how its severity is derived:
 Precedence when a span matches more than one rule tag: report every matching tag; the finding's headline severity is the maximum across matches (BLOCKING > MINOR > ADVISORY), ties broken by ascending rule number. Classification narrows *where* a rule applies at full force — it never erases the anti-pattern a rule targets; a convention can still produce a strong (BLOCKING) finding exactly where the rule says it obscures logical structure.
 
 ## Procedure
+
+For drafting or translation, first write the Japanese text from `artifact` or `source_artifact`, applying the active rules and the drafting preferences, then check the result with the steps below.
 
 1. If `terminology_sot` is supplied, identify its canonical terms, scopes, and permitted aliases. If `source_artifact` is supplied, identify each source term from its definition, formula, and use before assessing its Japanese rendering.
 2. Scan the artifact for each active rule: JP-1 to JP-9, JP-11 to JP-21, JP-25 and JP-26 (JP-10 is merged into JP-3; JP-22 to JP-24 are drafting preferences, not finding tags).
@@ -329,7 +331,7 @@ for compatibility.
 
 ## Output
 
-Default: review-only. Produce a structured finding report listing:
+For drafting or translation, return the Japanese text; report only unresolved items such as a JP-17 source conflict or unchecked generated language. For review, the default is review-only. Produce a structured finding report listing:
 - Rule tag (an active rule from Procedure step 2) and class
 - Severity: BLOCKING / MINOR / ADVISORY, per the classification mapping above
 - Location: environment label (e.g. `\begin{theorem}[thm:main]`), proof section, or paragraph identifier
