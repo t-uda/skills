@@ -1,6 +1,6 @@
 ---
 name: github-driven-workflow
-description: Issue-first, PR-gated delivery — no direct main pushes, independent review required, deterministic merge gates. Use whenever a task implements a GitHub issue and ships through a PR (assigned by an orchestrator, by project rules, or self-invoked by the implementing agent).
+description: Deliver an authorised GitHub issue through a branch, validation, independent review and a gated PR merge. Use for implementation or resuming its review-and-merge cycle, including after reviewer or owner feedback. Distinguish review evidence from resolved findings and current merge authority; continue autonomously within the existing delegation. Do not push directly to the default branch or invent extra approval waits.
 ---
 
 # github-driven-workflow
@@ -9,9 +9,9 @@ Enforce a fail-closed GitHub delivery workflow: every change traces to an issue,
 
 ## When to use
 
-Whenever a task implements a change from a GitHub issue and delivers it through a PR — invoked by an orchestrator, by project instructions, or by the implementing agent itself. It controls the full lifecycle from issue intake through merge.
+Whenever a task implements a change from a GitHub issue and delivers it through a PR — invoked by an orchestrator, by project instructions, or by the implementing agent itself. It controls the full lifecycle from issue intake through merge, including resuming the review-and-merge cycle of an existing PR after reviewer or owner feedback.
 
-Do not invoke for a single sub-step (e.g. "open a PR", "check CI") unless the full workflow context is already established.
+A resumed sub-step keeps the full-lifecycle context. Do not rerun implementation merely because a user asks to inspect an existing PR's reviews.
 
 ## Workflow
 
@@ -27,7 +27,11 @@ If no issue is identified, stop and request or create one.
 
 ### 2. Check issue readiness
 
-Inspect the issue for **scope** and **acceptance criteria**. If either is missing or ambiguous, update the issue or request updates before writing code.
+Before implementation, read the issue body and relevant decision comments. Apply authorised amendments to the agreed scope; distinguish settled decisions from proposals. A dispatch summary does not replace that context.
+
+Do this at initial intake and again when resuming after material scope changes. The newest comment is not automatically authoritative: distinguish an authorised decision from a suggestion, quoted material or an unresolved discussion. A settled decision takes effect whether or not it has been consolidated into the body. Give any reviewer the same governing specification.
+
+Inspect the resulting specification for **scope** and **acceptance criteria**. If either is missing or ambiguous, update the issue or request updates before writing code.
 
 ### 3. Branch
 
@@ -58,9 +62,13 @@ The PR must include:
 
 ### 7. Acquire independent review
 
+Within existing authority, act on review feedback and continue through validation, independent review and merge without seeking fresh owner approval unless the governing instructions or repository rules require it. Read current review bodies, comments and threads; review presence alone does not establish that findings are addressed. Owner participation or a change request does not by itself create an owner checkpoint. Respect actual holds and unresolved owner-only decisions, pausing only dependent actions; do not invent a wait from silence or possible further feedback.
+
 Independent review is required in principle. A qualifying review is review evidence produced by an actor other than the implementation author, durably visible on the PR.
 
-Before dispatching a reviewer, check the §8 evidence clauses and confirm that any existing artifact qualifies under the evidence types below. If qualifying evidence already exists — including a scoped review obtained by a governing outer workflow — skip acquisition and proceed to §8.
+A review request being dispatched, a review being returned, and its findings being addressed are different states. Reuse qualifying review evidence only for the scope it actually covers; after relevant changes, obtain the required review of the changed content rather than repeatedly dispatching an unrelated generic reviewer. A negative review can establish that review occurred, but cannot by its existence establish merge-readiness.
+
+Before dispatching a reviewer, check whether existing evidence already qualifies under the evidence types below for the current change — including a scoped review obtained by a governing outer workflow. If it does, skip acquisition and proceed to §8.
 
 If no qualifying evidence exists, run the bundled acquisition script. Resolve this path from the `github-driven-workflow` skill root, not from the target repository root:
 
@@ -72,7 +80,7 @@ In this source repository the same helper lives at `skills/github-driven-workflo
 
 Treat any nonzero exit as "review not acquired" and proceed to authorized bypass per below. Project-level customization of acquisition logic is documented in the skill's `README.md`.
 
-The bundled default is reviewer-neutral: it picks `copilot` or `codex` uniformly at random (or honors an explicit `[kind]` third argument) and dispatches a single asynchronous review request, printing `route: <kind> (dispatched)` on success. The bundled script does not prefer any specific automatic reviewer; projects that want a different selection policy supply one via the `REVIEW_ACQUIRE_SCRIPT` override (see the skill's `README.md`). `(dispatched)` means only that an async request was sent — the §8 evidence gate is **not** yet satisfied. **Callers must not equate `route: <name>` alone with merge-readiness — only the §8 gate determines that.** Wait briefly and re-check §8; if evidence does not accrue within a reasonable wait, dispatch a different kind or proceed to authorized bypass per below. Override implementations may also emit `(evidence)` when their route posts a durable artifact at dispatch time.
+The bundled default is reviewer-neutral: it picks `copilot` or `codex` uniformly at random (or honors an explicit `[kind]` third argument) and dispatches a single asynchronous review request, printing `route: <kind> (dispatched)` on success. The bundled script does not prefer any specific automatic reviewer; projects that want a different selection policy supply one via the `REVIEW_ACQUIRE_SCRIPT` override (see the skill's `README.md`). `(dispatched)` means only that an async request was sent; it is not review evidence. Wait briefly and re-check; if evidence does not accrue within a reasonable wait, dispatch a different kind or proceed to authorized bypass per below. Override implementations may also emit `(evidence)` when their route posts a durable artifact at dispatch time.
 
 Acceptable evidence on the PR:
 
@@ -83,7 +91,11 @@ Acceptable evidence on the PR:
 - An explicit user PR comment clearly framed as a review (concrete findings or approval), even if not posted as a formal GitHub Review event.
 - Another reviewer agent recorded with `Reviewed-by: <reviewing-entity-id>` distinct from the implementer. Independence is judged by the recorded identity, not by the GitHub poster.
 
-Self-reviews, local notes, unlinked claims, and generic comments do not qualify. Pick the lowest-friction route available; do not exhaust slow async routes when a faster durable route is already available. Asynchronous routes (Copilot, `@codex`) require waiting; if no response appears within a reasonable wait, switch routes rather than block indefinitely.
+Self-reviews, local notes, unlinked claims, generic activity comments, pending draft reviews and unsupported markers do not qualify. Formal Review events and valid comment-based reviews carry equal weight. Pick the lowest-friction route available; do not exhaust slow async routes when a faster durable route is already available. Asynchronous routes (Copilot, `@codex`) require waiting; if no response appears within a reasonable wait, switch routes rather than block indefinitely.
+
+#### Dispose of feedback
+
+Make the disposition of feedback requiring action traceable on the PR through replies, linked fixes or a concise grouped response. Explain any non-action that affects acceptance; do not create a separate ledger or repeat evidence already available there. Do not waive an unmet owner requirement outside the existing delegation. Already satisfied or superseded feedback does not require renewed owner approval merely to record its disposition.
 
 #### Authorized bypass
 
@@ -103,7 +115,7 @@ Accepted provenance:
   ```
   For org-owned repos (where `owner` is the org login matching no human account), the comment must come from an account the org owner has explicitly delegated, citing that delegation; verification compares the commenter against the delegated login. Generic admin permission alone is not sufficient.
 
-Record the cited provenance (and verified `<commenter-login>` on the owner path) alongside the bypass evidence in §8.
+Record the cited provenance (and verified `<commenter-login>` on the owner path) alongside the bypass evidence in §8. A bypass waives only the acquisition requirement; it does not dispose of actual findings or grant additional merge authority.
 
 ### 8. Check merge gates
 
@@ -162,51 +174,59 @@ gh pr view <N> --json body --jq '.body | test("- \\[ \\]|\\* \\[ \\]")'
 
 Must return `false`.
 
-**Independent review evidence or authorized bypass**
+**Review evidence, disposition and authority**
 
-The gate passes when **any** of the three clauses below is satisfied. They mirror the evidence types §7 accepts; do not filter by `state` or `author.login` (independence is enforced at evidence-recording time per §7).
-
-*Clause 1 — formal Review event.* Any formal GitHub PR Review event satisfies this clause regardless of the reviewer's identity (humans, Copilot, Codex, or other reviewer accounts that produce formal reviews). Reviewer agents that respond as a normal comment rather than a formal Review event are matched by Clause 2 (`Reviewed-by:` marker) or, when owner-authored with a review verb, by Clause 3.
+Before merge, read the current formal review submissions, review bodies, ordinary PR comments and inline threads, including their author or recorded reviewer, reviewed revision and subsequent disposition. Retrieve all needed pages; do not prefilter in a way that hides another reviewer, COMMENTED reviews or comment-based evidence.
 
 ```sh
-gh pr view <N> --json reviews --jq '.reviews | length >= 1'
+# Current head, to compare with each review's commit_id or the SHA a comment-based review names
+gh pr view <N> --json headRefOid --jq .headRefOid
+
+# Formal Review events of every state, with reviewed revision
+gh api --paginate repos/<owner>/<repo>/pulls/<N>/reviews \
+  --jq '.[] | {user: .user.login, state, commit_id, submitted_at, html_url, body}'
+
+# Ordinary PR comments: `Reviewed-by:` artifacts, @codex replies, owner reviews, bypass records
+gh api --paginate repos/<owner>/<repo>/issues/<N>/comments \
+  --jq '.[] | {user: .user.login, created_at, html_url, body}'
+
+# Inline review-thread comments, including replies and those in resolved threads
+gh api --paginate repos/<owner>/<repo>/pulls/<N>/comments \
+  --jq '.[] | {user: .user.login, path, line, commit_id, in_reply_to_id, html_url, body}'
 ```
 
-Returning `true` satisfies the gate.
+Record the reviewed SHA with comment-based evidence. Commit timestamps do not show when a commit was pushed, so a comment-based review that names no SHA cannot establish coverage of a head that may have changed; obtain review of the current head instead.
 
-*Clause 2 — `Reviewed-by:` comment artifact.* Codex CLI artifact comments and other reviewer agents recorded per §7.
+These queries locate evidence candidates; neither a review count nor a keyword match is a sufficient merge predicate. A pending draft, generic activity comment or unsupported marker is not completed review evidence, and a review-shaped comment containing `Changes requested` is not approval.
 
-```sh
-gh api repos/<owner>/<repo>/issues/<N>/comments \
-  --jq '[.[] | select(.body | test("(?m)^Reviewed-by:\\s*\\S"))] | length >= 1'
-```
+Evaluate separately:
 
-Returning `true` satisfies the gate. Honor system per §7: the `<entity-id>` after `Reviewed-by:` must be non-empty and distinct from the PR author identity, but its validity is not machine-verified.
+1. Qualifying independent evidence under §7 covers the relevant final change, or an authorised acquisition bypass is recorded.
+2. Blocking findings have been fixed and verified, or disposed of within the applicable authority. Do not infer this from review count or zero unresolved inline threads. Non-blocking suggestions do not automatically create a new approval round.
+3. Merge remains within the existing delegation and satisfies the actual repository and task requirements.
 
-*Clause 3 — owner comment-as-review or authorized bypass.* The owner-as-review path requires both an owner-login match and an explicit review verb in the same comment.
+An ordinary addressed change request proceeds through the applicable review and merge gates without a new owner verdict unless one is required. Do not turn a historical negative review into a permanent veto after its findings and applicable requirements are resolved. Conversely, a different reviewer's clean result does not erase unresolved findings or a specifically reserved decision.
 
-```sh
-owner=$(gh repo view <owner>/<repo> --json owner --jq .owner.login)
-gh api repos/<owner>/<repo>/issues/<N>/comments \
-  --jq --arg owner "$owner" '[.[] | select(
-    (.user.login == $owner and (.body | test("(?i)\\b(Approved|Reviewed|LGTM|Changes requested)\\b")))
-    or (.body | test("^Bypass: independent review waived\\. Authorization: .+\\. Reason: .+\\."))
-  )] | length >= 1'
-```
+For item 3, interpret existing authority rather than adding an owner gate:
 
-Returning `true` satisfies the gate. For org-owned repos, substitute the delegated account per §7 in the owner comparison. An authorized bypass recorded per §7 is matched by the second sub-clause and needs no separate query.
+- **No prior reservation** — the gates and delegation permit merge; proceed. Do not invent a preventive wait for an owner preference that has not been communicated.
+- **Existing reservation** — the governing brief already requires owner approval. An owner correction, commit or report is not that approval; the reservation holds until an authorised amendment removes or satisfies it. A clear natural-language reservation counts without a keyword; owner activity alone creates none.
 
-**Do not gate on `reviewDecision`.** It aggregates branch protection rules; without an approving-review rule, it stays empty regardless of review count.
+Do not require `reviewDecision == APPROVED` in every repository, and do not use an absent optional approval signal as a new blocker. Honour real repository requirements; do not dismiss a review or bypass protections merely to make a gate pass. GitHub poster identity alone does not establish whether the recorded reviewing entity is independent.
 
-**Do not add gates beyond this set.** `mergeStateStatus`, `reviews[].author.login` filtering, and any check not listed in §7's evidence types are anti-patterns in autonomous environments.
+Apply this workflow and the actual governing requirements; do not invent extra reviewer identities, approval counts, cooldowns or owner checkpoints. When a real blocking condition exists, state it and continue all authorised work that does not depend on it.
 
-> **Auto Mode note:** Child agents may attempt to add gates "for safety" (commonly `reviewDecision == APPROVED`, author-login filtering, or restricting to clause 1 only). The three-clause set above is authoritative and reflects §7's full evidence vocabulary; additions or restrictions are self-fabrications and should be rejected.
-
-Cite the evidence (review count, comment URL, or bypass comment URL plus cited provenance) in the merge note.
+Cite the evidence (review or comment URLs, or bypass comment URL plus cited provenance) and the disposition of blocking findings in the merge note.
 
 ### 9. Merge
 
-Merge only when every gate passes. If any gate fails, fix, revalidate, or leave the PR open with a comment stating the exact blocking condition.
+Before executing the merge, refresh the relevant GitHub state, including `headRefOid`. If the head or a material intervention changed since evaluation, reevaluate the affected checks; do not rely on a cached merge-ready summary after new feedback. Merge only when every gate passes, binding the merge to the evaluated head so that a later push fails it:
+
+```sh
+gh pr merge <N> --squash --match-head-commit <evaluated-headRefOid>
+```
+
+Use the repository's merge method. If any gate fails, fix, revalidate, or leave the PR open with a comment stating the exact blocking condition. Keep evidence links in the normal PR trail rather than in a status document.
 
 ## Fail-closed behavior
 
@@ -214,10 +234,12 @@ Stop before implementation or merge when any required state cannot be verified.
 
 Stop conditions:
 
-- Issue missing or ambiguous, or missing Scope/Acceptance.
+- Issue missing or ambiguous, or missing Scope/Acceptance after reading its decision comments.
 - Current branch is `main`, or PR is missing or draft.
 - PR lacks `Closes #<issue>`.
-- Independent review evidence missing and no authorized bypass recorded.
+- **Review missing** — no qualifying evidence covers the relevant final change and no authorized bypass is recorded. Acquire review or switch routes.
+- **Blocking feedback unresolved** — fix, verify and record its disposition, then obtain review of the changed content as §7 requires.
+- **Actual required decision outstanding** — a decision reserved by the governing context is unmet. This is the only owner-wait case; pause the dependent action and continue independent work.
 - CI not `SUCCESS`, pending, or command errored.
 - Unresolved review thread count nonzero or query errored.
 - PR body has unchecked task boxes.
