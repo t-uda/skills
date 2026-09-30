@@ -186,6 +186,10 @@ gh api --paginate repos/<owner>/<repo>/pulls/<N>/reviews \
 # Ordinary PR comments: `Reviewed-by:` artifacts, @codex replies, owner reviews, bypass records
 gh api --paginate repos/<owner>/<repo>/issues/<N>/comments \
   --jq '.[] | {user: .user.login, created_at, html_url, body}'
+
+# Inline review-thread comments, including replies and those in resolved threads
+gh api --paginate repos/<owner>/<repo>/pulls/<N>/comments \
+  --jq '.[] | {user: .user.login, path, line, commit_id, in_reply_to_id, html_url, body}'
 ```
 
 These queries locate evidence candidates; neither a review count nor a keyword match is a sufficient merge predicate. A pending draft, generic activity comment or unsupported marker is not completed review evidence, and a review-shaped comment containing `Changes requested` is not approval.
