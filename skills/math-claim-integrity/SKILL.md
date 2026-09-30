@@ -1,6 +1,6 @@
 ---
 name: math-claim-integrity
-description: Audit the structural and logical integrity of a mathematics paper — quantifier scope, domain-of-definition guards, proof/computation honesty, theorem hierarchy, contribution-list discipline (mapping every claimed contribution to its formal result, prior baseline, concrete gain, and independent significance), stale claims, notation accuracy at introduction, standing assumptions, and undefined relation symbols or coined terms in summary prose — without touching prose style or rhetorical prose inflation (structural inflation of contribution lists and result hierarchy is in scope).
+description: Audit the structural and logical integrity of a mathematics paper — quantifier scope, domain-of-definition guards, proof/computation honesty, theorem hierarchy, contribution-list discipline (mapping every claimed contribution to its formal result, prior baseline, concrete gain, and independent significance), stale claims, notation accuracy at introduction, standing assumptions, and undefined relation symbols or coined terms in summary prose — without touching prose style or rhetorical prose inflation. Before reporting counterexamples or proof gaps, recover the exact contextual claim and distinguish an identified defect from incomplete verification. For claims presented as machine-checked, inspect the formal declarations that actually support them.
 ---
 
 # Math Claim Integrity
@@ -32,6 +32,7 @@ Use this skill when:
 - A proof section may be conflating analytic argument with numerical/computational evidence
 - An open problem claim may have been resolved by a theorem proved later in the same document
 - A symbol or concept may be named in a way that misrepresents its mathematical role
+- A report or note presents claims as machine-checked against a formal source
 - The abstract, introduction, or conclusion uses a relation symbol (≺, ⊏, an ad hoc ordering) or a coined comparative term ("strictly finer than", "detection hierarchy", or an equivalent coinage in any language) that is never formally defined in the body
 
 ## Do not use
@@ -50,13 +51,16 @@ Gather or infer these before starting:
 - `main_theorem` — the result the paper is organized around (if known)
 - `citation_boundary` — what is credited to cited works vs. new in this paper
 - `proof_mode` — analytic/algebraic, numerical/computational, or mixed
+- `formal_source` — the relevant formal source or an accessible reference, when claims are presented as machine-checked (optional; formal source already supplied in the task context counts)
 
 ## Procedure
 
 1. Read the abstract and introduction. List all informal theorem descriptions and every contribution-list item.
 2. Locate every theorem-level environment (theorem, proposition, lemma, corollary) in the body.
-3. Apply rules R-A through R-N in sequence; record findings.
-4. Produce a structured finding report.
+3. Before diagnosing a suspected defect, reconstruct the exact contextual claim and its live hypotheses under R-N.
+4. For a claim presented as machine-checked, inspect the formal declaration that actually supplies its stated bound, hypotheses or conclusion; a headline theorem does not substitute for an intermediate result being quoted. Follow helper declarations only as needed to resolve that correspondence, including asserted matches in a correspondence table. Compare complete statements and instantiations, not identifier names or exponents in isolation. If the source cannot be inspected, report the unchecked scope rather than asserting either agreement or a defect.
+5. Apply rules R-A through R-N; record findings.
+6. Produce a structured finding report, keeping review limits separate from findings.
 
 ## Rules
 
@@ -72,7 +76,7 @@ Any quantity defined via a potentially-failing operation (matrix inverse, divisi
 Each theorem/proposition must be unambiguously classifiable as: (i) cited verbatim, (ii) restated/repackaged from a citation, or (iii) original to this paper. Infrastructure from cited works (constructions, prior existence results) must not be presented as the paper's own novel contribution. Conversely, genuinely original results must carry an explicit claim of novelty or must not be attributed to prior work by passive or vague phrasing. For the voice mechanics of attribution in Japanese (passive 〜が示されている vs active 〜を示す), cross-reference `wabun-math-style` rule JP-3. When the `citation_boundary` input is not supplied, all R-C findings are automatically severity NOTE ("unverifiable attribution") rather than BLOCKING or MINOR — flag the location but do not assert novelty or citedness without the boundary information.
 
 **R-D — Proof/computation honesty.** *(invariant)*
-Analytic/algebraic proofs and numerical/computational verifications must be strictly separated. Rules: every decimal value must be labeled as approximate or as a convenience form of an exact quantity; a load-bearing numerical claim must either have a closed-form analytic companion OR an explicit statement that the result is a certified numerical result (interval arithmetic, exact-arithmetic computation, rigorous exhaustive finite case enumeration with exact decision) with a statement of why a closed form is unavailable; grid-search or script output may be labeled as motivation or corroboration but not as a proof step.
+Analytic/algebraic proofs and numerical/computational verifications must be strictly separated. Rules: every decimal value must be labeled as approximate or as a convenience form of an exact quantity; a load-bearing numerical claim must either have a closed-form analytic companion OR an explicit statement that the result is a certified numerical result (interval arithmetic, exact-arithmetic computation, rigorous exhaustive finite case enumeration with exact decision) with a statement of why a closed form is unavailable; grid-search or script output may be labeled as motivation or corroboration but not as a proof step. A claim presented as machine-checked is supported only by the declaration inspected under Procedure step 4.
 
 **R-E — Stale-claim elimination.** *(invariant)*
 Scan for claims labeled open, unresolved, conjectural, or under investigation. For each, check whether the paper itself contains a theorem that resolves the claim. A claim labeled "open" that is resolved by a theorem proved elsewhere in the same document is a hard error. A condition listed as an assumption in a theorem that the paper later proves is universally satisfied should be flagged for the author to confirm removal (MINOR severity), as authors sometimes intentionally retain explicit hypotheses for modularity or citability.
@@ -101,41 +105,18 @@ Every relation symbol (≺, ⊏, ⋖, an arrow used as an ordering, or any ad ho
 **R-M — Contribution-list mapping discipline.** *(convention; primary requirement)*
 Every item in a §1 contribution list must map to: (a) the formal result it corresponds to; (b) the incumbent or prior baseline; (c) the concrete new gain over that baseline; (d) why the item is independently significant rather than merely supporting another listed item; (e) whether it duplicates another listed item at a different level of granularity. Unless independent significance is established, the following must not appear as parallel main contributions: infrastructure lemmas, routine corollaries, direct computational observations, worked examples, known-result reformulations, or several proof components of one result counted separately. Repair: move such material into a proof, remark, example, or auxiliary proposition, or omit it from the list. Escalates to BLOCKING when the abstract or introduction materially misrepresents the paper's main scholarly contribution, even though every individual statement is mathematically true. R-F and R-M often co-fire on the same underlying inflation — R-F concerns the theorem-environment label in the body, R-M concerns whether the §1 list conflates that result with genuine main contributions; report both tags rather than treating them as duplicates.
 
-**R-N — Exact contextual claim before counterexample.** *(invariant)*
-Before reporting a counterexample, the reviewer must write down the exact proposition being challenged with all hypotheses available at that location. A valid counterexample must satisfy those hypotheses and falsify that exact proposition.
+**R-N — Target the exact contextual claim.** *(invariant of review)*
+Before reporting a refutation or gap, recover the proposition as used, its construction history, live hypotheses and established properties. Determine whether it concerns a particular constructed object, a stated class, or every object of a type. Demonstratives can retain the context of the construction they identify.
 
-Do not:
-- replace a statement about a specifically constructed object by a universal statement about all objects of the same broad type;
-- discard local invariants, minimality/maximality assumptions, endpoint conditions, representation constraints, or properties established immediately before the claim;
-- infer an unstated stronger lemma merely because it would be one possible route to the written conclusion;
-- report failure of that stronger lemma as failure of the manuscript's actual argument.
+Do not discard that context or refute a stronger unstated proposition as though it were the manuscript's claim. Conversely, do not invent helpful hypotheses or import restrictions the manuscript does not inherit.
 
-If a stronger inferred proposition is false but the exact contextual claim is not refuted, this is **not** a mathematical-error finding.
+Distinguish four outcomes:
+- Refutation: an example satisfies the actual hypotheses and falsifies the actual conclusion.
+- Identified gap: a specific required inference or justification is missing after checking the available context; this does not itself refute the conclusion.
+- Review incomplete: neither a refutation nor a gap has been established. State the verification limit separately, not as a manuscript defect.
+- No finding: the concern is resolved, or only an irrelevant stronger generalisation has been refuted.
 
-For any suspicious proof step, classify the result as one of:
-1. **Refuted claim** — an example satisfies the actual local hypotheses and falsifies the exact claim.
-2. **Justification gap** — the exact claim may be true, but the written text does not supply enough argument to verify it from the stated hypotheses.
-3. **Irrelevant stronger generalisation is false** — a stronger proposition invented by the reviewer fails, while the actual local claim remains untouched. This is not a finding against the manuscript.
-
-A reviewer must not collapse (2) or (3) into (1).
-
-Before escalating a local proof step, inspect enough preceding context to recover:
-- how the object under discussion was constructed;
-- which properties of that construction were already established;
-- which assumptions remain live at that point;
-- whether the claim is about that particular object, a named class of objects, or all objects of some type.
-
-This is particularly important when prose uses demonstratives such as `this path`, `the resulting map`, `the above factorisation`, or `the chosen chain`: their semantics include the construction history.
-
-A counterexample finding should explicitly contain:
-- **Claim as used:** the exact local proposition;
-- **Live hypotheses:** all assumptions relevant at that point;
-- **Example:** a configuration satisfying those hypotheses;
-- **Failure:** the precise conclusion that fails.
-
-If the reviewer cannot fill all four fields because no attempted counterexample refutes the exact claim — the claim appears to hold under the live hypotheses — report no finding, not a justification gap. Report a possible justification gap only when a field cannot be filled because the written text does not supply enough argument to verify the claim from its stated hypotheses.
-
-As an **invariant** review rule, a counterexample that misses a live hypothesis or attacks only a stronger unstated proposition is itself an invalid finding and must not be used to block a manuscript change. A genuine justification gap can still be BLOCKING when the step is load-bearing, but its diagnosis must remain `gap`, not `false claim`, until the exact contextual statement is disproved.
+A counterexample finding states the claim, live hypotheses, example and failed conclusion. A gap finding identifies the unsupported transition and needed justification. Failure to complete verification or the counterexample fields is not evidence of a gap. A genuine load-bearing gap can be BLOCKING; an invalid counterexample or incomplete review cannot justify blocking the manuscript as mathematically defective.
 
 ## Examples
 
@@ -235,10 +216,44 @@ R-N — Context: A proof constructs a particular path with a separation property
       property has the asserted nontriviality.
 ```
 
+```
+R-N outcomes:
+Refutation: the manuscript claims x^2 > 0 for every real x, with no nonzero
+      guard; x = 0 satisfies the stated domain and falsifies the conclusion.
+      Report the claim, domain, example and failed strict inequality.
+Invalid counterexample: a proof constructs x = 1 + t^2 for real t and
+      concludes x ≠ 0; x = 0 is not an instance of the constructed object.
+      No finding.
+Identified gap: a step invokes a lemma requiring compactness of K, but the
+      context establishes only closedness in an arbitrary metric space and
+      supplies no replacement argument. Report the missing justification,
+      not a false theorem.
+Review incomplete: the reviewer has not checked a long preceding
+      construction that may establish compactness. Report the unchecked
+      dependency as a review limit, not a gap.
+Imported restriction: a formal source proves the result under an extra
+      hypothesis the manuscript does not inherit. Do not import it to rescue
+      the manuscript's claim; assess the claim as stated.
+```
+
+```
+Machine-checked support (Procedure step 4):
+Flag: a note displays a bound as machine-checked and cites the main theorem,
+      but the quoted exponent comes from an intermediate lemma whose statement
+      gives a different bound. Inspect that lemma and compare the complete
+      statements.
+Corrected: the displayed bound cites and matches the lemma that states it.
+No finding: the lemma bounds the squared error and the note the unsquared
+      norm, with the exponent correctly halved; compare full statements, not
+      exponents alone. A clearly identified prose derivation is assessed as a
+      derivation, not as a false machine-verification claim.
+```
+
 ## Output
 
 Default: review-only. Produce a structured finding report listing:
 - Rule tag (R-A through R-N)
+- Review limits (incomplete verification, uninspected formal source) are listed separately and carry no defect severity
 - Classification (invariant / convention / heuristic — see Rules) and Severity: BLOCKING / MINOR / ADVISORY / NOTE, following the default-severity mapping above unless the rule states otherwise
 - Location: section heading, theorem label, or equation reference
 - One-sentence description of the violation
@@ -256,11 +271,8 @@ Before finishing, verify:
 - R-F and R-M findings identify the actual scholarly gain and hierarchy the paper misrepresents, not merely the environment label used
 - R-M findings are not raised merely because a contribution list is long; they require an item that fails the (a)-(e) mapping or duplicates another item's granularity
 - A paper is not penalized under R-F/R-M for stating true results — the finding is about hierarchy and presentation, not mathematical correctness
-- R-N findings write down the exact local claim and all live hypotheses before reporting a counterexample; the example satisfies those hypotheses and falsifies that claim
-- R-N reviews reconstruct the preceding construction, established properties, and assumptions still live at the proof step, including the referent of demonstratives such as `this path` or `the resulting map`
-- R-N findings distinguish Refuted claim, Justification gap, and Irrelevant stronger generalisation is false; they do not collapse a justification gap or a false stronger proposition into a refuted claim
-- R-N counterexample findings contain Claim as used, Live hypotheses, Example, and Failure; when a field cannot be supplied because no attempted example refutes the exact claim, the review reports no finding; when it cannot be supplied because the text lacks enough argument to verify the claim, the review reports a possible justification gap instead
-- A genuine R-N justification gap may be BLOCKING when load-bearing, but its diagnosis remains `gap`, not `false claim`, until the exact contextual claim is disproved
+- R-N findings target the exact contextual claim with its construction history and live hypotheses, and neither discard context nor import restrictions the manuscript does not inherit
+- Each R-N concern ends as refutation, identified gap, review incomplete, or no finding; counterexample findings state claim, live hypotheses, example and failed conclusion; gap findings name the unsupported transition; incomplete verification is never reported as a gap or used to block
 
 ## Relationship to Other Skills
 
