@@ -139,7 +139,7 @@ This also covers literal translations of English mathematical shorthand. Choose 
 - 網 →「ε-ネット」with a recoverable set, metric and approximation scale; explain only what the intended audience needs
 - 失敗確率 → identify the event when active context does not supply it; retain the shorthand once established
 
-Use the source's actual event, not an invented replacement. `順位` and `規約` are drafting preferences, not JP-13 findings.
+JP-13 owns a calque that identifies the right concept in unsuitable Japanese; a rendering that names a different concept from the source or definition is one JP-17 finding instead. Use the source's actual event, not an invented replacement. `順位` and `規約` are drafting preferences, not JP-13 findings.
 
 `統計量` is not banned: valid for a genuine statistic in probability/statistics; flag it when used as a generic label for an arbitrary scalar quantity, invariant, score, or summary with no statistical meaning.
 
