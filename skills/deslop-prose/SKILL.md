@@ -1,6 +1,6 @@
 ---
 name: deslop-prose
-description: Clean academic or professional prose that carries AI-generated residue by removing hype, decorative structure, vague metadiscourse, pseudo-technical phrasing, and claim-evidence mismatch while preserving technical meaning, qualifications, and authorial intent.
+description: Clean near-final academic or professional prose that carries AI-generated residue — hype, decorative structure, excessive paragraph fragmentation, vague metadiscourse, pseudo-technical phrasing and rhetorical overstatement. Preserve technical meaning, qualifications, evidence boundaries and authorial intent.
 ---
 
 # Deslop Prose
@@ -16,6 +16,7 @@ Use this skill when:
 - academic or professional prose sounds inflated, generic, or mechanically polished
 - claims are broader or stronger than the evidence stated nearby
 - decorative structure or metadiscourse is displacing content
+- one explanatory unit is split across short paragraphs whose boundaries do no work
 - terminology sounds improvised when an established term would be clearer
 
 ## Do not use
@@ -47,7 +48,7 @@ Ask only when rewriting could blur a technical term, scope boundary, or required
 ## Procedure
 
 1. Identify the intended reader, artifact type, and evidence scope.
-2. Mark sentences where style is carrying more weight than content. Audit paragraph boundaries for adjacent one-sentence or formula-linked paragraphs that perform the same discourse role.
+2. Mark sentences where style is carrying more weight than content. Also inspect adjacent paragraph boundaries: sentence-level cleanup alone can miss fragmentation of one explanatory unit.
 3. Tighten claims so their strength matches the stated support.
 4. Remove decorative structure, generic metadiscourse, and pseudo-technical inflation.
 5. Rewrite with stable terminology and direct claims.
@@ -58,7 +59,7 @@ Ask only when rewriting could blur a technical term, scope boundary, or required
 - `hype-inflation` — unsupported importance claims such as "transformative" or "pivotal"
 - `enumeration-inflation` — decorative lists that imply coverage without support
 - `generic-metadiscourse` — scaffolding like "It is important to note that"
-- `paragraph-fragmentation` — flag adjacent one-sentence or formula-linked paragraphs that perform the same discourse role and whose separation adds no prerequisite, claim-status, or topic boundary. Merge them into a coherent paragraph, while preserving separate paragraphs for theorem environments, figures, explicit case branches, changes of discourse role, or a deliberate readability break. Severity is MINOR unless fragmentation obscures the dependency or epistemic status of the argument. Classification: MINOR (proposed heuristic; MINOR by default).
+- `paragraph-fragmentation` — one coherent explanatory unit split across adjacent paragraphs whose boundaries add no useful topic, logical, scope or readability distinction
 - `framework-inflation` — grand labels such as "broader landscape" or "holistic framework" without a concrete framework
 - `methodological-theatre` — vague rigor language where a concrete method should be named
 - `vague-significance` — "valuable insights" or "important implications" without the concrete insight or implication
@@ -80,6 +81,8 @@ Ask only when rewriting could blur a technical term, scope boundary, or required
 - Keep negative framing only when it prevents a likely misuse.
 - Do not turn precise prose into smooth but lower-density prose.
 - Do not change quantifier scope, hypothesis strength, or theorem/lemma/proposition naming and hierarchy while tightening a sentence — that is a logical-content edit, not a style edit.
+
+Sharing a discourse role is not sufficient reason to merge paragraphs: they may address different subclaims or stages. Merge only a fragmented coherent unit whose boundary has no useful function. Preserve theorem environments, figures, case branches, scope changes and deliberate readability breaks. Do not impose paragraph-length or sentence-count quotas, or remove necessary proof signposts as metadiscourse. Missing prerequisites and argument reordering belong to `exposition-flow`.
 
 Minimal examples:
 
@@ -104,10 +107,15 @@ This is a theorem-hierarchy defect (independent results conflated with proof inf
 ```
 
 ```text
-Before: [three consecutive one-sentence paragraphs describing the construction,
-         the swap identity, and the edge-case scope]
-After:  [one paragraph for the proof-plan explanation, with a new paragraph only
-         where the discourse role changes to a separate scope limitation]
+Merge candidate:
+Three successive paragraphs each narrate one stage of the same short,
+uninterrupted construction summary, with no useful boundary.
+Combine them without changing content or order.
+
+Keep:
+One short paragraph proves the finite case. The next opens the infinite
+case and introduces its additional compactness argument.
+Both are justifications, but the change of scope matters.
 ```
 
 ## Output
@@ -136,8 +144,7 @@ Before finishing, verify:
 - the prose sounds more direct, not more impressive
 - `deslop-history` would not be the more appropriate skill
 - no quantifier, hypothesis, or theorem-hierarchy content changed in the course of tightening a sentence
-- adjacent one-sentence or formula-linked paragraphs with the same discourse role were merged when their separation adds no prerequisite, claim-status, or topic boundary; preserve separate paragraphs for theorem environments, figures, explicit case branches, changes of discourse role, or a deliberate readability break
-- paragraph fragmentation is treated as MINOR by default unless it obscures the dependency or epistemic status of the argument
+- paragraph changes preserve useful discourse boundaries and mathematical content
 
 ## Relationship to Other Skills
 
