@@ -1,11 +1,15 @@
 ---
 name: math-notation-consistency
-description: Audit a LaTeX mathematics document for notation drift — symbols used under different names across sections, orphaned macros, undeclared aliases (including cross-language pairs where a term defined in one language is later used in another), symbols or relation signs used with no definition site anywhere, symbol reuse across scopes, and first-use-after-gap without back-reference — without evaluating mathematical correctness or prose style.
+description: Review mathematical documents during drafting or revision for undefined or conflicting notation, undeclared aliases, live-scope ambiguity, unrecoverable references, orphaned LaTeX macros, low-value abbreviations, and structural nouns that obscure their contextual referent or role. Use when notation or terminology changes, local names proliferate, or objects are described by generic coordinate/component labels. Do not verify proofs, impose an external notation style, or treat harmless reuse in a closed scope as a defect.
 ---
 
 # Math Notation Consistency
 
-Audit a LaTeX mathematics document for internal notation consistency. The skill is field-agnostic and applies to documents in any language; it checks bookkeeping (definition sites, aliases, scopes, cross-references), not mathematical correctness or stylistic convention.
+Audit a mathematics document for internal notation consistency. The skill is field-agnostic and applies to documents in any language.
+
+Preserve recoverable canonical meanings and useful notation. This skill owns notation bookkeeping, notation economy and contextual ambiguity of structural nouns. It does not verify mathematical claims or prescribe an external notation style. LaTeX checks apply when source is available.
+
+Use `math-semantic-preservation` for an edit that changes source meaning, `math-claim-integrity` for claim support and substantive conceptual errors, and `wabun-math-style` for Japanese lexical choice when the referent is already clear. Report a defect at its owning layer rather than duplicating it.
 
 ## Design intent
 
@@ -28,23 +32,23 @@ required runtime context and not shipped with installed copies).
 - A macro is defined in the preamble but never used in the document
 - A named concept has accumulated multiple aliases (a full name, an abbreviation, and one or more symbols) without a declared equivalence
 - A symbol introduced in section 2 reappears in section 5 with no reminder of its definition
-- The same symbol is used for two different objects (e.g., r as a parameter in one section and as an index in another)
+- The same symbol is used for two different objects (e.g., r as a parameter in one section and as an index in another), or a local symbol invites a conventional competing parse (e.g., a scalar Γ written as Γ(d+2))
 - A relation symbol or operator (e.g., ≺) appears only in the abstract or conclusion with no definition site anywhere in the body
 - A term defined in the document's main language is later used in another language for the same concept (e.g., a defined Japanese term later written in English), or the same operator is written with two argument conventions (e.g., F(X,t) vs F(tX))
+- Local names or abbreviations proliferate without doing mathematical work
+- An object is described by a generic structural noun (coordinate, component, coefficient) that obscures its referent or role
 
 ## Do not use
 
-- For evaluating whether a notation choice is mathematically optimal or conventional outside the bounded conventions in NC-8 and NC-9 — this skill checks internal consistency, not external convention
 - For quantifier scope errors, theorem hierarchy, or proof/computation distinction — use `math-claim-integrity`
-- For Japanese-language anti-patterns — use `wabun-math-style`
 - For prose inflation — use `deslop-prose`
-- For prose assigning the wrong mathematical role to notation (a family index read as an exponent, an argument position read as a tensor factor) — use `math-semantic-preservation`; this skill audits bookkeeping, not semantic interpretation
+- For an edit or explanatory description that assigns notation a role contradicting its semantic source (a family index read as an exponent, an argument position read as a tensor factor) — use `math-semantic-preservation` MS-5/MS-6
 
 ## Inputs
 
-- `artifact` — the LaTeX source file (full document preferred; section range accepted)
+- `artifact` — the document source, LaTeX when available (full document preferred; section range accepted)
 - `preamble` — the LaTeX preamble (if separate; otherwise included in artifact)
-- `known_aliases` — a list of intentional synonyms the author has declared equivalent (optional; if omitted, any alias is flagged)
+- `known_aliases` — a list of intentional synonyms the author has declared equivalent (optional; also inspect equivalences declared in the artifact)
 
 ## Procedure
 
@@ -52,8 +56,8 @@ required runtime context and not shipped with installed copies).
 2. Extract all first-use-in-prose definitions (e.g., "let X denote …", 「\(f\) を〜とおく」); note section and location.
 3. For each macro in the definition table, check whether it appears in the document body; flag unused macros (NC-2).
 4. For each nonstandard or document-specific symbol used in a load-bearing claim (a theorem/proposition/lemma/corollary statement, a proof step it depends on, or a claim in the abstract or conclusion), locate its canonical definition. Flag a missing definition, or two or more definition sites that assign incompatible content (NC-1, BLOCKING). A second passage that only restates the same canonical meaning is not a finding.
-5. Scan for multiple names applied to the same object (NC-3); compare against `known_aliases` if provided. Distinguish an unnecessary one-use name from a genuine alias or definition (NC-8), and scan for parallel notations that should expose varying parameters or index sets (NC-9).
-6. Scan for the same symbol applied to different objects within a live scope, asking whether a reader could plausibly assign two incompatible meanings at the point of use (NC-4).
+5. Check declared relationships between names and alternate argument conventions under NC-3, using equivalences in the document as well as supplied aliases. Assess local names under NC-8 by their role and lookup cost, not by expression length or occurrence count alone.
+6. At each load-bearing use, ask whether a reader could plausibly assign incompatible meanings: to a symbol under NC-4, including a competing parse prompted by established notation, and to a structural noun under NC-11.
 7. For each symbol reused after a gap, check whether its canonical definition is still readily recoverable from local context; if not, flag for back-reference (NC-5).
 8. Scan `\ref`, `\eqref`, `\autoref` for labels that do not match any defined `\label` in the document (NC-6).
 9. Scan subscript/superscript conventions for the same family of objects; flag inconsistent mixtures (NC-7).
@@ -72,8 +76,8 @@ Every macro defined in the LaTeX preamble via `\newcommand` or `\DeclareMathOper
 **NC-3 — One canonical term per concept.** *(convention)*
 Every named mathematical concept must have one canonical term used consistently across the document. If an object is referred to by multiple names (a full name, an abbreviation, and a symbol), each name must appear in a declared-equivalence sentence ("we write R for the small-scale limit and abbreviate it SSL"). Without such a declaration, aliases are flagged as NC-3 findings. Cross-language aliases are a common revision artifact and fall under this rule: a concept defined with a term in the document's main language later referred to by an undeclared equivalent in another language (e.g., a defined Japanese term later written in English, or vice versa) is an NC-3 finding — unify to the defined term. Argument-convention variants of the same operator (F(X,t) in the definition vs F(tX) in a later section) are also NC-3 findings unless the second form is explicitly declared (e.g., tX as the rescaled object with F(tX) := F(X,t)). This rule works in tandem with `math-claim-integrity` rule R-I: R-I checks conceptual *correctness* of the name at introduction; NC-3 checks *consistency* of the name thereafter.
 
-**NC-4 — No symbol reuse across scopes.** *(heuristic)*
-The same symbol must not carry two incompatible meanings within a live scope. The test: can the reader plausibly assign two different meanings to the same notation at the point of use? Common violations: r as both a continuous parameter and a discrete index while both are live; C as both a generic constant and a specific matrix in overlapping context; n as both dimension and index at once. Reuse in a scope that has genuinely closed (the earlier meaning is no longer live) is not a defect; explicit shadowing ("in this proof only, let r denote …") removes any remaining ambiguity outright. Severity: MINOR when reuse creates a plausible misreading in a live scope; ADVISORY when disjointness is credible but arguable.
+**NC-4 — No live ambiguity in a symbol's meaning.** *(heuristic)*
+The same symbol must not carry two incompatible meanings within a live scope. The test: can the reader plausibly assign two different meanings to the same notation at the point of use? Common violations: r as both a continuous parameter and a discrete index while both are live; C as both a generic constant and a specific matrix in overlapping context; n as both dimension and index at once. Reuse in a scope that has genuinely closed (the earlier meaning is no longer live) is not a defect; explicit shadowing ("in this proof only, let r denote …") removes any remaining ambiguity outright. When assessing a live ambiguity, include an established meaning that the intended reader is likely to infer from the surrounding syntax. A local definition does not automatically prevent a credible competing parse, but resemblance to a conventional symbol alone is not a defect. Clarify the expression or rename only where that resolves an actual misreading; do not treat ordinary mathematical letters as globally reserved. Severity: MINOR when reuse creates a plausible misreading in a live scope; ADVISORY when disjointness is credible but arguable.
 
 **NC-5 — Back-reference after a gap.** *(heuristic)*
 A symbol's first reuse long after its definition is a review trigger, not a defect by itself. Flag the reuse when its canonical definition is no longer readily recoverable from local context at the point of reuse — e.g., enough intervening notation or subject matter that a reader would need to search back through the document. A short recap phrase ("with the notation of Definition 2.3", "the S of equation (3)") resolves the flag. Do not flag reuse solely because a fixed number of sections separates definition and reuse; recoverability, not section distance, is the trigger. Severity: MINOR when reuse is genuinely not recoverable from local context; no finding when it is.
@@ -84,11 +88,17 @@ Every `\ref{label}`, `\eqref{label}`, `\autoref{label}` must resolve to a `\labe
 **NC-7 — Consistent subscript/superscript conventions.** *(convention)*
 For a family of related objects, subscript and superscript placement must be consistent. Example: if eigenvalues are written λ_r in most places but λ^r in one section, flag the inconsistency. Similarly, ν_- and ν⁻ (minus as subscript vs. superscript) for the same object must be unified.
 
-**NC-8 — No unnecessary one-use names.** *(convention)*
-Do not introduce a name for a quantity when its inline expression is short, unambiguous, and used only once or a small number of times. Prefer the inline expression in the definition, theorem, proof, table, caption, and figure. Permit one abbreviation only when the expression is materially unwieldy or is used in more than 3 displays; define it once and use it consistently. Introduce a local abbreviation only when its reuse or conceptual role repays the lookup cost. Shortness of the expanded expression is evidence against an alias, but not decisive when the abbreviation becomes a genuine structural parameter of the argument. A useful review question is: *if the reader forgets the abbreviation two sentences later, does the proof become harder to follow than if the expression had been written directly?* If yes, the alias is probably harmful. Severity is MINOR by default and BLOCKING when an unnecessary name creates a credible ambiguity in a load-bearing claim.
+**NC-8 — Names must earn their lookup cost.** *(convention)*
+A new name is useful when its conceptual role, reuse, or replacement of a genuinely unwieldy expression repays the cost of remembering its definition. Flag an alias that merely renames a readable expression and forces avoidable lookup. A short expression may deserve a name when it identifies a structural parameter, organises cases, or exposes a recurring relation. Repetition alone does not justify an alias, and a one-use name is not automatically wrong.
 
-**NC-9 — No parallel parameter/index notations.** *(convention)*
-For one mathematical operation or family, use one notation whose parameters expose the varying domain or index set. Do not create parallel names that differ only because one argument or summation range changed (`S_v^{(c)}(f)` versus `A_v`); write the parameterized inline expression or declare one uniform operator. If `c` is a function, write application as `c(i)` throughout and do not introduce `c_i` as a parallel function notation. Severity is BLOCKING when the parallel forms can be mistaken for distinct quantities and MINOR otherwise. This rule complements NC-3 without treating the issue as an undeclared-alias-only problem: NC-3 owns names for the same concept; NC-9 owns notation economy and parameter exposure.
+Compare the actual passages with and without the name. Do not impose a variable budget, display-count threshold or blanket requirement to inline expressions. Preserve the document's chosen function/index notation. Severity: MINOR; BLOCKING only when the notation also creates a credible ambiguity in a load-bearing claim.
+
+**NC-11 — Structural nouns identify their contextual role.** *(convention)*
+At a load-bearing use of a structural noun, the active context must make its referent and mathematical role recoverable. Flag competing live interpretations or a generic label that obscures the role actually used. Choose the precise noun per occurrence. Coordinate is the principal example; component, coefficient, entry, variable, index, factor and term illustrate the principle rather than define an exhaustive checklist.
+
+Prior context can identify the space, basis, function or object. Do not require every sentence to repeat it, or flag clearly distinguished senses of a word merely because they coexist in a document. For a multi-index α, call α_k a component, not a coordinate: a tuple encoding or possible Euclidean embedding does not change its role in this argument.
+
+Do not derive prose terms from identifier names or cited titles without checking their definitions and use. Preserve cited titles verbatim. For terminology migration use `math-semantic-preservation` MS-7 to classify occurrences before replacement. NC-11 owns a generic or competing label whose role the document's active context leaves unrecoverable or obscured; when an edit or explanatory description states a role that contradicts its semantic source, report MS-5/MS-6 instead, not both. Severity: MINOR; BLOCKING in a statement or definition when the ambiguity affects what is claimed or defined.
 
 ## Examples
 
@@ -165,6 +175,20 @@ Finding: none — §1's r is no longer live at the point of reuse, and the new r
 ```
 
 ```
+NC-4 (conventional competing parse — flag):
+A scalar constant Γ is defined earlier; a bound later reads "Γ(d+2) ≤ …".
+The juxtaposition invites the Gamma-function reading despite the definition.
+Finding (MINOR): write the product explicitly, Γ·(d+2), or rename the constant.
+```
+
+```
+NC-4 (conventional letter — must not flag):
+Γ is a clearly identified index set, and i is an ordinary summation index.
+Finding: none — resemblance to the Gamma function or the imaginary unit alone
+         is not a live ambiguity.
+```
+
+```
 NC-5 (not recoverable — flag):
 Definition 2.3 introduces S. Sections 3–6 develop unrelated machinery using
 different notation throughout. Section 7 states "since S is nonempty, …" with no
@@ -196,58 +220,57 @@ Finding: Inconsistent placement. Unify to the form matching the preamble macro.
 ```
 
 ```
-NC-8 (short, one-use quantity — flag):
-Before: `$a=c_{f(v)}$`, `$b=c_{f(w)}$`, and
-        `$A_v=\sum_{u\in N(v)\setminus\{w\}}c_{f(u)}$`.
-After:  `$c(f(w))<c(f(v))$` and
-        `$\sum_{u\in N(v)\setminus\{w\}}c(f(u))\leq
-        \sum_{u\in N(w)\setminus\{v\}}c(f(u))$`.
-Finding (MINOR): short, one-use names add lookup cost without a material gain in
-         readability. Inline the expressions unless an abbreviation is materially
-         unwieldy, reused in more than 3 displays, or has a genuine structural role.
+NC-8 (harmful alias — flag):
+b := a_n is introduced only to say b > 0, has no conceptual role and is
+not reused.
+Finding (MINOR): prefer a_n > 0 without changing the subscript notation.
 ```
 
 ```
-NC-8 (useful local abbreviation — must not flag):
-Bad:  `P := U_\eps S` inside a lemma whose statement and proof are clearer when
-      they simply say `U_\eps S`. `P` has no independent conceptual role and merely
-      forces the reader to remember an alias.
-Good: in Proposition 61, `a := f(x)+t` and `b := f(y)+s` are repeatedly reused as
-      the two endpoint heights, control sublevel/superlevel sets, and organize the
-      later case analysis.
-Finding: flag `P` as an unnecessary alias; do not flag `a` and `b`, whose reuse and
-         conceptual role repay the lookup cost.
+NC-8 (useful short names — must not flag):
+a := f(x)+t and b := f(y)+s are endpoint heights organising later intervals
+and cases.
+Finding: none — their conceptual role justifies the names.
 ```
 
 ```
-NC-9 (parallel notation — flag):
-Before: `$S_v^{(c)}(f)=\sum_{u\in N(v)}c_{f(u)}$`,
-        `$A_v=\sum_{u\in N(v)\setminus\{w\}}c_{f(u)}$`.
-After:  `$\sum_{u\in N(v)}c(f(u))$` and
-        `$\sum_{u\in N(v)\setminus\{w\}}c(f(u))$`.
-Finding (BLOCKING): parallel names hide that these are the same operation with a
-         changed summation range and can make the quantities appear distinct. Expose
-         the range inline or declare one uniform operator.
+NC-8 (no finding):
+A function or sequence is consistently written c_i. Parenthesised function
+application is possible but not required.
 ```
 
 ```
-NC-9 (parallel function notation — flag):
-Before: `$c:I_n\to\mathbb R$` is defined, but later costs are written as `$c_i$`.
-After:  define `$c:I_n\to\mathbb R$` and write `$c(i)$` throughout.
-Finding (MINOR): `$c_i$` is a parallel function notation; use `$c(i)$` consistently
-         when `$c$` is the function.
+NC-8 (no blanket finding):
+Two useful quantities have similar sums with different index sets.
+Judge their meanings and the value of their names, not formula similarity.
+```
+
+```
+NC-11 (generic label — flag):
+"the coordinates of the multi-index α" — use "components", even though α
+can be encoded as a tuple.
+"change of feature coordinates" describes positive rescaling of individual
+basis functions — name that rescaling instead of a broader generic operation.
+"coordinate identity" is justified only by Coordinate in a Lean identifier —
+describe the equality's actual mechanism, such as cancellation of row scaling.
+```
+
+```
+NC-11 (must not flag):
+Coordinates relative to a basis already identified in the active context;
+chart coordinates; clearly distinguished vector and connected components.
 ```
 
 ## Output
 
 Default: review-only. Produce a finding report listing:
-- Rule tag (NC-1 through NC-9)
+- Rule tag (NC-1 to NC-8, NC-11)
 - Classification (invariant / convention / heuristic — see Rules) and Severity: BLOCKING / MINOR / ADVISORY, following the default-severity mapping above unless the rule states otherwise
 - Location: line number, section heading, or macro name
 - One-sentence description
 - Concrete fix suggestion
 
-When the user asks to apply fixes: edit the LaTeX source in-place for NC-6 (dangling refs) and NC-7 (subscript unification) only — these are purely mechanical. For NC-1/NC-3/NC-4/NC-8/NC-9, produce a fix suggestion but do not edit without author confirmation, since renaming or removing notation requires author judgement and may require global replace.
+When the user asks to apply fixes: edit the LaTeX source in-place for NC-6 (dangling refs) and NC-7 (subscript unification) only — these are purely mechanical. For NC-1/NC-3/NC-4/NC-8/NC-11, produce a fix suggestion but do not edit without author confirmation, since renaming or removing notation requires author judgement and may require global replace.
 
 ## Quality Check
 
@@ -256,10 +279,10 @@ Before finishing, verify:
 - NC-2 findings distinguish unused macros from macros used only in other macros (a macro used only inside another `\newcommand` is technically "used" even if not directly in prose)
 - NC-3 findings do not flag declared equivalences (where the author explicitly stated the alias)
 - NC-1 findings do not merely count definition-phrase occurrences: a second passage restating the same canonical meaning is not a finding, only a genuinely incompatible second meaning is
-- NC-4 findings turn on whether a competing meaning is actually live at the point of reuse, not on whether the same character was ever reused anywhere in the document
+- NC-4 findings turn on whether a competing meaning, including a credible conventional parse, is actually live at the point of use, not on whether the same character was ever reused anywhere in the document or resembles a standard symbol
 - NC-5 findings turn on local recoverability, not on a fixed section-count gap
-- NC-8 findings distinguish an unnecessary short, one-use name from a genuine local abbreviation whose reuse or conceptual role repays the lookup cost; shortness alone is not decisive when the abbreviation is a structural parameter, and severity is MINOR by default and BLOCKING only for credible load-bearing ambiguity
-- NC-9 findings check that varying domains or index sets are exposed by the notation, and distinguish notation economy and parameter exposure from NC-3's undeclared-alias findings
+- Abbreviations earn their lookup cost; no display-count or function-notation prescription was imposed.
+- NC-11 findings rest on contextual recoverability of the referent and role-appropriate wording, not on the coexistence of distinct senses of a word.
 
 ## Relationship to Other Skills
 
