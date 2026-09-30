@@ -220,7 +220,13 @@ Cite the evidence (review or comment URLs, or bypass comment URL plus cited prov
 
 ### 9. Merge
 
-Before executing the merge, refresh the relevant GitHub state, including `headRefOid`. If the head or a material intervention changed since evaluation, reevaluate the affected checks; do not rely on a cached merge-ready summary after new feedback. Merge only when every gate passes. If any gate fails, fix, revalidate, or leave the PR open with a comment stating the exact blocking condition. Keep evidence links in the normal PR trail rather than in a status document.
+Before executing the merge, refresh the relevant GitHub state, including `headRefOid`. If the head or a material intervention changed since evaluation, reevaluate the affected checks; do not rely on a cached merge-ready summary after new feedback. Merge only when every gate passes, binding the merge to the evaluated head so that a later push fails it:
+
+```sh
+gh pr merge <N> --squash --match-head-commit <evaluated-headRefOid>
+```
+
+Use the repository's merge method. If any gate fails, fix, revalidate, or leave the PR open with a comment stating the exact blocking condition. Keep evidence links in the normal PR trail rather than in a status document.
 
 ## Fail-closed behavior
 
