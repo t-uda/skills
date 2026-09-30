@@ -66,3 +66,4 @@ Commit locally often. Push only when asked. An agent's "PROVEN" label is not evi
 
 - For generic delegate-and-verify orchestration mechanics, see `light-orchestration` and `claude-code-advanced-orchestration`.
 - For keeping computational (non-proof) experiments reproducible and honest about status, see `computational-reproducibility` — this skill is its analogue for machine-checked proofs.
+- For turning checked formal proofs into human-readable manuscript prose, see `formal-proof-exposition`.

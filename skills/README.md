@@ -48,3 +48,5 @@ Current skills:
 - gcvx-vertex-teammates
 - owner-file-request
 - math-schematic-figures
+- math-proof-exposition
+- formal-proof-exposition

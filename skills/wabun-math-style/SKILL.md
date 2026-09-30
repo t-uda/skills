@@ -111,6 +111,7 @@ Severity: BLOCKING when a theorem/proposition/lemma statement hides its antecede
 In theorem, proposition, corollary and definition statements, express universal quantification with `全ての` or an equivalent explicit universal quantifier. Do not use `任意の` as a general substitute. In a proof, `任意に ... をとる` is appropriate when selecting an arbitrary object for the argument. Preserve the actual quantifier order, domains and dependencies when correcting the wording. Apply this even when the intended universal meaning is recoverable. Severity: MINOR for the wording violation; BLOCKING when a load-bearing statement's quantifier role is genuinely obscured.
 
 **JP-21 (convention) — Announce case splits and contradiction arguments before opening branches.**
+This is the Japanese realisation of `math-proof-exposition` PE-1, which owns the language-independent requirement; report one finding, not both.
 Before the first branch of a proof by cases, state the partition criterion (for example, `$v$ と $w$ が隣接するか否かで場合を分ける`). Label each branch with the corresponding condition. Before a proof by contradiction, state that contradiction is being assumed or that the argument proceeds by contradiction. After all branches or the contradiction discharge, state the common conclusion with `以上より` (or an equally explicit closing sentence). Do not flag a genuine case label that is itself the announced branch. Severity is BLOCKING when the proof structure is difficult to reconstruct and MINOR for a merely unclosed local split.
 
 **JP-9 (convention) — Double-negation ban.**
