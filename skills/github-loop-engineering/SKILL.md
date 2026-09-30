@@ -57,6 +57,8 @@ Apply `deslop-history` to discussion or task-history residue and `deslop-prose` 
 
 Merge only through `github-driven-workflow` after the scoped independent review and all workflow gates pass.
 
+Refresh material owner and reviewer interventions before merge and apply `github-driven-workflow`'s current evidence, disposition and authority checks. Do not maintain a separate approval policy or infer a checkpoint from owner participation alone.
+
 ### 6. Discover
 
 Create bounded follow-up Issues for latent bugs, deferred refactors, documentation defects, or performance problems discovered during execution. Include enough scope and evidence for later triage.
