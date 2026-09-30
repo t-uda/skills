@@ -1,6 +1,6 @@
 ---
 name: math-semantic-preservation
-description: Review or rewrite mathematical prose so an edit, paraphrase, terminology migration, or explanatory description preserves the exact mathematical meaning fixed by its semantic source — referent identity, operation versus result, domain/codomain and representation level, quantifier and equality mode, role and provenance, notation role, and classified-before-replacement terminology migration with concept-cluster synchronization — without auditing claim-versus-proof strength (use math-claim-integrity), notation bookkeeping (use math-notation-consistency), Japanese style or translation events (use wabun-math-style), or audience prerequisites and ordering (use exposition-flow).
+description: Review or rewrite mathematical prose against definitions, formulas or other semantic sources to preserve referents, operations, domains, quantifiers, equality, provenance and notation roles. Use for paraphrase, terminology migration, formal-source exposition and almost-sure or almost-everywhere claims whose measure, random objects or parameter dependencies are inherited from context. Not for independent proof verification, notation bookkeeping, Japanese lexical choice or document-level exposition.
 ---
 
 # Math Semantic Preservation
@@ -22,6 +22,7 @@ required runtime context and not shipped with installed copies).
 - Generating documentation or explanatory prose from formal sources (Lean, Coq, Isabelle, Agda, or similar)
 - Synchronizing the statement, proof explanation, notes, link labels, glossary, and audit records that describe one mathematical concept
 - An explanatory description assigns a role to notation, an argument position, or a datum whose definition should be checked first
+- Reviewing or rewriting an almost-sure, probability-one, or almost-everywhere claim whose measure, random objects, or parameter dependencies are inherited from context, even when no formula is edited
 
 ## Do not use
 
@@ -51,7 +52,7 @@ Each rule is tagged with a classification that sets a default severity: **invari
 ## Procedure
 
 1. **Identify the semantic anchor.** Determine which definition, formula, formal declaration, theorem statement, or source passage fixes the meaning of the edited or reviewed text.
-2. **Build a compact semantic record.** For each load-bearing edited span, record only the relevant fields: referent, operation or relation, domain and codomain, quantifier or equality mode, assumptions and provenance, notation role.
+2. **Build a compact semantic record.** For each load-bearing edited span, record only the relevant fields: referent, operation or relation, domain and codomain, quantifier or equality mode, assumptions and provenance, notation role. When probabilistic qualifiers occur, record the quantifier field under the MS-4 probability-context reading.
 3. **Classify overloaded terminology by occurrence.** Before any repository-wide or document-wide replacement, classify each occurrence by the mathematical object it denotes. Do not begin with a one-to-one lexical substitution table.
 4. **Compare the edit with the semantic record.** Check whether the new prose preserves every load-bearing field. Natural wording is not evidence of semantic equivalence.
 5. **Inspect the concept cluster.** When the same concept appears in a statement, proof explanation, note, link label, glossary, or audit record, verify that all members of the cluster use compatible terminology and describe the same object.
@@ -70,6 +71,10 @@ The edit must preserve where an object lives and at what representation level a 
 
 **MS-4 — Preserve quantifier and equality mode.** *(invariant)*
 The edit must preserve universal, existential, and eventual quantification; pointwise versus almost-everywhere equality; equality versus convergence; implication versus case selection; and fixed-parameter versus uniform assertions. `math-claim-integrity` remains responsible when the claim itself exceeds what the proof establishes; this rule is responsible when an edit or explanatory description changes the source claim's mode. Default severity: BLOCKING.
+
+Treat "almost surely", "with probability one", and "almost everywhere" as context-dependent quantified claims, not stylistic modifiers. Before assessing or rewriting them, recover the governing measure, random objects or measured variable, and fixed versus quantified data from the active context. Check which parameters the exceptional null set and any constants or eventual thresholds may depend on. Preserve that context and those dependencies; retain conventional shorthand when they are recoverable, and clarify only the unresolved dependency. Do not guess missing dependencies or require each statement to redeclare the space or supply a quantifier transcript.
+
+Use the active declarations and semantic source, not the edited sentence alone. If they do not determine a dependency, identify that ambiguity rather than choosing a stronger or weaker reading as a supposed repair. Conventional omission is not itself a defect, and multiple random objects do not by themselves establish ambiguity. An almost-sure qualifier does not itself quantify over new probability spaces; read which space and law are fixed or varied from the surrounding statement and source.
 
 **MS-5 — Preserve role and provenance.** *(invariant)*
 The edit must correctly identify which assumption, structure, package, field, or previous result supplies a datum; which numbered position is an argument, coordinate, factor, component, or stage; and which construction a later property belongs to. Do not infer ownership from nearby implementation structure or identifier names alone. Severity: BLOCKING when the wrong source changes the mathematical dependency; MINOR when the dependency remains unambiguous but the explanation is locally inaccurate.
@@ -96,6 +101,21 @@ Source: f = g in L^2, i.e. f(x) = g(x) for almost every x.
 Edit:   "f(x) equals g(x) at every point x."
 Finding (BLOCKING): almost-everywhere equality rewritten as unqualified
          pointwise equality. Restore the a.e. qualifier or the L^2 statement.
+```
+
+```
+MS-4 (probability context and dependencies):
+Flag: the source chooses a deterministic constant before quantifying over the
+      probability space and sampling data; the rewrite makes the constant
+      apparently depend on those data.
+Flag: a statement is almost sure for each fixed parameter; the rewrite asserts
+      simultaneous validity on one common full-measure event without the source
+      or an established argument supporting that change.
+Keep: the active context fixes the probability space and process unambiguously;
+      "X_n converges almost surely" needs no repeated space or sample argument.
+Keep: an established countability or regularity argument supplies a common
+      event; do not reject an equivalent formulation by comparing prefix
+      strings literally.
 ```
 
 ```
