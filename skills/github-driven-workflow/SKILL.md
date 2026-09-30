@@ -179,8 +179,9 @@ Must return `false`.
 Before merge, read the current formal review submissions, review bodies, ordinary PR comments and inline threads, including their author or recorded reviewer, reviewed revision and subsequent disposition. Retrieve all needed pages; do not prefilter in a way that hides another reviewer, COMMENTED reviews or comment-based evidence.
 
 ```sh
-# Current head, to compare with each review's commit_id or the revision a comment-based review names
-gh pr view <N> --json headRefOid --jq .headRefOid
+# Current head and PR commits, to compare with each review's commit_id or a comment's revision
+gh pr view <N> --json headRefOid,commits \
+  --jq '{head: .headRefOid, commits: [.commits[] | {oid, committedDate}]}'
 
 # Formal Review events of every state, with reviewed revision
 gh api --paginate repos/<owner>/<repo>/pulls/<N>/reviews \
@@ -194,6 +195,8 @@ gh api --paginate repos/<owner>/<repo>/issues/<N>/comments \
 gh api --paginate repos/<owner>/<repo>/pulls/<N>/comments \
   --jq '.[] | {user: .user.login, path, line, commit_id, in_reply_to_id, html_url, body}'
 ```
+
+A comment-based review that names no revision covers at most the head that existed when it was posted. When the covered revision cannot be established, treat the evidence as not covering later commits.
 
 These queries locate evidence candidates; neither a review count nor a keyword match is a sufficient merge predicate. A pending draft, generic activity comment or unsupported marker is not completed review evidence, and a review-shaped comment containing `Changes requested` is not approval.
 
