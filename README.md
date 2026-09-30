@@ -71,7 +71,7 @@ Each skill must live at `skills/<skill-name>/SKILL.md`.
 
 ### Mathematical writing
 
-- `math-claim-integrity`: audit the structural and logical integrity of a mathematics paper — quantifier scope, proof/computation honesty, theorem hierarchy, contribution-list discipline, stale claims, and standing assumptions
+- `math-claim-integrity`: audit the structural and logical integrity of a mathematics paper — quantifier scope, proof/computation honesty, theorem hierarchy, contribution-list discipline, stale claims, and standing assumptions; target the exact contextual claim, separate identified defects from incomplete verification, and inspect the formal declarations behind machine-checked claims
 - `math-notation-consistency`: review mathematical documents for undefined or conflicting notation, undeclared aliases, live-scope ambiguity, unrecoverable references, orphaned LaTeX macros, low-value abbreviations, and structural nouns that obscure their contextual role
 - `math-semantic-preservation`: review or rewrite mathematical prose so edits, paraphrases, and terminology migrations preserve the exact source meaning — referent identity, operation vs result, quantifier and equality mode, provenance, and notation role
 - `wabun-math-style`: draft, review or revise Japanese mathematical prose for logical-role wording, universal quantification, certainty, tense and voice, numerals, references, mathematical translation, structural nouns and terminology-source conflicts, including macro-generated language when rendered text is available; drafting preferences stay distinct from review defects
