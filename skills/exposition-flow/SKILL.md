@@ -29,6 +29,7 @@ Agents that build repository-wide context — files, history, issue and PR discu
 - For auditing the authority or evidentiary grounding of the source material itself → use `sot-integrity` (verify the source first; this skill decides how verified material is introduced to the audience)
 - For quantifier scope, theorem hierarchy, or proof honesty → use `math-claim-integrity`; for notation bookkeeping → use `math-notation-consistency`; for Japanese mathematical language → use `wabun-math-style`
 - For factual verification, citation checking, controlled-vocabulary design, typography, line breaking, visual layout, or slide rendering — out of scope entirely
+- For drawing or auditing explanatory mathematical figures, including proof-dependency diagrams → use `math-schematic-figures`
 
 ## Inputs
 
