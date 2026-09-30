@@ -179,13 +179,12 @@ Must return `false`.
 Before merge, read the current formal review submissions, review bodies, ordinary PR comments and inline threads, including their author or recorded reviewer, reviewed revision and subsequent disposition. Retrieve all needed pages; do not prefilter in a way that hides another reviewer, COMMENTED reviews or comment-based evidence.
 
 ```sh
-# Current head and PR commits, to compare with each review's commit_id or a comment's revision
-gh pr view <N> --json headRefOid,commits \
-  --jq '{head: .headRefOid, commits: [.commits[] | {oid, committedDate}]}'
+# Current head, to compare with each review's commit_id or the SHA a comment-based review names
+gh pr view <N> --json headRefOid --jq .headRefOid
 
 # Formal Review events of every state, with reviewed revision
 gh api --paginate repos/<owner>/<repo>/pulls/<N>/reviews \
-  --jq '.[] | {user: .user.login, state, commit_id, submitted_at, body}'
+  --jq '.[] | {user: .user.login, state, commit_id, submitted_at, html_url, body}'
 
 # Ordinary PR comments: `Reviewed-by:` artifacts, @codex replies, owner reviews, bypass records
 gh api --paginate repos/<owner>/<repo>/issues/<N>/comments \
@@ -196,7 +195,7 @@ gh api --paginate repos/<owner>/<repo>/pulls/<N>/comments \
   --jq '.[] | {user: .user.login, path, line, commit_id, in_reply_to_id, html_url, body}'
 ```
 
-A comment-based review that names no revision covers at most the head that existed when it was posted. When the covered revision cannot be established, treat the evidence as not covering later commits.
+Record the reviewed SHA with comment-based evidence. Commit timestamps do not show when a commit was pushed, so a comment-based review that names no SHA cannot establish coverage of a head that may have changed; obtain review of the current head instead.
 
 These queries locate evidence candidates; neither a review count nor a keyword match is a sufficient merge predicate. A pending draft, generic activity comment or unsupported marker is not completed review evidence, and a review-shaped comment containing `Changes requested` is not approval.
 
