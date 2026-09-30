@@ -105,7 +105,7 @@ Every relation symbol (≺, ⊏, ⋖, an arrow used as an ordering, or any ad ho
 **R-M — Contribution-list mapping discipline.** *(convention; primary requirement)*
 Every item in a §1 contribution list must map to: (a) the formal result it corresponds to; (b) the incumbent or prior baseline; (c) the concrete new gain over that baseline; (d) why the item is independently significant rather than merely supporting another listed item; (e) whether it duplicates another listed item at a different level of granularity. Unless independent significance is established, the following must not appear as parallel main contributions: infrastructure lemmas, routine corollaries, direct computational observations, worked examples, known-result reformulations, or several proof components of one result counted separately. Repair: move such material into a proof, remark, example, or auxiliary proposition, or omit it from the list. Escalates to BLOCKING when the abstract or introduction materially misrepresents the paper's main scholarly contribution, even though every individual statement is mathematically true. R-F and R-M often co-fire on the same underlying inflation — R-F concerns the theorem-environment label in the body, R-M concerns whether the §1 list conflates that result with genuine main contributions; report both tags rather than treating them as duplicates.
 
-**R-N — Target the exact contextual claim.** *(invariant of review)*
+**R-N — Target the exact contextual claim.** *(invariant; also governs the review itself)*
 Before reporting a refutation or gap, recover the proposition as used, its construction history, live hypotheses and established properties. Determine whether it concerns a particular constructed object, a stated class, or every object of a type. Demonstratives can retain the context of the construction they identify.
 
 Do not discard that context or refute a stronger unstated proposition as though it were the manuscript's claim. Conversely, do not invent helpful hypotheses or import restrictions the manuscript does not inherit.
@@ -116,7 +116,7 @@ Distinguish four outcomes:
 - Review incomplete: neither a refutation nor a gap has been established. State the verification limit separately, not as a manuscript defect.
 - No finding: the concern is resolved, or only an irrelevant stronger generalisation has been refuted.
 
-A counterexample finding states the claim, live hypotheses, example and failed conclusion. A gap finding identifies the unsupported transition and needed justification. Failure to complete verification or the counterexample fields is not evidence of a gap. A genuine load-bearing gap can be BLOCKING; an invalid counterexample or incomplete review cannot justify blocking the manuscript as mathematically defective.
+A counterexample finding states the claim, live hypotheses, example and failed conclusion. A gap finding identifies the unsupported transition and needed justification. Failure to complete verification or the counterexample fields is not evidence of a gap. A refutation is BLOCKING; an identified gap is BLOCKING when load-bearing and MINOR otherwise. An invalid counterexample or incomplete review cannot justify blocking the manuscript as mathematically defective: it invalidates the review finding, not the manuscript.
 
 ## Examples
 
