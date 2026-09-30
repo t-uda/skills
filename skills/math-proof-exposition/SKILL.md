@@ -108,7 +108,7 @@ Do not remove it merely because it involves elements or a numerical measure.
 
 ## Output and quality check
 
-For review, identify the location, obscured proof mode or purpose, and a concrete exposition repair. Keep an exposition defect distinct from a proof gap or a verification not completed, as `math-claim-integrity` R-N distinguishes them.
+For review, give each finding's rule tag (PE-1 to PE-6), location, the exposition defect (an obscured proof mode or purpose, misplaced detail, compression without a sufficient reason, an unhelpful level, or a lost architecture), and a concrete repair. Keep an exposition defect distinct from a proof gap or a verification not completed, as `math-claim-integrity` R-N distinguishes them.
 
 For authorised rewriting, provide the revised proof and a compact account of substantive structural changes, unless only prose was requested. A change to the theorem or its hypotheses requires an explicit author decision, not a silent exposition edit.
 
