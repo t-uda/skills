@@ -42,7 +42,7 @@ required runtime context and not shipped with installed copies).
 
 - For quantifier scope errors, theorem hierarchy, or proof/computation distinction — use `math-claim-integrity`
 - For prose inflation — use `deslop-prose`
-- For prose assigning the wrong mathematical role to consistent notation (a family index read as an exponent, an argument position read as a tensor factor) — use `math-semantic-preservation`
+- For an edit or explanatory description that assigns notation a role contradicting its semantic source (a family index read as an exponent, an argument position read as a tensor factor) — use `math-semantic-preservation` MS-5/MS-6
 
 ## Inputs
 
@@ -98,7 +98,7 @@ At a load-bearing use of a structural noun, the active context must make its ref
 
 Prior context can identify the space, basis, function or object. Do not require every sentence to repeat it, or flag clearly distinguished senses of a word merely because they coexist in a document. For a multi-index α, call α_k a component, not a coordinate: a tuple encoding or possible Euclidean embedding does not change its role in this argument.
 
-Do not derive prose terms from identifier names or cited titles without checking their definitions and use. Preserve cited titles verbatim. For terminology migration use `math-semantic-preservation` MS-7 to classify occurrences before replacement. Severity: MINOR; BLOCKING in a statement or definition when the ambiguity affects what is claimed or defined.
+Do not derive prose terms from identifier names or cited titles without checking their definitions and use. Preserve cited titles verbatim. For terminology migration use `math-semantic-preservation` MS-7 to classify occurrences before replacement. NC-11 owns a generic or competing label whose role the document's active context leaves unrecoverable or obscured; when an edit or explanatory description states a role that contradicts its semantic source, report MS-5/MS-6 instead, not both. Severity: MINOR; BLOCKING in a statement or definition when the ambiguity affects what is claimed or defined.
 
 ## Examples
 
