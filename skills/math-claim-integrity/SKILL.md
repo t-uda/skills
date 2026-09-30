@@ -41,6 +41,7 @@ Do not use this skill for:
 - Sentence-level prose inflation, hype, or AI-generated decoration → use `deslop-prose` (but structural contribution/hierarchy inflation belongs here: R-F, R-M)
 - Symbol-table drift across sections → use `math-notation-consistency`
 - Japanese-specific language anti-patterns → use `wabun-math-style`
+- How a valid proof is exposed to readers → use `math-proof-exposition`; translating a formal proof into prose → use `formal-proof-exposition`
 - Discussion-history artifacts in planning docs → use `deslop-history`
 - Whether an edit, paraphrase, or terminology migration preserves the semantic content of its source (referent identity, operation vs result, quantifier or equality mode changed by an edit) → use `math-semantic-preservation`
 
