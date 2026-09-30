@@ -47,3 +47,4 @@ Current skills:
 - math-semantic-preservation
 - gcvx-vertex-teammates
 - owner-file-request
+- math-schematic-figures
