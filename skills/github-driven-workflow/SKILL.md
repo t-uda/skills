@@ -179,6 +179,9 @@ Must return `false`.
 Before merge, read the current formal review submissions, review bodies, ordinary PR comments and inline threads, including their author or recorded reviewer, reviewed revision and subsequent disposition. Retrieve all needed pages; do not prefilter in a way that hides another reviewer, COMMENTED reviews or comment-based evidence.
 
 ```sh
+# Current head, to compare with each review's commit_id or the revision a comment-based review names
+gh pr view <N> --json headRefOid --jq .headRefOid
+
 # Formal Review events of every state, with reviewed revision
 gh api --paginate repos/<owner>/<repo>/pulls/<N>/reviews \
   --jq '.[] | {user: .user.login, state, commit_id, submitted_at, body}'
@@ -215,7 +218,7 @@ Cite the evidence (review or comment URLs, or bypass comment URL plus cited prov
 
 ### 9. Merge
 
-Before executing the merge, refresh the relevant GitHub state. If the head or a material intervention changed since evaluation, reevaluate the affected checks; do not rely on a cached merge-ready summary after new feedback. Merge only when every gate passes. If any gate fails, fix, revalidate, or leave the PR open with a comment stating the exact blocking condition. Keep evidence links in the normal PR trail rather than in a status document.
+Before executing the merge, refresh the relevant GitHub state, including `headRefOid`. If the head or a material intervention changed since evaluation, reevaluate the affected checks; do not rely on a cached merge-ready summary after new feedback. Merge only when every gate passes. If any gate fails, fix, revalidate, or leave the PR open with a comment stating the exact blocking condition. Keep evidence links in the normal PR trail rather than in a status document.
 
 ## Fail-closed behavior
 
