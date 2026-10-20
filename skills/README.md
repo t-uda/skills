@@ -50,3 +50,6 @@ Current skills:
 - math-schematic-figures
 - math-proof-exposition
 - formal-proof-exposition
+- human-intervention-management
+- webclass-operations
+- teaching-materials

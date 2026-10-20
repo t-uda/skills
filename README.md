@@ -53,6 +53,14 @@ Each skill must live at `skills/<skill-name>/SKILL.md`.
 
 - `handoff-prompt`: generate a compact prompt for the next agent or stage
 
+### Teaching and delivery
+
+- `teaching-materials`: design and validate educational content and assessment criteria, maintain accepted versions, and coordinate delivery attributes
+- `webclass-operations`: discover applicable WebClass attributes, map the shared target model to import/UI operations, and verify saved state and delivery
+- `human-intervention-management`: keep task authority separate from runtime permissions, coordinate necessary human attention, and continue authorized accessible work
+
+These skills compose conditionally through their linked entry points and existing task state. Installing one does not install its companions; load the needed companion from an available source or report the missing capability. Source packaging here does not activate skills in another project.
+
 ### Notebook review
 
 - `marimo-reactive-review`: review an existing marimo notebook for reactive design quality and refactor opportunities
