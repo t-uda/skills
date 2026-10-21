@@ -57,7 +57,7 @@ Precedence when a span matches more than one rule tag: report every matching tag
 
 ## Procedure
 
-For drafting or translation, first write the Japanese text from `artifact` or `source_artifact`, applying the active rules and the drafting preferences, then check the result with the steps below.
+For drafting or translation, complete step 1 before writing, then write the Japanese text from `artifact` or `source_artifact`, applying the active rules and the drafting preferences. Check the result with steps 2–5 and revise the written text for each finding before returning it per Output; the fix-mode gate in step 7 applies only to review of an existing artifact.
 
 1. If `terminology_sot` is supplied, identify its canonical terms, scopes, and permitted aliases. If `source_artifact` is supplied, identify each source term from its definition, formula, and use before assessing its Japanese rendering.
 2. Scan the Japanese text under check (the artifact under review, or the text just written when drafting or translating) for each active rule: JP-1 to JP-9, JP-11 to JP-21, JP-25 and JP-26 (JP-10 is merged into JP-3; JP-22 to JP-24 are drafting preferences, not finding tags).
@@ -65,7 +65,7 @@ For drafting or translation, first write the Japanese text from `artifact` or `s
 4. When JP-16 or JP-17 applies, record the relevant SoT, source, or definition evidence. Do not create a duplicate finding in another skill for the same terminology event.
 5. When current generated text is available, inspect it for Japanese-language defects introduced by macros or localisation settings and absent from the source, especially cross-reference names and connectors. Check context: English quotations and bibliography entries are not defects merely because they contain English. Locate the generating construct and verify the repair in the output. Treat extraction artefacts or uncertain locations as limits of the check, not established manuscript defects. This is a language-content check, not a visual-layout review; it requires neither a fresh build, OCR, nor a complete PDF inspection. Without `rendered_text`, or with only stale output, state generated language as unchecked scope and continue the source review.
 6. Produce the structured finding report (see Output).
-7. If asked to apply fixes, edit in place per Output's fix-mode instructions. Apply the drafting preferences only to new prose or an explicitly requested stylistic rewrite.
+7. If asked to apply fixes to an existing artifact, edit in place per Output's fix-mode instructions. Apply the drafting preferences only to new prose or an explicitly requested stylistic rewrite.
 
 ## Rules
 
@@ -332,7 +332,7 @@ for compatibility.
 
 ## Output
 
-For drafting or translation, return the Japanese text; report only unresolved items such as a JP-17 source conflict or unchecked generated language. For review, the default is review-only. Produce a structured finding report listing:
+For drafting or translation, return the Japanese text already revised for the findings of the post-writing check; report only unresolved items such as a JP-17 source conflict or unchecked generated language. For review, the default is review-only. Produce a structured finding report listing:
 - Rule tag (an active rule from Procedure step 2) and class
 - Severity: BLOCKING / MINOR / ADVISORY, per the classification mapping above
 - Location: environment label (e.g. `\begin{theorem}[thm:main]`), proof section, or paragraph identifier
