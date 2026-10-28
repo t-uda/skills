@@ -412,8 +412,8 @@ Ownership boundaries to preserve:
 - `wabun-math-terminology` owns evidence-backed terminology selection,
   unnatural Japanese calques, terminology SoT conflicts and translation-level
   concept identity across both passage types.
-- `math-writing-preferences` holds optional personal natural-number/index
-  conventions for all languages; it does not define general review defects.
+- `math-writing-preferences` holds scoped personal natural-number/index
+  conventions for drafting, translation and revision in all languages; it does not define general review defects.
 - `math-notation-consistency` owns document-level symbol identity, aliases,
   definition locality, and notation reuse.
 - `math-claim-integrity` owns claim structure, proof/evidence boundaries,
@@ -479,12 +479,15 @@ consequential boundary conditions and every necessary argument. Clear uses of
 `規約` are not defects. JP-22's order/enumeration preference and JP-24's
 construction wording likewise remain drafting defaults, not review findings.
 
-The separately elected personal convention uses `N = {0, 1, 2, ...}` and
+The personal convention uses `N = {0, 1, 2, ...}` and
 permits `0 行目`, `0 列目`, `0 番目`, “row 0”, “column 0” and “zeroth” in
 all languages. Explanations and translations must preserve mathematics, code
-and array indices without silently adding 1. This preference is strong when
-elected, but is not a general mathematical-correctness test and does not
-authorize silently changing a source's mathematics.
+and array indices without silently adding 1. This strong preference applies automatically when trusted context establishes the user
+as uda/t-uda OR the target repository owner is t-uda/uda-lab. A known user needs
+no repository; a matching repository needs no matching user. Unknown identity
+is not presumed to match; other contexts require an explicit request. It is not a general
+mathematical-correctness test and does not authorize silently changing a source's
+mathematics or judging another author's convention mathematically wrong.
 
 ### Evidence and validation limits
 

@@ -89,7 +89,7 @@ These skills compose conditionally through their linked entry points and existin
 - `wabun-math-theorem`: draft and review Japanese wording in explicitly structured definitions, results, proofs and remarks, including Markdown equivalents
 - `wabun-math-style`: draft and review narrative Japanese mathematical prose, with shared language rules and default drafting preferences
 - `wabun-math-terminology`: research meaning and established Japanese usage for every terminology operation, reuse verified evidence, and retain English when no standard Japanese translation is found
-- `math-writing-preferences`: optional personal conventions for zero-inclusive natural numbers and zero-based indexing in writing and translation in all languages
+- `math-writing-preferences`: personal conventions for zero-inclusive natural numbers and zero-based indexing in all languages, automatically applied for a known uda/t-uda user or a target repository owned by t-uda/uda-lab; preserve explicit source conventions and keep preferences distinct from mathematical correctness
 
 The Japanese writing skills share references shipped inside `wabun-math-style` and use the terminology companion when needed. Install the required companions alongside them, or resolve them from an available skill source; single-skill installation does not install dependencies.
 

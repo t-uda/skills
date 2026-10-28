@@ -7,7 +7,7 @@ description: Draft, translate, review or revise Japanese wording inside explicit
 
 Apply within the named mathematical blocks, whether LaTeX environments or explicitly labelled Markdown blocks. Read each sentence by its role: a proof goal, definition, conclusion, citation and conjecture need different wording. Use `wabun-math-style` for narrative passages.
 
-Read the [shared Japanese language rules](../wabun-math-style/references/language.md) before drafting or review, and [drafting preferences](../wabun-math-style/references/drafting.md) for new prose, translation or a requested stylistic rewrite. Resolve the `wabun-math-style` companion from the available skill catalog if a sibling path is absent; report a missing required reference. For every terminology operation, use `wabun-math-terminology` and its evidence record. Use `deslop-prose` for redundant explanation and rhetorical guard phrases, and elected `math-writing-preferences` for personal conventions.
+Read the [shared Japanese language rules](../wabun-math-style/references/language.md) before drafting or review, and [drafting preferences](../wabun-math-style/references/drafting.md) for new prose, translation or a requested stylistic rewrite. Resolve the `wabun-math-style` companion from the available skill catalog if a sibling path is absent; report a missing required reference. For every terminology operation, use `wabun-math-terminology` and its evidence record. Use `deslop-prose` for redundant explanation and rhetorical guard phrases, and apply `math-writing-preferences` for drafting, translation and revision according to its user/repository scope.
 
 ## Rules
 

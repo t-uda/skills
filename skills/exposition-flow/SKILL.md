@@ -31,6 +31,8 @@ Agents that build repository-wide context — files, history, issue and PR discu
 - For factual verification, citation checking, controlled-vocabulary design, typography, line breaking, visual layout, or slide rendering — out of scope entirely
 - For drawing or auditing explanatory mathematical figures, including proof-dependency diagrams → use `math-schematic-figures`
 
+For mathematical drafting, translation and revision in any language, use `math-writing-preferences` according to its user/repository scope.
+
 ## Inputs
 
 - `source_material` — the material to explain and the agreed task brief or accessible reference; distinguish evidence from governing requirements

@@ -20,6 +20,8 @@ This skill owns local proof exposition. Use `math-claim-integrity` for correctne
 
 Use `formal-proof-exposition` when formal code or a formalisation repair is a source of the prose. A proof assistant is not a prerequisite for this skill.
 
+For mathematical drafting, translation and revision in any language, use `math-writing-preferences` according to its user/repository scope.
+
 ## Inputs
 
 Read the claim being proved, the proof and its surrounding live assumptions, the agreed audience model, and any existing proof version or requested edit boundary. Use supplied terminology and notation. Do not assume that the reader knows a construction merely because the writing agent knows it from another file or conversation.

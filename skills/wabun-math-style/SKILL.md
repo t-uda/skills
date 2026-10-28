@@ -7,7 +7,7 @@ description: Draft, review or revise narrative Japanese mathematical prose, incl
 
 Use for narrative prose in papers, notes and lecture materials. Read [shared Japanese language rules](references/language.md) for every passage; those rules also serve structured mathematical blocks. For explicitly structured definitions, lemmas, propositions, theorems, corollaries, proofs and remarks, use `wabun-math-theorem`.
 
-For any terminology selection, translation, glossary work or terminology audit, use `wabun-math-terminology` and its evidence record before adopting a term. Use `deslop-prose` for general metadiscourse, redundant explanation and rhetorical guard phrases. Read [drafting preferences](references/drafting.md) for new prose, translation or a requested stylistic rewrite. Apply `math-writing-preferences` only when the user or project elects its personal conventions.
+For any terminology selection, translation, glossary work or terminology audit, use `wabun-math-terminology` and its evidence record before adopting a term. Use `deslop-prose` for general metadiscourse, redundant explanation and rhetorical guard phrases. Read [drafting preferences](references/drafting.md) for new prose, translation or a requested stylistic rewrite. Apply `math-writing-preferences` for drafting, translation and revision according to its user/repository scope.
 
 ## Narrative rules
 
