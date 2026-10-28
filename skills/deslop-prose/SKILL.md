@@ -28,7 +28,7 @@ Do not use this skill for:
 - legal or policy text where rhetorical softening could change meaning
 - drafts that still need architectural or substantive decisions
 - quantifier scope, theorem/lemma/proposition hierarchy, or claim-level mathematical relations — this is logical content, not rhetorical inflation; use `math-claim-integrity`
-- Japanese-language phrasing anti-patterns — use `wabun-math-style`
+- Japanese mathematical wording — route through `wabun-math`; general metadiscourse and rhetorical guard phrases remain here
 - judging whether a research direction or connection is worth pursuing — use `research-significance`
 
 Use `deslop-history` when the artifact leaks process history, superseded alternatives, or agent-facing framing.
@@ -59,6 +59,7 @@ Ask only when rewriting could blur a technical term, scope boundary, or required
 - `hype-inflation` — unsupported importance claims such as "transformative" or "pivotal"
 - `enumeration-inflation` — decorative lists that imply coverage without support
 - `generic-metadiscourse` — scaffolding like "It is important to note that"
+- `redundant-explanation` — repeating a qualification already fixed by the active context, without information or needed contrast
 - `paragraph-fragmentation` — one coherent explanatory unit split across adjacent paragraphs whose boundaries add no useful topic, logical, scope or readability distinction
 - `framework-inflation` — grand labels such as "broader landscape" or "holistic framework" without a concrete framework
 - `methodological-theatre` — vague rigor language where a concrete method should be named
@@ -76,6 +77,7 @@ Ask only when rewriting could blur a technical term, scope boundary, or required
 - Start with the claim, not the sentence-level announcement of the claim.
 - Name the actual method, evidence, dataset, theorem, metric, proof step, or procedure when known.
 - Preserve necessary hedging, qualifications, citations, notation, and scope boundaries.
+- Remove redundant qualifications only when they add no information or needed contrast; treat the redundant wording as MINOR. Keep a first clarification, a comparison of conventions, or a reminder needed for an independently read passage. Preserve established mathematical conventions, notation and index origins.
 - Preserve established technical terms; do not paraphrase for freshness.
 - Rewrite long ad hoc hyphenated compounds as ordinary noun phrases unless the compound is standard.
 - Keep negative framing only when it prevents a likely misuse.
@@ -152,5 +154,5 @@ Before finishing, verify:
 - Use `sot-integrity` when authority, factual grounding, or trust scope must be audited.
 - Use `textlint-cli` for deterministic lint checks, not context-sensitive prose judgment.
 - Use `math-claim-integrity` for quantifier scope, theorem/proposition hierarchy, proof/computation honesty, or other logical-structural defects; this skill never edits claim-level mathematical content.
-- Use `wabun-math-style` for Japanese-language anti-patterns (particle misuse, unnatural literal translation, epistemic hedges); this skill is language-agnostic and does not target Japanese-specific phrasing.
+- Use `wabun-math` to route Japanese mathematical wording by passage and task, including `wabun-math-terminology` for researched term choices. Keep general rhetorical guard phrases under this skill's `defensive-negative-framing` guidance.
 - Use `research-significance` to assess whether a research direction or connection has scholarly value; this skill only cleans prose after that judgment is made.

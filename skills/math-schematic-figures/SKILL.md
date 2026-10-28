@@ -20,7 +20,7 @@ This skill covers planning, drawing, polishing and acceptance of a correct, info
 
 Plotting measured or computed data and its statistical interpretation belong to a data-visualisation workflow. Classify by purpose, not by file format or whether code generated the picture.
 
-Use `math-claim-integrity` for the validity of the underlying claim and for retrieving the formal declarations that support machine-checked claims; `math-notation-consistency` for label meanings; `wabun-math-style` for Japanese wording; `exposition-flow` for the agreed reader needs and surrounding exposition order; and `deslop-prose` for caption prose. This skill still checks that the figure and caption faithfully represent the intended mathematics. A figure does not replace a missing proof, and visual review does not authorise changing a theorem to fit a picture.
+Use `math-claim-integrity` for the validity of the underlying claim and for retrieving the formal declarations that support machine-checked claims; `math-notation-consistency` for label meanings; `wabun-math` for Japanese wording; `exposition-flow` for the agreed reader needs and surrounding exposition order; and `deslop-prose` for caption prose. This skill still checks that the figure and caption faithfully represent the intended mathematics. A figure does not replace a missing proof, and visual review does not authorise changing a theorem to fit a picture.
 
 ## Inputs
 
