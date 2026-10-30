@@ -28,11 +28,11 @@ required runtime context and not shipped with installed copies).
 
 - For whether a claim is supported at the strength its proof establishes, theorem hierarchy, or claim/proof boundaries → use `math-claim-integrity`
 - For definition sites, aliases, symbol reuse across scopes, subscript/superscript typography, or dangling references → use `math-notation-consistency`
-- For Japanese-language anti-patterns, terminology SoT conflicts, and translation or source-naming events (JP-16/JP-17) → use `wabun-math-style`
+- For Japanese wording → use `wabun-math`; for terminology research, SoT conflicts and translation or source-naming events (JP-16/JP-17) → use `wabun-math-terminology`
 - For audience prerequisites, dependency ordering, and self-containment of an exposition → use `exposition-flow`
 - For prose inflation or hype → use `deslop-prose`
 
-One defect, one layer: report the skill whose invariant is actually broken, never duplicate findings. `wabun-math-style` JP-17 owns the translation or source-naming event; this skill owns the corresponding language-agnostic defect when it arises during **monolingual** paraphrase, corpus editing, documentation generation, or terminology migration rather than translation.
+One defect, one layer: report the skill whose invariant is actually broken, never duplicate findings. `wabun-math-terminology` JP-17 owns the translation or source-naming event; this skill owns the corresponding language-agnostic defect when it arises during **monolingual** paraphrase, corpus editing, documentation generation, or terminology migration rather than translation.
 
 ## Inputs
 
@@ -83,7 +83,7 @@ The edit must correctly identify which assumption, structure, package, field, or
 A superscript is not automatically a power, a subscript is not automatically an index, and a number in an identifier is not automatically the number of a displayed factor. Determine the role from the definition, type, formula, and use. `math-notation-consistency` owns inconsistent typography for the same family (NC-7); this rule owns an incorrect semantic interpretation of otherwise consistent notation. Default severity: BLOCKING.
 
 **MS-7 — Classify before terminology migration and synchronize the concept cluster.** *(convention for cluster synchronization; invariant when the replacement itself collapses distinct concepts)*
-A terminology migration must classify occurrences by referent before replacement. After choosing the context-specific terms, update all relevant members of the concept cluster: statement, proof explanation, note, link display text, glossary, and audit or migration record. Do not require every repository metadata field or compatibility identifier to be renamed — the scope is human-facing mathematical content and records that claim to describe the applied migration. Severity: cluster-synchronization defects default MINOR, escalating to BLOCKING when inconsistent terms identify different mathematical objects; a replacement that collapses distinct concepts into one term is BLOCKING.
+A terminology migration must classify occurrences by referent before replacement. For Japanese terminology, use `wabun-math-terminology` for mandatory meaning/usage research or a matching verified record; share that record rather than repeating research or findings. MS-7 retains occurrence classification and migration synchronization. After choosing the context-specific terms, update all relevant members of the concept cluster: statement, proof explanation, note, link display text, glossary, and audit or migration record. Do not require every repository metadata field or compatibility identifier to be renamed — the scope is human-facing mathematical content and records that claim to describe the applied migration. Severity: cluster-synchronization defects default MINOR, escalating to BLOCKING when inconsistent terms identify different mathematical objects; a replacement that collapses distinct concepts into one term is BLOCKING.
 
 ## Examples
 
@@ -231,7 +231,7 @@ Before finishing, verify:
 - Every finding names its semantic anchor and the field that changed
 - No finding rests on fluency or naturalness judgments — only on comparison with the semantic record
 - Any terminology migration classified occurrences by referent before replacement was assessed
-- No duplicate finding for an event owned by `wabun-math-style` (JP-16/JP-17 translation or SoT events), `math-notation-consistency` (bookkeeping), or `math-claim-integrity` (claim strength)
+- No duplicate finding for an event owned by `wabun-math-terminology` (JP-16/JP-17 translation or SoT events), `math-notation-consistency` (bookkeeping), or `math-claim-integrity` (claim strength)
 - No compatibility identifier, theorem label, file name, or metadata field was demanded renamed
 - Pointwise, almost-everywhere, eventual, and uniform statements remain distinct in every proposed correction
 
@@ -239,6 +239,6 @@ Before finishing, verify:
 
 - `math-claim-integrity` owns whether a claim is supported at the strength its proof establishes; this skill owns whether an edit changed the source claim's meaning or mode (MS-4 defers claim-strength defects there).
 - `math-notation-consistency` owns document-wide notation bookkeeping — definition sites, aliases, scope, typography (NC-7); this skill owns whether prose assigns the correct mathematical role to otherwise consistent notation (MS-6).
-- `wabun-math-style` owns Japanese language review, terminology SoT conflicts, and translation or source-naming events (JP-16/JP-17); this skill owns the language-agnostic semantic defect in monolingual paraphrase, corpus editing, documentation generation, or terminology migration.
+- `wabun-math-terminology` owns researched Japanese term choices, terminology SoT conflicts, and translation or source-naming events (JP-16/JP-17); this skill owns the language-agnostic semantic defect in monolingual paraphrase, corpus editing, documentation generation, or terminology migration.
 - `exposition-flow` owns audience prerequisites and dependency order; it does not determine whether a local mathematical paraphrase preserves the source meaning — that is this skill.
 - Do not emit duplicate findings for one defect: report the layer whose invariant is actually broken.

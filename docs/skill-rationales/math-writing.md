@@ -4,21 +4,26 @@ Maintenance-only document. It is not runtime skill context and is not copied int
 installed skill directories; it exists so a maintainer or reviewer can recover why
 a rule exists without reconstructing issue history.
 
-Covers four skills:
+Covers the Japanese mathematical-writing family and its semantic neighbours:
 
+- `skills/wabun-math/SKILL.md`
+- `skills/wabun-math-theorem/SKILL.md`
 - `skills/wabun-math-style/SKILL.md`
+- `skills/wabun-math-terminology/SKILL.md`
+- `skills/math-writing-preferences/SKILL.md`
 - `skills/math-notation-consistency/SKILL.md`
 - `skills/math-claim-integrity/SKILL.md`
 - `skills/math-semantic-preservation/SKILL.md`
 
 Original implementation: PR [#118](https://github.com/t-uda/skills/pull/118).
-Latest semantic revision: [#149](https://github.com/t-uda/skills/issues/149).
+Terminology revision: [#149](https://github.com/t-uda/skills/issues/149).
+Japanese-writing split and evidence contract: [#201](https://github.com/t-uda/skills/issues/201).
 `math-semantic-preservation` added: [#153](https://github.com/t-uda/skills/issues/153).
 Future semantic rewrites need their own issue. This document
 preserves *design intent*; it must not silently weaken any target behaviour or
 drop any "Protected behaviour" clause when edited.
 
-## 1. `wabun-math-style`: implication, cases, and discourse roles
+## 1. `wabun-math-theorem` and `wabun-math-style`: implication, cases, and discourse roles
 
 ### Originating failure mode
 
@@ -86,7 +91,7 @@ theorem statements, proofs, and exposition. The rule must not collapse into
 either bad extreme: globally replacing every `とき`/`場合` with `ならば`, or
 allowing `A のとき B` everywhere because it is colloquially understandable.
 
-## 2. `wabun-math-style`: unnatural Japanese literal translations and AI metaphors
+## 2. `wabun-math-terminology`: unnatural Japanese literal translations and AI metaphors
 
 ### Originating failure mode
 
@@ -122,12 +127,14 @@ mathematical content instead of expressing it.
 ### Narrow technical-term exceptions
 
 A narrow exception applies when the Japanese term is established in the
-relevant field and used with that exact technical meaning, or when the paper
-explicitly defines it as a local technical term — e.g. `模型` in model theory,
+relevant field and used with that exact technical meaning — e.g. `模型` in model theory,
 `統計量` for a genuine statistic in probability/statistics, `検出` where
 detection is an established technical operation in that field, `層別` in an
 established technical expression (e.g. a recognised statistical procedure). Do
-not infer an exception from English usage alone.
+not infer an exception from English usage alone. Issue #201 removes the former
+local-definition shortcut: defining a Japanese label locally does not establish
+its usage or authorize an invented translation. Preserve the definition's
+mathematical meaning while resolving its name through evidence.
 
 ### Special handling of `統計量`
 
@@ -142,7 +149,7 @@ interdisciplinary concepts. Its purpose is to reject unnatural Japanese
 literal translations and decorative AI metaphors while preserving established
 Japanese technical terminology.
 
-## 3. `wabun-math-style`: canonical terminology and concept-preserving translation
+## 3. `wabun-math-terminology`: canonical terminology and concept-preserving translation
 
 ### Originating failure mode
 
@@ -155,16 +162,20 @@ organisational role.
 ### Identify the concept before translating its label
 
 Definitions, formulas, and use determine the concept; an English label is not
-decisive evidence. If a source calls a simplex filtration threshold a "birth
-value" even though it is not homology-class birth, the review must report that
-source-side inconsistency rather than endorse `誕生値`. Natural English is not
-enough to justify a literal Japanese translation.
+decisive evidence. If a source identifies a simplex filtration threshold with
+homology-class birth, report that concept conflict rather than endorse `誕生値`.
+The shared English word alone does not establish a conflict: simplex entry is
+also called birth time in [Cavanna, Jahanseir and Sheehy, Section 2](https://arxiv.org/html/1506.03797v1#S2).
+Preserve genuinely distinct scoped uses, while requiring separate evidence for
+their Japanese renderings. Natural English is not enough to justify a literal
+Japanese translation.
 
 ### Terminology SoT is authoritative but not infallible
 
-When a document or repository supplies a glossary, it controls canonical
-Japanese wording and permitted aliases in its scope. The reviewer must not
-introduce a local alternative. A glossary does not override a conflicting
+When a document or repository supplies a glossary, it controls project canonical
+wording and permitted aliases in its scope, subject to external evidence of
+Japanese usage. The reviewer must not introduce an unsupported local alternative.
+A project editorial choice is not proof that another attested term is wrong. A glossary does not override a conflicting
 definition, however, whether the definition is in the Japanese artifact or a
 supplied source: report the conflict and resolve the terminology at its source
 rather than mechanically replacing the prose.
@@ -174,12 +185,16 @@ rather than mechanically replacing the prose.
 Distinct concepts and operations must retain distinct names in Japanese. This
 is a semantic requirement, not a stylistic preference. Conversely, do not ban
 established Japanese mathematics terms such as `層`, `核`, or `台`, and retain
-English or katakana where that is the field's established usage. Local terms
-are valid when explicitly defined and consistent with the supplied SoT.
+English or katakana where that is the field's established usage. All terminology
+operations require research into meaning and Japanese usage, or reuse of a
+matching inspected record. If completed research finds no established Japanese
+translation, retain English; do not invent provisional Japanese or unsupported
+katakana. Preserve local definitions without treating them as usage evidence.
+Inaccessible research is unresolved evidence, not a completed negative search.
 
 ### Ownership boundary
 
-`wabun-math-style` owns a SoT conflict and translation-level concept
+`wabun-math-terminology` owns a SoT conflict and translation-level concept
 conflation. `math-notation-consistency` owns a separate document-wide alias or
 definition-locality defect; `math-claim-integrity` owns a separate claim-scope
 or truth-value defect. Do not emit duplicate findings for one terminology
@@ -329,12 +344,14 @@ plausible. These are semantic-preservation defects, not prose-style defects.
 
 `math-claim-integrity` owns whether a claim is supported at the strength its
 proof establishes; `math-notation-consistency` owns document-wide notation
-bookkeeping; `wabun-math-style` JP-16/JP-17 own terminology SoT conflicts and
+bookkeeping; `wabun-math-terminology` JP-16/JP-17 own terminology SoT conflicts and
 translation or source-naming events. `math-semantic-preservation` owns whether
 an edit, monolingual paraphrase, terminology migration, or explanatory
 description preserves the semantic content fixed by its source anchor. One
 defect is reported at exactly one layer — the layer whose invariant is
-actually broken.
+actually broken. MS-7 retains occurrence classification and concept-cluster
+synchronization; `wabun-math-terminology` researches and records Japanese term
+choices. Both reuse the same record rather than duplicate searches or findings.
 
 ### Compact live examples
 
@@ -382,13 +399,21 @@ Future compression or generalisation must preserve the following:
 8. The skill must not become a general theorem prover or duplicate Japanese
    style, notation bookkeeping, or paper-level claim-integrity review.
 
-## 7. Relationship among the four skills
+## 7. Ownership across the writing skills
 
 Ownership boundaries to preserve:
 
-- `wabun-math-style` owns Japanese linguistic form, connective roles,
-  unnatural Japanese translation patterns, terminology SoT conflicts, and
-  translation-level concept identity.
+- `wabun-math` routes by passage role and terminology task without repeating rules.
+- `wabun-math-theorem` owns Japanese wording within explicitly structured
+  definitions, lemmas, propositions, theorems, corollaries, proofs and remarks,
+  including explicit Markdown equivalents. It excludes narrative prose.
+- `wabun-math-style` owns narrative Japanese prose and the shared Japanese
+  language and default drafting references used by structured blocks.
+- `wabun-math-terminology` owns evidence-backed terminology selection,
+  unnatural Japanese calques, terminology SoT conflicts and translation-level
+  concept identity across both passage types.
+- `math-writing-preferences` holds scoped personal natural-number/index
+  conventions for drafting, translation and revision in all languages; it does not define general review defects.
 - `math-notation-consistency` owns document-level symbol identity, aliases,
   definition locality, and notation reuse.
 - `math-claim-integrity` owns claim structure, proof/evidence boundaries,
@@ -398,5 +423,84 @@ Ownership boundaries to preserve:
   anchor.
 
 A wording pattern may reveal a deeper claim defect, but a finding should state
-which layer is actually broken instead of duplicating the same rule across all
-four skills.
+which layer is actually broken instead of duplicating the same finding across
+skills.
+
+
+## 8. Issue #201 migration and preservation decisions
+
+The split moves rules and examples to one owner rather than copying the old
+monolithic skill. Shared runtime files stay inside installed skill directories;
+this maintenance document is not a runtime dependency. Companion skills are
+separately installed or resolved from an available catalog.
+
+### Historical rule correspondence
+
+| Former rule | Current owner and disposition |
+| --- | --- |
+| JP-1 | Style's shared `references/language.md`, used by theorem and narrative style; judge sentence role, including proved summaries, clear definitions, proof goals and explicitly identified conjecture/interpretation. |
+| JP-2 | Shared language reference; retain present-tense norm, BLOCKING in theorem/proposition statements, MINOR elsewhere, and historical/completed-proof-step exceptions. |
+| JP-3 | Theorem; keep construction/progression distinct from external citation and protect legitimate stative citation passives. |
+| JP-4 | Shared language reference; retain immediate restatement/inference test and register norm. The immediately preceding text can invoke existing assumptions or results. |
+| JP-5 | Theorem; retain same-/next-sentence justification or reference and visible sign/boundary/substitution checks; coordinate with proof exposition. |
+| JP-6 | Narrative style; retain heading-redundancy test, purposeful orientation and proof signposts; general metadiscourse stays in `deslop-prose`. |
+| JP-7 | Deleted as approved; no replacement particle audit. The old claim that an existential topic with `は` inherently presupposes existence was false. |
+| JP-8 | Theorem for structured statements/proofs; narrative style retains implication clarity and genuine regime/comparison uses. Preserve explicit antecedents, standing assumptions, legitimate cases and direct proof progression. |
+| JP-9 | Theorem, narrowed as approved to unnecessary proof double negation with the logical-equivalence exception; retain proof-context MINOR severity. Rhetorical guard phrases use existing `deslop-prose` coverage. |
+| JP-10 | Already merged into JP-3; remains retired. |
+| JP-11 | Style's shared language reference; retain four stacked `の` test and MINOR severity across passage roles. |
+| JP-12 | Terminology; always inspect technical `generic`, retain English and reject `一般位置の` as its translation. Preserve nontechnical general/typical uses. |
+| JP-13 | Terminology plus `references/usage.md`; preserve every individual recurrence example and established-usage exception, including shorthand and genuine statistics. Local definition no longer substitutes for usage evidence. |
+| JP-14 | Semicolon ban in shared language reference; lexical aliases/adjectives/English retention in terminology. Macro-generated-English inspection deleted. Report one terminology alias defect; NC-3 covers only a distinct notation-wide defect. |
+| JP-15 | Terminology; preserve strong ban on vague `閉形式` where an explicit formula or equation reference expresses the intended content, its severities and all three exemptions. |
+| JP-16–17 | Terminology; evidence contract governs project choices, source/definition conflicts and English retention. No invented-Japanese/local-definition workaround. |
+| JP-18 | Shared language reference; quantities use Arabic numerals, lexical items remain, style alone stays MINOR. |
+| JP-19 | Absorbed into `deslop-prose` redundant-explanation guidance with MINOR severity and informative-clarification exceptions; no dedicated natural-number notation prescription. |
+| JP-20 | Theorem; mandatory universal-assertion/arbitrary-selection wording norm, including recoverable meanings, preserving quantifier order and dependencies. Not an optional personal preference. |
+| JP-21 | Theorem's Japanese realization of PE-1; preserve pre-branch announcement, branch labels and explicit closure with existing severities. |
+| JP-22–24 | Style's shared `references/drafting.md`, applied by default to new prose, translation and requested stylistic rewrites; never review findings solely from the words used. |
+| JP-25 | Shared language reference; recoverability and purposeful reference, no distance or frequency cutoff, existing ambiguity severities. |
+| JP-26 | Terminology; a multi-index has components even with tuple representation; preserve actual chart/basis-coordinate usage and NC-11 boundary. |
+
+Unsettled first-batch proposals were resolved conservatively for implementation:
+JP-2's severity, JP-4's locality/register test, JP-5's placement test, JP-6's
+heading test and JP-11's count threshold remain. The count threshold is retained
+behavior, not a newly established empirical criterion. No rule was weakened on
+an unsupported claim that current models no longer need it.
+
+### Drafting and personal conventions
+
+JP-23 retains a concrete recurrence-prevention purpose: formal systems such as
+Lean make conventions and technical scaffolding explicit, and their prose
+translations can mechanically narrate that scaffolding. Prefer `空和は0である`
+or `空和は0だから` to unnecessary provenance/definition procedure. Preserve the
+fact and reasoning needed in the empty case, nonstandard conventions,
+consequential boundary conditions and every necessary argument. Clear uses of
+`規約` are not defects. JP-22's order/enumeration preference and JP-24's
+construction wording likewise remain drafting defaults, not review findings.
+
+The personal convention uses `N = {0, 1, 2, ...}` and
+permits `0 行目`, `0 列目`, `0 番目`, “row 0”, “column 0” and “zeroth” in
+all languages. Explanations and translations must preserve mathematics, code
+and array indices without silently adding 1. This strong preference applies automatically when trusted context establishes the user
+as uda/t-uda OR the target repository owner is t-uda/uda-lab. A known user needs
+no repository; a matching repository needs no matching user. Unknown identity
+is not presumed to match; other contexts require an explicit request. It is not a general
+mathematical-correctness test and does not authorize silently changing a source's
+mathematics or judging another author's convention mathematically wrong.
+
+### Evidence and validation limits
+
+The first-ten rules originate collectively in #117 / PR #118. JP-8's later
+role refinements are documented in #126, #131, #132 and PR #137. Individual
+originating failure logs and responsible models have not been identified for
+the other first-ten rules. Current-model effectiveness and the effect of
+removing JP-7 are unmeasured.
+
+Before/after size measurements establish compression, not semantic equivalence.
+Focused behavioral checks should cover citation passives, existing-context
+justifications, proof signposts, case/regime roles, necessary negation,
+quantifier wording, source/glossary conflicts, all JP-13 cases, English
+retention, evidence-unavailable versus negative-search outcomes, zero-based
+translation and concise empty-case proofs. Keep test results separate from
+claims about general model efficacy.

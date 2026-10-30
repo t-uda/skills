@@ -40,7 +40,11 @@ Current skills:
 - github-project-board-maintenance
 - math-claim-integrity
 - math-notation-consistency
+- wabun-math
+- wabun-math-theorem
 - wabun-math-style
+- wabun-math-terminology
+- math-writing-preferences
 - lean-formalization-discipline
 - research-significance
 - exposition-flow

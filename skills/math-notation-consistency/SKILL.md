@@ -9,7 +9,7 @@ Audit a mathematics document for internal notation consistency. The skill is fie
 
 Preserve recoverable canonical meanings and useful notation. This skill owns notation bookkeeping, notation economy and contextual ambiguity of structural nouns. It does not verify mathematical claims or prescribe an external notation style. LaTeX checks apply when source is available.
 
-Use `math-semantic-preservation` for an edit that changes source meaning, `math-claim-integrity` for claim support and substantive conceptual errors, and `wabun-math-style` for Japanese lexical choice when the referent is already clear. Report a defect at its owning layer rather than duplicating it.
+Use `math-semantic-preservation` for an edit that changes source meaning, `math-claim-integrity` for claim support and substantive conceptual errors, and `wabun-math-terminology` for Japanese lexical choice when the referent is already clear. Report a defect at its owning layer rather than duplicating it.
 
 ## Design intent
 
@@ -287,7 +287,7 @@ Before finishing, verify:
 ## Relationship to Other Skills
 
 - Use `math-claim-integrity` for logical/structural issues: quantifier scope, theorem hierarchy, stale claims, proof/computation distinction. Rule R-I in that skill handles conceptual correctness of a symbol's *name at introduction*; NC-3 here handles consistency of that name *across the document*.
-- Use `wabun-math-style` for Japanese-language anti-patterns.
+- Use `wabun-math` for Japanese wording and `wabun-math-terminology` for terminology research and lexical choice.
 - Use `deslop-prose` for prose inflation.
 - NC-1 (existence/uniqueness of definition) complements `math-claim-integrity` rule R-J (defined-before-use in theorem statements): R-J checks completeness of theorem statements; NC-1 checks uniqueness of the definition site.
 - NC-7 owns inconsistent typography for the same family of objects; `math-semantic-preservation` rule MS-6 owns an incorrect semantic reading of otherwise consistent notation (e.g. a family index described as a power).

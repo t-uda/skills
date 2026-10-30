@@ -40,7 +40,7 @@ Use this skill when:
 Do not use this skill for:
 - Sentence-level prose inflation, hype, or AI-generated decoration → use `deslop-prose` (but structural contribution/hierarchy inflation belongs here: R-F, R-M)
 - Symbol-table drift across sections → use `math-notation-consistency`
-- Japanese-specific language anti-patterns → use `wabun-math-style`
+- Japanese mathematical wording → use `wabun-math`
 - How a valid proof is exposed to readers → use `math-proof-exposition`; translating a formal proof into prose → use `formal-proof-exposition`
 - Discussion-history artifacts in planning docs → use `deslop-history`
 - Whether an edit, paraphrase, or terminology migration preserves the semantic content of its source (referent identity, operation vs result, quantifier or equality mode changed by an edit) → use `math-semantic-preservation`
@@ -74,7 +74,7 @@ Every claim must be stated at exactly the quantifier strength the proof establis
 Any quantity defined via a potentially-failing operation (matrix inverse, division, limit, logarithm) must: (a) name its failure locus at the point of definition, and (b) have every subsequent universal claim over that quantity guarded by the same condition. Example: a quantity defined via the inverse of a parameter-dependent matrix A(t) must state that it is defined only where A(t) is invertible; every "for all t" claim about it must be guarded by "for all t where A(t) is invertible" or equivalent.
 
 **R-C — Attribution boundary.** *(convention)*
-Each theorem/proposition must be unambiguously classifiable as: (i) cited verbatim, (ii) restated/repackaged from a citation, or (iii) original to this paper. Infrastructure from cited works (constructions, prior existence results) must not be presented as the paper's own novel contribution. Conversely, genuinely original results must carry an explicit claim of novelty or must not be attributed to prior work by passive or vague phrasing. For the voice mechanics of attribution in Japanese (passive 〜が示されている vs active 〜を示す), cross-reference `wabun-math-style` rule JP-3. When the `citation_boundary` input is not supplied, all R-C findings are automatically severity NOTE ("unverifiable attribution") rather than BLOCKING or MINOR — flag the location but do not assert novelty or citedness without the boundary information.
+Each theorem/proposition must be unambiguously classifiable as: (i) cited verbatim, (ii) restated/repackaged from a citation, or (iii) original to this paper. Infrastructure from cited works (constructions, prior existence results) must not be presented as the paper's own novel contribution. Conversely, genuinely original results must carry an explicit claim of novelty or must not be attributed to prior work by passive or vague phrasing. For the voice mechanics of attribution in Japanese (passive 〜が示されている vs active 〜を示す), cross-reference `wabun-math-theorem` rule JP-3. When the `citation_boundary` input is not supplied, all R-C findings are automatically severity NOTE ("unverifiable attribution") rather than BLOCKING or MINOR — flag the location but do not assert novelty or citedness without the boundary information.
 
 **R-D — Proof/computation honesty.** *(invariant)*
 Analytic/algebraic proofs and numerical/computational verifications must be strictly separated. Rules: every decimal value must be labeled as approximate or as a convenience form of an exact quantity; a load-bearing numerical claim must either have a closed-form analytic companion OR an explicit statement that the result is a certified numerical result (interval arithmetic, exact-arithmetic computation, rigorous exhaustive finite case enumeration with exact decision) with a statement of why a closed form is unavailable; grid-search or script output may be labeled as motivation or corroboration but not as a proof step. A claim presented as machine-checked is supported only by the declaration inspected under Procedure step 4.
@@ -278,7 +278,7 @@ Before finishing, verify:
 ## Relationship to Other Skills
 
 - Use `deslop-prose` when the problem is inflated prose, hype, or AI-generated decoration.
-- Use `wabun-math-style` for Japanese-language anti-patterns (epistemic hedges, verb tense, particle misuse).
+- Use `wabun-math` for Japanese mathematical wording by passage and task.
 - Use `math-notation-consistency` for symbol drift across sections, orphaned macros, or alias detection.
 - Use `deslop-history` when a planning or notes artifact leaks process history or prior-draft residue.
 - Use `math-semantic-preservation` when an edit or explanatory description changed a source statement's meaning or mode; this skill remains responsible when the claim itself exceeds what the proof establishes (its rule MS-4 defers claim-strength defects here).

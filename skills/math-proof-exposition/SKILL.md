@@ -16,9 +16,11 @@ Write around the mathematical argument the reader needs, not around the order in
 
 ## Boundaries
 
-This skill owns local proof exposition. Use `math-claim-integrity` for correctness, exact claim scope and result/contribution hierarchy; `math-semantic-preservation` for edits that change their source meaning, including probability and measure context; `math-notation-consistency` for definitions, aliases and notation economy; `exposition-flow` for the agreed audience model, reader needs, document structure and transitions between results; `wabun-math-style` for Japanese expression, including the Japanese realisation of proof-mode announcements; and `deslop-prose` for paragraph grouping, which must keep meaningful proof boundaries.
+This skill owns local proof exposition. Use `math-claim-integrity` for correctness, exact claim scope and result/contribution hierarchy; `math-semantic-preservation` for edits that change their source meaning, including probability and measure context; `math-notation-consistency` for definitions, aliases and notation economy; `exposition-flow` for the agreed audience model, reader needs, document structure and transitions between results; `wabun-math-theorem` for Japanese wording in structured proofs, including the Japanese realisation of proof-mode announcements; and `deslop-prose` for paragraph grouping, which must keep meaningful proof boundaries.
 
 Use `formal-proof-exposition` when formal code or a formalisation repair is a source of the prose. A proof assistant is not a prerequisite for this skill.
+
+For mathematical drafting, translation and revision in any language, use `math-writing-preferences` according to its user/repository scope.
 
 ## Inputs
 

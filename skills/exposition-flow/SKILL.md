@@ -27,9 +27,11 @@ Agents that build repository-wide context — files, history, issue and PR discu
 - For sentence-level rhetorical inflation, hype, or metadiscourse in near-final prose → use `deslop-prose` (run it after this skill)
 - For removing discussion provenance or process residue from a final artifact → use `deslop-history` (this skill consumes history as source material but does not own residue cleanup)
 - For auditing the authority or evidentiary grounding of the source material itself → use `sot-integrity` (verify the source first; this skill decides how verified material is introduced to the audience)
-- For quantifier scope, theorem hierarchy, or proof honesty → use `math-claim-integrity`; for notation bookkeeping → use `math-notation-consistency`; for Japanese mathematical language → use `wabun-math-style`
+- For quantifier scope, theorem hierarchy, or proof honesty → use `math-claim-integrity`; for notation bookkeeping → use `math-notation-consistency`; for Japanese mathematical language → use `wabun-math`
 - For factual verification, citation checking, controlled-vocabulary design, typography, line breaking, visual layout, or slide rendering — out of scope entirely
 - For drawing or auditing explanatory mathematical figures, including proof-dependency diagrams → use `math-schematic-figures`
+
+For mathematical drafting, translation and revision in any language, use `math-writing-preferences` according to its user/repository scope.
 
 ## Inputs
 
@@ -57,7 +59,7 @@ Each rule is tagged with a classification that sets a default severity: **invari
 4. **Build prerequisite edges.** Add an edge `A -> B` when interpreting `B` requires `A` — because `B` uses a term, notation, or assumption introduced by `A` (definitional), or because `B` is derived from a prior claim `A` that must already be stated (derivational). `B`'s own justification or proof is not a prerequisite of `B` and creates no edge into `B`, so a theorem's proof may follow its statement. Repository file order, commit order, and implementation order must not override this dependency order. An edge whose source unit is absent from the artifact marks an omitted prerequisite branch: add the missing unit or remove its dependents.
 5. **Resolve cycles.** Merge mutually dependent concepts into an explicit simultaneous-definition block, or introduce a provisional informal explanation before the formal definitions. Do not silently leave cyclic dependencies in the exposition.
 6. **Topologically order the material.** Present prerequisites before dependent concepts and claims. Reintroduce context after a long gap when local recoverability has been lost. Correct global order is not sufficient: adjacent units joined by an unexplained jump need a local bridge stating why one leads to the next.
-7. **Rewrite for self-containment.** Replace repository-local shorthand with standard terminology or direct explanation. Introduce a local technical term only when repeated reference genuinely requires it, and define it explicitly at first use.
+7. **Rewrite for self-containment.** Replace repository-local shorthand with standard terminology or direct explanation. Introduce a local technical term only when repeated reference genuinely requires it, and define it explicitly at first use. For Japanese terminology, use `wabun-math-terminology` before adopting a name.
 8. **Audit the final flow.** Read forward using the inherited audience model. Check both that the reader can interpret each retained load-bearing statement and that the artifact answers the agreed questions. For each load-bearing sentence or slide, the reader can identify what is being defined or asserted, what prior information it depends on, why it is present, and whether it is established, illustrative, conditional, or unresolved. Audit its entry point separately and preserve prerequisite closure after compression. Do not rebalance lengths by padding, or require section-ratio tables as routine evidence.
 
 ## Rules
@@ -276,5 +278,5 @@ Before finishing, verify:
 - Run `exposition-flow` before `deslop-prose`: this skill determines structure and prerequisite order; `deslop-prose` cleans near-final prose.
 - Use `deslop-history` when process history leaks into the final artifact; this skill may consume that history as source context but does not expose it without communicative value.
 - Use `sot-integrity` to verify authority and evidence boundaries of the source; this skill decides how verified material is introduced to the audience.
-- For mathematics, compose with `math-claim-integrity`, `math-notation-consistency`, and the relevant language-style skill (e.g. `wabun-math-style`). Those skills audit correctness, claim structure, notation, and language; this skill owns audience prerequisites and information order.
+- For mathematics, compose with `math-claim-integrity`, `math-notation-consistency`, and the relevant language-style skill (e.g. `wabun-math`). Those skills audit correctness, claim structure, notation, and language; this skill owns audience prerequisites and information order.
 - Do not expand this skill into factual verification, citation checking, typography, or generic slide design.
