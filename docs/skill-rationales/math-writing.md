@@ -455,7 +455,7 @@ separately installed or resolved from an available catalog.
 | JP-15 | Terminology; preserve strong ban on vague `閉形式` where an explicit formula or equation reference expresses the intended content, its severities and all three exemptions. |
 | JP-16–17 | Terminology; evidence contract governs project choices, source/definition conflicts and English retention. No invented-Japanese/local-definition workaround. |
 | JP-18 | Shared language reference; quantities use Arabic numerals, lexical items remain, style alone stays MINOR. |
-| JP-19 | Originally absorbed into `deslop-prose`; `deslop-caveat` now handles redundant qualifications. The MINOR severity, informative-clarification exceptions and decision against a dedicated natural-number notation rule stand. |
+| JP-19 | Originally absorbed into `deslop-prose`. `deslop-caveat` now removes redundant qualifiers without changing the term, notation, index origin or convention; genuine clarifications stay, and redundancy alone is MINOR in review. No dedicated natural-number notation rule. |
 | JP-20 | Theorem; mandatory universal-assertion/arbitrary-selection wording norm, including recoverable meanings, preserving quantifier order and dependencies. Not an optional personal preference. |
 | JP-21 | Theorem's Japanese realization of PE-1; preserve pre-branch announcement, branch labels and explicit closure with existing severities. |
 | JP-22–24 | Style's shared `references/drafting.md`, applied by default to new prose, translation and requested stylistic rewrites; never review findings solely from the words used. |

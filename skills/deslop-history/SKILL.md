@@ -142,6 +142,7 @@ Before finishing, verify:
 
 ## Relationship to Other Skills
 
+- Use `deslop-caveat` for reader-facing qualifications; this skill handles the history that prompted them.
 - Use `sot-integrity` when the artifact's authority or factual grounding must be audited.
 - Use `metaplan` when a plan or spec still needs execution-readiness review.
 - Use `handoff-prompt` when the output is a transfer prompt for another agent.

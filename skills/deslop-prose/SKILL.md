@@ -148,6 +148,7 @@ Before finishing, verify:
 
 ## Relationship to Other Skills
 
+- Use `deslop-caveat` to decide whether a qualification adds information the reader needs.
 - Use `deslop-history` when the main problem is discussion provenance, prior-draft residue, or process framing.
 - Use `sot-integrity` when authority, factual grounding, or trust scope must be audited.
 - Use `textlint-cli` for deterministic lint checks, not context-sensitive prose judgment.
