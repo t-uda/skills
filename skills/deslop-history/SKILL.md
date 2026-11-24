@@ -59,7 +59,7 @@ Use these categories.
 
 - `current-state-essential` — current decisions, interfaces, contracts, responsibility splits, active constraints, active assumptions, and operational open issues
 - `operational-rationale` — rationale still needed to prevent misimplementation or misuse
-- `historical-meta-residue` — discussion provenance, superseded alternatives, prior drafts, process notes, defensive explanations, agent-facing framing, and negative definitions that mainly answer an earlier misunderstanding instead of stating the current role directly
+- `historical-meta-residue` — discussion provenance, superseded alternatives, prior drafts, process notes, agent-facing framing, and explanations whose subject is an earlier misunderstanding
 - `nonessential-context` — background that may be interesting but does not change the reader's action
 
 When content could fit more than one category, classify by this precedence and assign the first match: `current-state-essential` > `operational-rationale` > `historical-meta-residue` > `nonessential-context`. A sentence that both states a current decision and narrates how it was reached is `current-state-essential`: keep the decision, drop the narration.
@@ -71,7 +71,7 @@ Do not output the classification unless the user explicitly asks for a review tr
 
 ## Removal Heuristics
 
-Recognize `historical-meta-residue` by phrasing that narrates the discussion instead of stating the current role, such as: "This was discussed in ...", "After issue discussion ...", "This supersedes ...", "We considered ...", "In review ...", "This note exists because ...", "For now" used as discussion timing rather than a real boundary, migration or backward-compatibility framing with no current operational effect, "This is not X" that mainly reacts to earlier discussion rather than preventing a likely current misuse, or internal protocol detail that exists only to coordinate drafting or review. Treat close variants ("the earlier direction", "the first pass", "the initial draft") the same way.
+Recognize `historical-meta-residue` by phrasing that narrates the discussion instead of stating the current role, such as: "This was discussed in ...", "After issue discussion ...", "This supersedes ...", "We considered ...", "In review ...", "This note exists because ...", "For now" used as discussion timing rather than a real boundary, migration or backward-compatibility framing with no current operational effect, or internal protocol detail that exists only to coordinate drafting or review. Treat close variants ("the earlier direction", "the first pass", "the initial draft") the same way.
 
 Retain phrasing that matches one of these patterns lexically but is `current-state-essential` or `operational-rationale` under the classification precedence above — most often: active constraints, current interfaces and contracts, compatibility requirements affecting actual behaviour, open issue links defining unresolved boundaries, rationale that prevents a likely wrong implementation, and dates/versions/commit references where freshness or compatibility matters.
 
@@ -81,9 +81,7 @@ Retain phrasing that matches one of these patterns lexically but is `current-sta
 - Replace provenance with direct current-state wording.
 - Replace "This supersedes X" with "Use Y" unless readers must actively avoid X.
 - Remove defensive framing about why the artifact exists.
-- Keep caveats that affect execution, but make them operational.
-- Rewrite negative definitions into positive current-state statements when possible.
-- Keep negative framing only when it prevents a likely misuse by the intended reader.
+- State retained operational constraints as instructions. Use `deslop-caveat` for qualifications prompted by earlier discussion.
 - Separate process from structure: remove agent-facing process commentary and describe the actual responsibility boundary, interface, or user model, not the planning discussion that produced it.
 - Replace internal coordination protocols with reader-facing abstractions unless the reader must execute the protocol.
 - Preserve links only when they define current authority, unresolved boundaries, or required follow-up.
@@ -99,11 +97,6 @@ After: Preserve compatibility notes when they affect current behaviour.
 ```text
 Before: This supersedes the earlier direction to include the full discussion.
 After: Include only current decisions and operational constraints.
-```
-
-```text
-Before: This is not intended to replace the existing evaluation framework.
-After: This complements the existing evaluation framework by handling final prose cleanup.
 ```
 
 ```text

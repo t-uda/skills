@@ -446,7 +446,7 @@ separately installed or resolved from an available catalog.
 | JP-6 | Narrative style; retain heading-redundancy test, purposeful orientation and proof signposts; general metadiscourse stays in `deslop-prose`. |
 | JP-7 | Deleted as approved; no replacement particle audit. The old claim that an existential topic with `は` inherently presupposes existence was false. |
 | JP-8 | Theorem for structured statements/proofs; narrative style retains implication clarity and genuine regime/comparison uses. Preserve explicit antecedents, standing assumptions, legitimate cases and direct proof progression. |
-| JP-9 | Theorem, narrowed as approved to unnecessary proof double negation with the logical-equivalence exception; retain proof-context MINOR severity. Rhetorical guard phrases use existing `deslop-prose` coverage. |
+| JP-9 | Theorem, narrowed as approved to unnecessary proof double negation with the logical-equivalence exception; retain proof-context MINOR severity. Rhetorical guard phrases now route to `deslop-caveat`. |
 | JP-10 | Already merged into JP-3; remains retired. |
 | JP-11 | Style's shared language reference; retain four stacked `の` test and MINOR severity across passage roles. |
 | JP-12 | Terminology; always inspect technical `generic`, retain English and reject `一般位置の` as its translation. Preserve nontechnical general/typical uses. |
@@ -455,7 +455,7 @@ separately installed or resolved from an available catalog.
 | JP-15 | Terminology; preserve strong ban on vague `閉形式` where an explicit formula or equation reference expresses the intended content, its severities and all three exemptions. |
 | JP-16–17 | Terminology; evidence contract governs project choices, source/definition conflicts and English retention. No invented-Japanese/local-definition workaround. |
 | JP-18 | Shared language reference; quantities use Arabic numerals, lexical items remain, style alone stays MINOR. |
-| JP-19 | Absorbed into `deslop-prose` redundant-explanation guidance with MINOR severity and informative-clarification exceptions; no dedicated natural-number notation prescription. |
+| JP-19 | Originally absorbed into `deslop-prose`; `deslop-caveat` now handles redundant qualifications. The MINOR severity, informative-clarification exceptions and decision against a dedicated natural-number notation rule stand. |
 | JP-20 | Theorem; mandatory universal-assertion/arbitrary-selection wording norm, including recoverable meanings, preserving quantifier order and dependencies. Not an optional personal preference. |
 | JP-21 | Theorem's Japanese realization of PE-1; preserve pre-branch announcement, branch labels and explicit closure with existing severities. |
 | JP-22–24 | Style's shared `references/drafting.md`, applied by default to new prose, translation and requested stylistic rewrites; never review findings solely from the words used. |
