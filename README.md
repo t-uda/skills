@@ -229,6 +229,6 @@ The installer in this repository manages skills only. It does not generate repos
 
 ## Notes
 
-- Keep repository files and skill artifacts in English.
+- Write rule prose and structure in English. Examples, quoted text and terms under review may be in any language.
 - Keep skills narrow, explicit, and easy for agents to apply.
 - Prefer project-local installation unless there is a clear reason to install globally.
