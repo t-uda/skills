@@ -38,6 +38,7 @@ Each skill must live at `skills/<skill-name>/SKILL.md`.
 
 ### Artifact cleanup
 
+- `deslop-caveat`: cut qualifications that tell a careful reader nothing new while drafting or revising human-facing text in any language
 - `deslop-history`: clean final user-visible artifacts from accepted decisions or issue/PR discussion by removing historical residue and process framing
 - `deslop-prose`: clean near-final academic or professional prose of hype, decorative structure, excessive paragraph fragmentation, vague metadiscourse, pseudo-technical phrasing and rhetorical overstatement while preserving technical meaning
 
