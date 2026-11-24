@@ -9,7 +9,7 @@ Apply while drafting or revising papers, proofs, notes, specifications, document
 
 ## The deletion test
 
-Delete the qualification. **Given the text at the reader's entry point, could a careful reader now reasonably draw a wrong conclusion or act wrongly?** If not, leave it out. A reader may open a theorem or API entry on its own. Judge what that reader has been told, not what the author knows.
+Delete the qualification. **Given the text at the reader's entry point, could a careful reader now reasonably draw a wrong conclusion or act wrongly?** If not, leave it out. A reader may open a theorem or API entry on its own. Judge what the text actually gives that reader reason to infer. Do not introduce a stronger claim just to deny it.
 
 Apply the same test to a denial (“No X is provided”), a positive exclusion (“Out of scope: X”), or a qualification hidden in a word or proof step (`only`, `exactly`, a repeated hypothesis, an unnecessary case split). None of these forms is itself a defect.
 
@@ -20,6 +20,7 @@ Keep what determines the claim or action: a hypothesis, a failing converse, what
 - **Changelog:** “Adds the isomorphism `foo_iso`. No executable extraction is available.” → “Adds the isomorphism `foo_iso`.” A later addition elsewhere should not make this entry false.
 - **API guide:** “`read_v1` accepts v1 snapshots. Other versions are rejected.” → “`read_v1` accepts v1 snapshots only.” A caller needs the format contract. In lasting text, describe the named object's scope rather than taking inventory of what is absent elsewhere.
 - **Issue:** For a typo in the help text, drop “Out of scope: redesign the parser.” For a renamed option, keep “Continue accepting the old spelling in saved configurations.”
-- **Estimate:** “Fix n ≥ 1. For fₙ(x) = nx on the real line, the optimal Lipschitz constant is n (the case n = 0 is excluded).” Delete the parenthesis; keep the dependence on n.
+- **Paper body, convergence:** “For a nonempty finite graph with a piecewise-linear height function and a finite cover of its range by bounded open intervals, the geometric interleaving distance from the categorical Mapper reconstruction to the Reeb graph is bounded by the maximum width of the cover intervals with nonempty pullback. It therefore tends to zero as this width tends to zero. This result does not provide an algorithm for enumerating the components.” Delete the last sentence. The bound and convergence make no algorithmic claim.
+- **Paper body, upper bound:** “Composing a 1/4-interleaving between the parallel-edge and single-edge graphs with a 1/2-interleaving between the single-edge graph and its midpoint gives a geometric interleaving at 1/4 + 1/2. Thus the distance from the parallel edges to the midpoint is at most 3/4; no exact value is claimed.” Delete the clause after the semicolon. The inequality already states what was proved.
 - **Counterexample:** Keep both properties in “A surjection need not be injective: the constant map from a two-point set to a singleton is surjective but not injective.”
 - **Japanese commit message:** “ヘルプの誤字を修正。他の動作に変更はない。” → “ヘルプの誤字を修正。”
