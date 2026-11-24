@@ -6,7 +6,7 @@ This repository stores reusable agent skills and a small amount of supporting do
 
 ## Rules
 
-- Keep all repository text and skill artifacts in English. Exception: a skill whose subject is non-English text (e.g. a language-review skill) may contain that language as quoted linguistic data — examples, terms under review, and replacement phrases; rule prose and structure remain in English.
+- Write rule prose and structure in English. Examples, quoted text and terms under review may be in any language.
 - Store each skill at `skills/<skill-name>/SKILL.md`.
 - Keep each skill narrow, explicit, and operational.
 - Avoid registry-specific assumptions in skill content.
