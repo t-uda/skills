@@ -9,7 +9,9 @@ Apply while drafting or revising papers, proofs, notes, specifications, document
 
 ## The deletion test
 
-Delete the qualification. **Given the text at the reader's entry point, could a careful reader now reasonably draw a wrong conclusion or act wrongly?** If not, leave it out. A reader may open a theorem or API entry on its own. Judge what the text actually gives that reader reason to infer. Do not introduce a stronger claim just to deny it.
+Delete the qualification. **Given the text at the reader's entry point, could a careful reader now reasonably draw a wrong conclusion or act wrongly?** If not, leave it out. A reader may open a theorem or API entry on its own.
+
+**Do not bring up a claim just to deny it when the text gives the reader no reason to infer it.**
 
 Apply the same test to a denial (“No X is provided”), a positive exclusion (“Out of scope: X”), or a qualification hidden in a word or proof step (`only`, `exactly`, a repeated hypothesis, an unnecessary case split). None of these forms is itself a defect.
 
